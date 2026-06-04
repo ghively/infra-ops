@@ -20,11 +20,21 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/sensitivity-router.js\"",
+            "timeout": 3
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/gateguard-fact-force.js\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/pan-egress-filter.js\""
           }
         ],
-        "description": "DLP: block any tool call whose input contains a Luhn-valid PAN or a high-confidence secret",
-        "id": "infra:pre:pan-egress-filter"
+        "description": "CHD routing to local lane; GateGuard investigation gate; DLP PAN/secrets blocking",
+        "id": "infra:pre:sensitivity-gateguard-pan-filter"
       }
     ],
     "PostToolUse": [
@@ -33,13 +43,24 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/governance-capture.js\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/observe-runner.js\"",
+            "async": true,
+            "timeout": 3
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/governance-ledger.js\"",
             "async": true,
             "timeout": 10
           }
         ],
-        "description": "Append a fingerprinted, append-only audit record per tool use (PCI Req 10 / CP §6.4 feed)",
-        "id": "infra:post:governance-ledger"
+        "description": "Governance capture, observation, and audit ledger (PCI Req 10)",
+        "id": "infra:post:governance-observe-ledger"
       }
     ]
   }
