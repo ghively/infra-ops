@@ -1,0 +1,145 @@
+# Ansible Deploy - Dev Environment (Manual Gate)
+#
+# GitLab CI component for deploying Ansible playbooks to Dev environment.
+# This is a manual gate - deployments never happen automatically to production.
+#
+# Usage: Include in your .gitlab-ci.yml:
+#   include:
+#     - components: 'infra-ops@latest'
+#       ref: main
+#       file: '/.gitlab-ci/components/ansible-deploy/template.yml'
+#
+# Or copy directly into your .gitlab-ci.yml
+
+variables:
+  ANSIBLE_FORCE_COLOR: "0"
+  ANSIBLE_HOST_KEY_CHECKING: "False"
+  ANSIBLE_INVENTORY: "inventories/${CI_ENVIRONMENT_NAME}"
+
+.ansible_base:
+  image: ${CI_REGISTRY}/ansible/ansible-runner:${ANSIBLE_VERSION:-latest}
+  before_script:
+    - |
+      # Setup SSH key for Ansible
+      mkdir -p ~/.ssh
+      echo "${ANSIBLE_SSH_KEY}" | tr -d '\r' > ~/.ssh/id_rsa
+      chmod 600 ~/.ssh/id_rsa
+      ssh-keyscan -t rsa ${ANSIBLE_CONTROLLER} >> ~/.ssh/known_hosts
+    - ansible --version
+    - ansible-lint --version
+    - yamllint --version
+
+.ansible_quality:
+  extends: .ansible_base
+  stage: validate
+  script:
+    - echo "Running YAML lint..."
+    - yamllint -d "{extends: default, rules: {line-length: {max: 120}}}" playbooks/ roles/
+    - echo "Running Ansible lint..."
+    - ansible-lint playbooks/ roles/ --force-color
+    - echo "Running syntax check..."
+    - find playbooks/ -name "*.yml" -exec ansible-playbook --syntax-check {} \;
+
+.ansible_check:
+  extends: .ansible_base
+  stage: verify
+  script:
+    - echo "Running check mode against ${CI_ENVIRONMENT_NAME}..."
+    - ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml --check --diff
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Dev deployment - manual gate, but automatic on merge to main
+deploy_dev:
+  extends: .ansible_base
+  stage: deploy
+  environment:
+    name: dev
+    url: https://dev.example.com
+    on_stop: stop_dev
+  script:
+    - |
+      echo "Deploying to Dev environment..."
+      ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml \
+        --extra-vars "target_env=dev deploy_id=${CI_PIPELINE_ID}"
+    - echo "Dev deployment complete"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+  allow_failure: false
+  needs:
+    - job: ansible_quality
+    - job: ansible_check
+      optional: true
+
+stop_dev:
+  extends: .ansible_base
+  stage: deploy
+  environment:
+    name: dev
+    action: stop
+  script:
+    - echo "Stopping Dev environment resources..."
+    - ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml --extra-vars "target_action=stop"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  allow_failure: true
+
+# Test/Staging/Production deployments - manual gates only
+deploy_test:
+  extends: .ansible_base
+  stage: deploy
+  environment:
+    name: test
+    url: https://test.example.com
+  script:
+    - |
+      echo "Deploying to Test environment (manual gate)..."
+      ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml \
+        --extra-vars "target_env=test deploy_id=${CI_PIPELINE_ID}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  allow_failure: false
+  needs:
+    - job: deploy_test
+
+deploy_staging:
+  extends: .ansible_base
+  stage: deploy
+  environment:
+    name: staging
+    url: https://staging.example.com
+  script:
+    - |
+      echo "Deploying to Staging environment (manual gate)..."
+      ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml \
+        --extra-vars "target_env=staging deploy_id=${CI_PIPELINE_ID}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  allow_failure: false
+  needs:
+    - job: deploy_staging
+
+deploy_production:
+  extends: .ansible_base
+  stage: deploy
+  environment:
+    name: production
+    url: https://example.com
+    deployment_tier: production
+  script:
+    - |
+      echo "Deploying to PRODUCTION (manual gate + approval)..."
+      ansible-playbook -i ${ANSIBLE_INVENTORY} site.yml \
+        --extra-vars "target_env=production deploy_id=${CI_PIPELINE_ID}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  allow_failure: false
+  needs:
+    - job: deploy_production
