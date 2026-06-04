@@ -1,0 +1,74 @@
+{
+  "name": "infra-ops",
+  "version": "0.1.0",
+  "description": "PCI-aware DevOps agent for Ansible + self-hosted GitLab CI/CD + Octopus Deploy. Lean Claude Code orchestrator + isolated specialist subagents with documentation-grounded, governed self-improvement loop.",
+  "author": {
+    "name": "ghively",
+    "url": "https://github.com/ghively"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghively/infra-ops.git"
+  },
+  "homepage": "https://github.com/ghively/infra-ops#readme",
+  "bugs": {
+    "url": "https://github.com/ghively/infra-ops/issues"
+  },
+  "keywords": [
+    "ansible",
+    "gitlab",
+    "octopus-deploy",
+    "iac",
+    "devops",
+    "pci-dss",
+    "pci-card-production",
+    "gitops",
+    "claude-code",
+    "agents",
+    "skills",
+    "hooks",
+    "security",
+    "compliance"
+  ],
+  "files": [
+    ".claude-plugin/",
+    "agents/",
+    "commands/",
+    "docs/",
+    "hooks/",
+    "knowledge/",
+    "rules/",
+    "scripts/",
+    "skills/",
+    "SPEC.md",
+    "README.md",
+    "TODO.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "echo '\\n  infra-ops plugin installed!\\n  Add to Claude Code: claude plugin marketplace add .\\n  Docs: https://github.com/ghively/infra-ops\\n'",
+    "lint": "eslint scripts/**/*.js && markdownlint '**/*.md' --ignore node_modules --ignore docs/infra-agent/research",
+    "test": "node tests/run-all.js",
+    "coverage": "c8 --all --include=\"scripts/**/*.js\" --reporter=text --reporter=lcov node tests/run-all.js",
+    "validate": "npm run validate:agents && npm run validate:commands && npm run validate:skills && npm run validate:hooks",
+    "validate:agents": "node tests/ci/validate-agents.js",
+    "validate:commands": "node tests/ci/validate-commands.js",
+    "validate:skills": "node tests/ci/validate-skills.js",
+    "validate:hooks": "node tests/ci/validate-hooks.js"
+  },
+  "dependencies": {
+    "ajv": "^8.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.7.0",
+    "c8": "^11.0.0",
+    "eslint": "^9.39.2",
+    "globals": "^17.4.0",
+    "markdownlint-cli": "^0.48.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

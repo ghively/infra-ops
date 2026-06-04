@@ -1,0 +1,27 @@
+{
+  "name": "infra-ops",
+  "owner": {
+    "name": "infra-ops"
+  },
+  "metadata": {
+    "description": "PCI-aware DevOps agent plugin for Ansible + GitLab CI/CD + Octopus Deploy"
+  },
+  "plugins": [
+    {
+      "name": "infra-ops",
+      "source": "./",
+      "description": "Lean Claude Code orchestrator + isolated specialist subagents for managing an Ansible/GitLab/Octopus estate under PCI DSS + PCI Card Production + PCI PIN, with a governed, documentation-grounded self-improvement loop.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "category": "workflow",
+      "keywords": [
+        "ansible",
+        "gitlab",
+        "octopus-deploy",
+        "iac",
+        "devops",
+        "pci"
+      ]
+    }
+  ]
+}

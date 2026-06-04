@@ -1,0 +1,29 @@
+# Local runtime / audit / ingested-knowledge artifacts — never commit sensitive content.
+/.infra-ops/
+knowledge/ingested/
+knowledge/instincts/*.local.*
+*.local.md
+*.vault
+*.pem
+*.key
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+
+# Coverage reports
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
