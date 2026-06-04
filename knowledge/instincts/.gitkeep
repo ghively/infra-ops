@@ -1,0 +1,19 @@
+# Instinct Ledger - Governed Self-Improvement
+#
+# This directory stores learned patterns promoted to instincts.
+# All promotions are gated by human approval + documentation citation.
+#
+# Structure:
+#   corpor/ - Corporate zone instincts (DSS-scoped)
+#   in-zone/ - HSA instincts (PCI Card Production zone)
+#
+# Format per instinct:
+#   id: instinct-NNN
+#   version: N
+#   confidence: 0.00-1.00
+#   evidence: [{ observation_id: ..., citation: "..." }]
+#   promoted_at: ISO-8601 timestamp
+#   promoted_by: user-id or approval-signature
+#   status: active | deprecated | rollback
+#   content: |
+#     Natural language description of the learned pattern
