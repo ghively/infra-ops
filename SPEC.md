@@ -65,30 +65,32 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 | Agent | Model | Status | Role |
 |---|---|---|---|
-| infra-planner | opus | 🟡 | Ambiguous brief → sprint/roadmap with dependency edges + rollback per unit |
-| iac-author | opus→sonnet | 🟡 | Author Ansible roles/playbooks + `.gitlab-ci.yml` (greenfield opus; routine sonnet) |
-| playbook-reviewer | sonnet | 🟡 | Severity-tiered review of every MR diff |
-| pci-compliance-reviewer | sonnet | 🟡 | PCI control checks on changes (no-SAD, PAN-mask, TLS, SoD) |
-| infra-auditor | sonnet | 🟡 | Read-only discovery + drift/compliance evidence |
-| sensitive-local-analyst | haiku (routing shell) | 🟡 | Routes CHD-adjacent work to the on-prem local (Ollama) lane; never ingests CHD itself. NOTE: a Claude Code subagent runs on a cloud model, so the actual local inference is enforced by the `sensitivity-router` hook (TODO) + `OLLAMA_BASE_URL`, not the frontmatter `model:` field. |
-| change-scribe | haiku | 🟡 | Generate changelog/ADR/Wiki records from merged diffs |
-| knowledge-curator | sonnet (corp) / local (in-zone) | 🟡 | Ingest+classify docs, answer with citations, maintain instinct ledger |
+| infra-planner | opus | ✅ | Ambiguous brief → sprint/roadmap with dependency edges + rollback per unit |
+| iac-author | opus→sonnet | ✅ | Author Ansible roles/playbooks + `.gitlab-ci.yml` (greenfield opus; routine sonnet) |
+| playbook-reviewer | sonnet | ✅ | Severity-tiered review of every MR diff |
+| pci-compliance-reviewer | sonnet | ✅ | PCI control checks on changes (no-SAD, PAN-mask, TLS, SoD) |
+| infra-auditor | sonnet | ✅ | Read-only discovery + drift/compliance evidence |
+| sensitive-local-analyst | haiku (routing shell) | ✅ | Routes CHD-adjacent work to the on-prem local (Ollama) lane; never ingests CHD itself. NOTE: a Claude Code subagent runs on a cloud model, so the actual local inference is enforced by the `sensitivity-router` hook + `OLLAMA_BASE_URL`, not the frontmatter `model:` field. |
+| change-scribe | haiku | ✅ | Generate changelog/ADR/Wiki records from merged diffs |
+| knowledge-curator | sonnet (corp) / local (in-zone) | ✅ | Ingest+classify docs, answer with citations, maintain instinct ledger |
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
 | Skill | Status | Purpose |
 |---|---|---|
-| ansible-patterns | 🟡 | Repo layout, FQCN, idempotency, mixed Win/Linux, no-`command`/`shell` |
-| ansible-testing | 🟡 | yamllint→ansible-lint→syntax→`--check --diff`→Molecule idempotence |
-| gitlab-cicd-pipeline | 🟡 | Stages, `environment:`, protected envs, CI components, runner tags |
-| octopus-release | 🟡 | GitLab→Octopus integration, lifecycles, manual-intervention gate |
-| drift-detection | 🟡 | Scheduled `--check --diff`, ARA tagging, drift→alert |
-| pci-dss-compliance | 🟡 | Corporate DSS controls (modeled on ECC healthcare-phi-compliance) |
-| pci-cp-compliance | 🟡 | Card Production Logical+PIN constraints for in-zone work (docs/infra-agent/DESIGN.md §7) |
-| change-documentation | 🟡 | The rework of the `documentation` playbook + auto-doc generation |
-| multi-env-promotion | 🟡 | dev→test→staging→prod, build-once-promote-one-artifact |
-| secrets-vault | 🟡 | Vault references, runtime lookups, `no_log`, never plaintext |
-| knowledge-curation | 🟡 | Doc ingestion + sensitivity classification + cited-answer protocol |
+| ansible-patterns | ✅ | Repo layout, FQCN, idempotency, mixed Win/Linux, no-`command`/`shell` |
+| ansible-testing | ✅ | yamllint→ansible-lint→syntax→`--check --diff`→Molecule idempotence |
+| gitlab-cicd-pipeline | ✅ | Stages, `environment:`, protected envs, CI components, runner tags |
+| octopus-release | ✅ | GitLab→Octopus integration, lifecycles, manual-intervention gate |
+| drift-detection | ✅ | Scheduled `--check --diff`, ARA tagging, drift→alert |
+| pci-dss-compliance | ✅ | Corporate DSS controls (modeled on ECC healthcare-phi-compliance) |
+| pci-cp-compliance | ✅ | Card Production Logical+PIN constraints for in-zone work (docs/infra-agent/DESIGN.md §7) |
+| change-documentation | ✅ | The rework of the `documentation` playbook + auto-doc generation |
+| multi-env-promotion | ✅ | dev→test→staging→prod, build-once-promote-one-artifact |
+| secrets-vault | ✅ | Vault references, runtime lookups, `no_log`, never plaintext |
+| knowledge-curation | ✅ | Doc ingestion + sensitivity classification + cited-answer protocol |
+| instinct-promotion | ✅ | Promote observed patterns to governed instincts |
+| instinct-rollback | ✅ | Rollback or deactivate instincts with governance |
 
 ### Hooks (`hooks/hooks.json` + `scripts/hooks/*.js`, auto-loaded)
 
@@ -97,26 +99,34 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | infra-session-bootstrap | SessionStart | ✅ | Prime session with SPEC/TODO/knowledge + hard rules |
 | pan-egress-filter | PreToolUse | ✅ | Block PAN/secret in tool input (DLP) |
 | governance-ledger | PostToolUse | ✅ | Append-only, fingerprinted audit record |
-| infra-gateguard | PreToolUse | ⬜ | DENY→FORCE→ALLOW on infra changes (blast radius + rollback) — see ECC `gateguard-fact-force.js` |
-| sensitivity-router | PreToolUse | ⬜ | Route CHD-adjacent prompts to the local lane |
-| learning-promotion-gate | — | ⬜ | Block instinct promotion lacking human approval + doc citation |
+| gateguard-fact-force | PreToolUse | ✅ | Demands investigation facts before Edit/Write/Bash (blast radius + rollback) |
+| sensitivity-router | PreToolUse | ✅ | Route CHD-adjacent prompts to the local lane |
+| governance-capture | PostToolUse | ✅ | Detect secrets/policy violations, log to State Store |
+| observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
+| yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
+| ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
+| dual-control-promotion-gate | — | ✅ | CPSA-gated dual control for HSA instinct promotion |
+| learning-promotion-gate | — | ✅ | Block instinct promotion lacking human approval + doc citation |
 
 ### Rules (`rules/**`, paths-scoped)
 
 | Rule | Status |
 |---|---|
-| common/prompt-defense-baseline.md | 🟡 |
-| ansible/*.md (coding-style, testing, security) | 🟡 |
-| gitlab-ci, secrets, pci — TODO | ⬜ |
+| common/prompt-defense-baseline.md | ✅ |
+| ansible/*.md (coding-style, testing, security) | ✅ |
+| gitlab-ci/*, secrets/*, pci/* | ✅ |
+| pci/pci-cp-compliance.md | ✅ |
 
 ### Commands (`commands/*.md`)
 
 | Command | Status | Purpose |
 |---|---|---|
-| /infra-discover | 🟡 | Run the capture-current-state discovery pass |
-| /playbook-review | 🟡 | Review a playbook/MR with the reviewer + compliance-reviewer |
-| /drift-check | 🟡 | Run drift detection and report |
-| /knowledge-ingest | 🟡 | Ingest a document into the knowledge base (classify + index) |
+| /infra-discover | ✅ | Run the capture-current-state discovery pass |
+| /playbook-review | ✅ | Review a playbook/MR with the reviewer + compliance-reviewer |
+| /drift-check | ✅ | Run drift detection and report |
+| /knowledge-ingest | ✅ | Ingest a document into the knowledge base (classify + index) |
+| /instinct-promote | ✅ | Promote observed pattern to governed instinct |
+| /instinct-rollback | ✅ | Rollback or deactivate an instinct |
 
 ---
 
