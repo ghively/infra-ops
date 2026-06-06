@@ -17,11 +17,14 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.1.0 — Scaffold Phase**
+**v0.9.0 — Corporate-zone foundations built; HSA pending CPSA review**
 
-Baseline tooling is wired and installable. Most domain depth is intentionally left as TODOs for the agent to build out with real context from your environment.
+The corporate-zone plugin is built and wired: DLP, the local inference lane, the
+governed learning loop, and the audit/state substrate all run and are covered by
+tests (`npm test`). The in-HSA deployment remains documentation-only and CPSA-gated.
 
-- See **[`SPEC.md`](SPEC.md)** for component status and what exists vs. stubbed
+- See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for design-vs-as-built status (the source of truth)
+- See **[`SPEC.md`](SPEC.md)** for the component inventory
 - See **[`TODO.md`](TODO.md)** for the ordered build backlog
 - See **[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md)** for full rationale and research
 
@@ -30,14 +33,16 @@ Baseline tooling is wired and installable. Most domain depth is intentionally le
 | Component | Status |
 |-----------|--------|
 | Plugin manifest + marketplace | ✅ Installable |
-| `pan-egress-filter` hook | ✅ PAN/secrets DLP |
-| `governance-ledger` hook | ✅ Append-only audit |
-| `infra-session-bootstrap` hook | ✅ Session primer |
-| 8 specialist agents | 🟡 Scaffolded |
-| 11 domain skills | 🟡 Scaffolded |
-| 4 commands | 🟡 Scaffolded |
-| 3 hook scripts | ✅ Implemented |
-| Ansible rules | 🟡 Stubbed |
+| `pan-egress-filter` hook (Luhn PAN + secrets, fail-closed option) | ✅ Implemented |
+| Local inference lane (`scripts/lib/ollama-router.js`) + `sensitivity-router` | ✅ Implemented (see caveat in architecture-gap.md) |
+| Governed learning loop (promote/rollback over unified State Store) | ✅ Wired |
+| `governance-ledger` + State Store (`scripts/lib/state-store.js`) | ✅ Implemented |
+| 8 specialist agents | ✅ Implemented |
+| 13 domain skills | ✅ Implemented |
+| 6 commands | ✅ Implemented |
+| 11 hook scripts (9 event-wired + 2 CLI gates) | ✅ Implemented |
+| Ansible / GitLab / secrets / PCI rules | ✅ Implemented |
+| In-HSA deployment + `perso-*` agents | ⬜ Documented only (CPSA-gated) |
 
 ## Installation
 
@@ -76,53 +81,60 @@ infra-ops/
 ├── .claude-plugin/          # Plugin manifest (Claude Code marketplace)
 │   ├── plugin.json          # Main plugin configuration
 │   └── marketplace.json     # Marketplace listing metadata
-├── agents/                  # Specialist subagents (auto-discovered)
-│   ├── infra-planner.md     # Brief → phased plans with rollback units
-│   ├── infra-auditor.md     # Read-only discovery + drift detection
-│   ├── iac-author.md        # Ansible/GitLab CI authoring
-│   ├── playbook-reviewer.md # Playbook MR review
+├── agents/                  # 8 specialist subagents (auto-discovered)
+│   ├── infra-planner.md            # Brief → phased plans with rollback units
+│   ├── infra-auditor.md            # Read-only discovery + drift detection
+│   ├── iac-author.md               # Ansible/GitLab CI authoring
+│   ├── playbook-reviewer.md        # Playbook MR review
 │   ├── pci-compliance-reviewer.md  # PCI control checks
 │   ├── sensitive-local-analyst.md  # Local-lane router for CHD work
-│   ├── change-scribe.md     # Auto-doc generation
-│   └── knowledge-curator.md # Doc ingestion + cited answers
-├── skills/                  # Lazy-loaded domain skills
-│   ├── ansible-patterns/    # Repo layout, FQCN, idempotency
-│   ├── ansible-testing/     # yamllint→ansible-lint→molecule
-│   ├── gitlab-cicd-pipeline/  # Stages, environments, CI components
-│   ├── octopus-release/     # GitLab→Octopus integration
-│   ├── drift-detection/     # Scheduled --check --diff
-│   ├── pci-dss-compliance/  # Corporate DSS controls
-│   ├── pci-cp-compliance/   # Card Production (Logical+PIN)
-│   ├── change-documentation/  # Auto-doc generation
-│   ├── multi-env-promotion/  # dev→test→staging→prod
-│   ├── secrets-vault/       # Vault references, runtime lookups
-│   └── knowledge-curation/  # Doc ingestion + classification
-├── commands/                # Slash commands
-│   ├── infra-discover.md    # Run capture-current-state discovery
-│   ├── playbook-review.md   # Review a playbook/MR
-│   ├── drift-check.md       # Run drift detection
-│   └── knowledge-ingest.md  # Ingest a document into knowledge base
-├── hooks/                   # Hook wiring (auto-loaded)
-│   └── hooks.json           # Hook event bindings
-├── scripts/hooks/           # Hook implementations
-│   ├── infra-session-bootstrap.js  # SessionStart primer
-│   ├── pan-egress-filter.js       # PreToolUse DLP
-│   └── governance-ledger.js        # PostToolUse audit
+│   ├── change-scribe.md            # Auto-doc generation
+│   └── knowledge-curator.md        # Doc ingestion + cited answers
+├── skills/                  # 13 lazy-loaded domain skills
+│   ├── ansible-patterns/  ansible-testing/  gitlab-cicd-pipeline/
+│   ├── octopus-release/  drift-detection/  multi-env-promotion/
+│   ├── pci-dss-compliance/  pci-cp-compliance/  secrets-vault/
+│   ├── change-documentation/  knowledge-curation/
+│   └── instinct-promotion/  instinct-rollback/   # governed learning loop
+├── commands/                # 6 slash commands
+│   ├── infra-discover.md  playbook-review.md  drift-check.md
+│   ├── knowledge-ingest.md
+│   └── instinct-promote.md  instinct-rollback.md
+├── contexts/                # Context modes (dev / research / review)
+├── hooks/
+│   └── hooks.json           # Hook event bindings (9 event-wired hooks)
+├── scripts/
+│   ├── hooks/               # 11 hook implementations (incl. 2 CLI gates)
+│   │   ├── infra-session-bootstrap.js  pan-egress-filter.js
+│   │   ├── governance-ledger.js  governance-capture.js  observe-runner.js
+│   │   ├── gateguard-fact-force.js  sensitivity-router.js
+│   │   ├── yamllint-hook.js  ansible-syntax-hook.js
+│   │   └── learning-promotion-gate.js  dual-control-promotion-gate.js
+│   └── lib/                 # Shared libraries
+│       ├── state-store.js          # Unified state/governance store
+│       ├── instinct-ledger.js      # Instinct persistence + governance logging
+│       ├── ollama-router.js        # Local-only inference lane
+│       ├── siem-forwarder.js       # Audit forwarding
+│       └── shell-substitution.js
 ├── rules/                   # Paths-scoped rules
-│   ├── common/             # Prompt Defense Baseline
-│   └── ansible/            # Coding style, testing, security
-├── knowledge/               # Ingested docs + instinct ledger
-│   ├── README.md            # Knowledge base conventions
-│   └── .gitignore           # Sensitive content not committed
-├── docs/                    # Documentation
-│   └── infra-agent/         # Full design rationale + research
-│       ├── DESIGN.md        # Complete design document
-│       └── research/        # 11 research reports
-├── tests/                   # Test suites
-│   └── ci/                  # Validation scripts
-├── SPEC.md                  # Build spec + component status
-├── TODO.md                  # Ordered build backlog
-├── package.json             # NPM manifest
+│   ├── common/  ansible/  gitlab-ci/  secrets/  pci/
+├── schemas/                 # JSON schemas (state-store.schema.json)
+├── knowledge/               # Knowledge base + instinct ledger
+│   ├── README.md  runner-topology.md  hsa-deployment.md
+│   └── instincts/           # corpor/  in-zone/   (zone-segmented)
+├── docs/
+│   ├── architecture-gap.md         # Design-vs-as-built (source of truth)
+│   ├── foundation-improvement-plan.md
+│   ├── changes/  decisions/         # Auto-docs (change records + ADRs)
+│   └── infra-agent/                 # Full design rationale + research
+│       ├── DESIGN.md  research/     # (11 research reports)
+├── tests/
+│   ├── ci/                  # Component validators (agents/commands/skills/hooks)
+│   ├── unit/                # Unit suites (local-lane, instinct-loop)
+│   └── run-all.js           # Test runner (npm test)
+├── .gitlab-ci/              # Reusable CI components (ansible-deploy)
+├── SPEC.md  TODO.md  CHANGELOG.md  CONTRIBUTING.md
+├── package.json  .env.example
 └── README.md                # This file
 ```
 

@@ -1,0 +1,66 @@
+# Architecture Gap — design intent vs. as-built
+
+This document is the single source of truth for how the four descriptions of this
+plugin relate to each other:
+
+- **DESIGN** — `docs/infra-agent/DESIGN.md` (the full ambition)
+- **SPEC** — `SPEC.md` (the buildable subset / intended-as-built)
+- **README** — `README.md` (the front door)
+- **CODE** — what actually runs
+
+It exists because these artifacts drifted: DESIGN/SPEC overclaimed completion in two
+areas, while the README undercounted what was built. Keep this table honest; update it
+whenever a component's wiring changes.
+
+Legend: ✅ built & wired · 🟡 partial / advisory · ⬜ documented only (not code) · ➖ n/a
+
+---
+
+## Dimension-by-dimension
+
+| Dimension | DESIGN intends | SPEC claims | README says | CODE (as-built) |
+|---|---|---|---|---|
+| **Zones / deployments** | Two: corporate (DSS) **and** air-gapped in-HSA | One PoC (corp); HSA "later phase" | One harness + local lane | ✅ corporate zone; ⬜ HSA is docs only (`knowledge/hsa-deployment.md`), no in-zone deployment/agents |
+| **Local model lane** | Classifier → local Ollama, **egress blocked**; enforced by hooks | Hook enforces local inference | "Local Lane (Ollama)" capability | ✅ `scripts/lib/ollama-router.js` (local-only HTTP, no cloud SDK, refuses non-local) + `sensitivity-router` gate (advisory default, deny under fail-closed). ⚠️ caveat below |
+| **PAN/secret DLP** | CHD never enters a model/tool context | `pan-egress-filter` ✅ | DLP ✅ | ✅ Luhn + secret regex; honors `INFRAOPS_DLP_FAIL_CLOSED` |
+| **Agents** | ~10–11 (incl. 3 HSA `perso-*`) | 8 | 8 (🟡 scaffolded) | ✅ 8 corporate agents; ⬜ HSA agents not built |
+| **Hooks** | per-zone sets incl. `hsa-boundary-guard`, `block-no-verify` | 11 ✅ | 3 ✅ | ✅ 11 scripts; 9 wired in `hooks.json`; 2 promotion gates are CLI-invoked (not event hooks); some DESIGN-named hooks never built |
+| **State Store** | one shared store + append-only ledger | `state-store.js` (7 collections) + SIEM | (omitted) | ✅ unified: `state-store.js` (9 collections) is the one store; gates log through `instinct-ledger.js` → it. `governance-ledger` JSONL audit + `siem-forwarder` are separate **by design** (audit/forwarding, not state) |
+| **Learning loop** | observe→propose→verify→promote→rollback, gated | all ✅ | bullet only | ✅ wired: `observe-runner`→store; `/instinct-promote`→`learning-promotion-gate --promote`→`instinct-ledger`→governance event; `/instinct-rollback`→`instinct-ledger --rollback`; HSA dual-control via `--check` |
+| **Skills** | per-zone lists | 13 ✅ | 11 🟡 | ✅ 13 (instinct-promotion/-rollback now have frontmatter) |
+| **Commands** | — | 6 ✅ | 4 🟡 | ✅ 6 (instinct-promote/-rollback added) |
+| **CI / tests** | test gates per phase | implied green | `npm test` | ✅ `npm test` runs 4 validators + 2 unit suites; previously broken (missing `run-all.js`, broken hook validator) |
+
+---
+
+## The one honest caveat on the local lane
+
+DESIGN §4 imagines the *agent itself* thinking on a local model for sensitive work.
+In the Claude Code harness, a hook **cannot** redirect the orchestrator's (or a
+subagent's) own inference to Ollama — subagents run on the configured cloud model.
+
+So the **real, buildable** local lane is:
+
+1. `scripts/lib/ollama-router.js` — a local-only inference path (built-in `http`
+   only; refuses non-local endpoints) that the `sensitive-local-analyst` agent
+   **shells out to** for the actual sensitive processing, keeping that processing
+   off the cloud.
+2. `sensitivity-router` — detects CHD-adjacent tool calls and, under
+   `INFRAOPS_SENSITIVE_FAIL_CLOSED=1`, **denies** them so sensitive content cannot
+   proceed on the cloud path; advisory otherwise (to avoid keyword false positives).
+
+This is a genuine boundary, but it is **opt-in enforcement + shell-out**, not
+transparent in-context local inference. Treat the frontmatter `model:` field on
+"local" agents as a label, not an enforcement mechanism.
+
+---
+
+## What still remains (pre-1.0)
+
+- ⬜ **HSA / in-zone deployment** — documented only; CPSA-gated. Do not build the
+  in-zone deployment or `perso-*` agents until a CPSA reviews the design
+  (DESIGN §14 Phase 7).
+- ⬜ **Operational standup** — local Ollama box + model registration; GitLab
+  service accounts; `knowledge/environment.md` (the auditor's published map).
+- 🟡 **Cited answers to the open scoping questions** (network segmentation,
+  DSS-vs-CP split, HSM vendor, Octopus Tentacle inventory) — DESIGN §17.
