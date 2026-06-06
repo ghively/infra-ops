@@ -36,7 +36,7 @@ $ARGUMENTS:
 
 2. **Choose** rollback (revert to a prior version) or deactivation (mark inactive).
 3. **Collect approvals** — one approver for routine instincts, two distinct
-   approvers for compliance-related or HSA (`in-zone`) instincts.
+   approvers for compliance-related or HSA (`hsa`) instincts.
 4. **Execute** — invoke the ledger CLI. It updates the entry (`status` plus a
    `rollback`/`deactivated` block) and logs to the shared governance store:
 
