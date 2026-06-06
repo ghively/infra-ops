@@ -84,6 +84,7 @@ runaway fan-out and token blow-up.
 
 | Skill | Loaded by |
 |---|---|
+| `iac-tooling-selection` | infra-planner, iac-author |
 | `ansible-patterns`, `ansible-testing` | iac-author, playbook-reviewer, infra-auditor, iac-debugger |
 | `gitlab-cicd-pipeline` | iac-author, playbook-reviewer |
 | `ci-pipeline-debugging` | iac-debugger |
