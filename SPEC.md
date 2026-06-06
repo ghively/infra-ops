@@ -97,6 +97,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | instinct-promotion | ✅ | Promote observed patterns to governed instincts |
 | instinct-rollback | ✅ | Rollback or deactivate instincts with governance |
 | iac-sast-scanning | ✅ | Binding CI security gate (ansible-lint/gitleaks/TruffleHog/Checkov, SARIF) |
+| pre-commit-and-secret-scanning | ✅ | Fast developer-machine tier; pre-commit ⊆ CI |
+| supply-chain-and-sbom | ✅ | SBOM (syft), artifact signing/attestation, dependency pinning (PCI 6.3.2) |
 | rollback-and-runbooks | ✅ | Forward-fix vs roll-back, artifact redeploy, runbooks, break-glass |
 | ci-pipeline-debugging | ✅ | Safe job-log diagnosis, EE repro, failure-signature table |
 | incident-response | ✅ | Bounded agent role for PCI 12.10.x / 12.10.7 (contain/preserve/escalate) |
