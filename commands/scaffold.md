@@ -15,7 +15,8 @@ new role/module/repo/env — never hand-build the layout. Delegate the authoring
 /scaffold <type> <name> [--dest <path>]
 ```
 
-- `<type>` — one of: `ansible-role`, `ansible-repo`, `terraform-module`, `terraform-env`
+- `<type>` — one of: `ansible-role`, `ansible-repo`, `terraform-module`, `terraform-env`,
+  `packer-template`, `python-tool`, `bash-tool`, `powershell-tool`
   (list with `node scripts/validate-structure.js --list`).
 - `<name>` — the unit name (replaces `__ROLE_NAME__` / placeholders).
 - `--dest <path>` — where to create it (e.g. `roles/<name>`, `modules/<name>`,
