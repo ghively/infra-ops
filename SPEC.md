@@ -4,9 +4,9 @@ This is the working spec for the **infra-ops** Claude Code plugin: a lean orches
 specialist subagents that manage an Ansible / self-hosted GitLab CI/CD / Octopus Deploy estate for a
 **credit-card manufacturer** (PCI DSS + PCI Card Production + PCI PIN scope).
 
-The full rationale, citations, and decision record live in **[`docs/infra-agent/docs/infra-agent/DESIGN.md`](docs/infra-agent/docs/infra-agent/DESIGN.md)**
+The full rationale, citations, and decision record live in **[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md)**
 (v2) and its research in [`docs/infra-agent/research/`](docs/infra-agent/research/). This SPEC is the buildable subset: what
-exists, what's stubbed, and how the agent fills the gaps. **Read [`docs/infra-agent/DESIGN.md`](docs/infra-agent/docs/infra-agent/DESIGN.md) before extending anything.**
+exists, what's stubbed, and how the agent fills the gaps. **Read [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) before extending anything.**
 
 > This plugin is intentionally a **scaffold**. Baseline tooling is wired and installable; most
 > domain depth is left as TODOs (see `TODO.md`) for the agent to build once it has real context from
@@ -61,6 +61,9 @@ These are load-bearing. Everything else is incremental; these are not.
 
 Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ not started (TODO to create).
 
+> For authoritative design-vs-as-built status (including the local-lane enforcement
+> caveat and what remains HSA/CPSA-gated), see **[`docs/architecture-gap.md`](docs/architecture-gap.md)**.
+
 ### Agents (`agents/*.md`, auto-discovered)
 
 | Agent | Model | Status | Role |
@@ -73,6 +76,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | sensitive-local-analyst | haiku (routing shell) | ✅ | Routes CHD-adjacent work to the on-prem local (Ollama) lane; never ingests CHD itself. NOTE: a Claude Code subagent runs on a cloud model, so the actual local inference is enforced by the `sensitivity-router` hook + `OLLAMA_BASE_URL`, not the frontmatter `model:` field. |
 | change-scribe | haiku | ✅ | Generate changelog/ADR/Wiki records from merged diffs |
 | knowledge-curator | sonnet (corp) / local (in-zone) | ✅ | Ingest+classify docs, answer with citations, maintain instinct ledger |
+| iac-debugger | sonnet | ✅ | Diagnose red pipelines / failed runs → cited root cause + proposed fix (read-only) |
+| secrets-scanner | haiku | ✅ | Deterministic pre-merge secret/PAN static scan; emits VERDICT for the merge gate |
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
@@ -91,6 +96,12 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | knowledge-curation | ✅ | Doc ingestion + sensitivity classification + cited-answer protocol |
 | instinct-promotion | ✅ | Promote observed patterns to governed instincts |
 | instinct-rollback | ✅ | Rollback or deactivate instincts with governance |
+| iac-sast-scanning | ✅ | Binding CI security gate (ansible-lint/gitleaks/TruffleHog/Checkov, SARIF) |
+| pre-commit-and-secret-scanning | ✅ | Fast developer-machine tier; pre-commit ⊆ CI |
+| supply-chain-and-sbom | ✅ | SBOM (syft), artifact signing/attestation, dependency pinning (PCI 6.3.2) |
+| rollback-and-runbooks | ✅ | Forward-fix vs roll-back, artifact redeploy, runbooks, break-glass |
+| ci-pipeline-debugging | ✅ | Safe job-log diagnosis, EE repro, failure-signature table |
+| incident-response | ✅ | Bounded agent role for PCI 12.10.x / 12.10.7 (contain/preserve/escalate) |
 
 ### Hooks (`hooks/hooks.json` + `scripts/hooks/*.js`, auto-loaded)
 
@@ -105,8 +116,18 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
 | yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
 | ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
-| dual-control-promotion-gate | — | ✅ | CPSA-gated dual control for HSA instinct promotion |
-| learning-promotion-gate | — | ✅ | Block instinct promotion lacking human approval + doc citation |
+| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion (invoked by `/instinct-promote` via `--check`) |
+| learning-promotion-gate | CLI/hook | ✅ | Block instinct promotion lacking human approval + doc citation (`--promote`/`--validate` CLI) |
+
+### Libraries (`scripts/lib/*.js`)
+
+| Library | Status | Purpose |
+|---|---|---|
+| state-store.js | ✅ | Unified JSON state/governance store (9 collections); single source of truth |
+| instinct-ledger.js | ✅ | Instinct persistence (zone-segmented YAML) + governance logging via state-store |
+| ollama-router.js | ✅ | Local-only inference lane (built-in http; refuses non-local endpoints) |
+| siem-forwarder.js | ✅ | Forward audit/governance events to a SIEM |
+| shell-substitution.js | ✅ | Shell variable substitution helper |
 
 ### Rules (`rules/**`, paths-scoped)
 
@@ -134,7 +155,11 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 - **Agents:** Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`, optional `color`).
   Open the body with the **Prompt Defense Baseline** (copy from `rules/common/prompt-defense-baseline.md`),
-  then Mission / Workflow / Constraints / Output. Do **not** list agents in `plugin.json` (auto-discovered).
+  then Mission / **Skills & Tools** / Workflow / Constraints / Output. Do **not** list agents in
+  `plugin.json` (auto-discovered). In **Skills & Tools**, name the skills the agent loads and—when
+  the agent authors or reviews library/framework code—grant the Context7 tools
+  (`mcp__context7__resolve-library-id`, `mcp__context7__get-library-docs`) and instruct it to fetch
+  current docs. Delegation routing lives in [`CLAUDE.md`](CLAUDE.md) (Claude orchestrates; subagents do the work).
 - **Skills:** `skills/<name>/SKILL.md` with frontmatter (`name`, `description`) and sections
   **When to Use / How It Works / Examples**. Keep them lazy-loadable (trigger keywords in the description).
 - **Hooks:** add to `hooks/hooks.json` (auto-loaded; do **not** add a `hooks` field to `plugin.json`).

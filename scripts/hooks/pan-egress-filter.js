@@ -12,11 +12,18 @@
  *   - to BLOCK: print a PreToolUse JSON decision with permissionDecision="deny"
  *   - to ALLOW: exit 0 with no decision (passthrough)
  *
- * Failure policy: on parse/internal error this exits 0 (fail-open) so it never
- * unexpectedly breaks the session. NOTE (TODO/SPEC): for a hardened CDE you may
- * want fail-CLOSED here — gated behind an env flag once validated. See TODO.md.
+ * Failure policy: by default, on parse/internal error this exits 0 (fail-open) so
+ * it never unexpectedly breaks the session. For a hardened CDE, set
+ * INFRAOPS_DLP_FAIL_CLOSED=1 to make the filter DENY whenever it cannot inspect
+ * the input (parse error, unstringifiable input, internal error). See TODO.md / README.
  */
 'use strict';
+
+// Fail-closed when the operator opts in. When true, any inability to inspect the
+// tool input results in a DENY rather than a silent allow.
+function failClosedEnabled() {
+  return /^(1|true|yes)$/i.test(String(process.env.INFRAOPS_DLP_FAIL_CLOSED || ''));
+}
 
 function readStdin() {
   try {
@@ -90,6 +97,9 @@ function main() {
   try {
     payload = JSON.parse(raw);
   } catch (err) {
+    if (failClosedEnabled()) {
+      deny('[infra-ops] BLOCKED (fail-closed): could not parse tool input for DLP inspection. ' + err.message);
+    }
     process.stderr.write('[pan-egress-filter] parse error; allowing (fail-open): ' + err.message + '\n');
     process.exit(0);
   }
@@ -97,7 +107,11 @@ function main() {
   let blob = '';
   try {
     blob = JSON.stringify(payload.tool_input || payload.toolInput || payload || {});
-  } catch {
+  } catch (err) {
+    if (failClosedEnabled()) {
+      deny('[infra-ops] BLOCKED (fail-closed): tool input could not be serialized for DLP inspection.');
+    }
+    process.stderr.write('[pan-egress-filter] serialize error; allowing (fail-open): ' + err.message + '\n');
     process.exit(0);
   }
 
@@ -121,6 +135,9 @@ function main() {
 try {
   main();
 } catch (err) {
+  if (failClosedEnabled()) {
+    deny('[infra-ops] BLOCKED (fail-closed): DLP filter internal error. ' + err.message);
+  }
   process.stderr.write('[pan-egress-filter] internal error; allowing (fail-open): ' + err.message + '\n');
   process.exit(0);
 }

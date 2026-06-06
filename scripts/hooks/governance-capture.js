@@ -12,8 +12,10 @@
  *   - approval_requested: Operations requiring explicit approval
  *   - hook_input_truncated: Hook input exceeded the safe inspection limit
  *
- * Enable: Set ECC_GOVERNANCE_CAPTURE=1
- * Configure session: Set ECC_SESSION_ID for session correlation
+ * Enable: Set INFRAOPS_GOVERNANCE_CAPTURE=1
+ * Configure session: Set INFRAOPS_SESSION_ID (or CLAUDE_SESSION_ID) for correlation
+ *
+ * (Legacy ECC_* names are still honored for back-compat with the ECC spinout.)
  */
 
 'use strict';
@@ -21,6 +23,23 @@
 const crypto = require('crypto');
 
 const MAX_STDIN = 1024 * 1024;
+
+// Lazy-loaded shared State Store so captured events persist (not just stderr).
+let StateStore;
+function getStore() {
+  if (StateStore === undefined) {
+    try {
+      StateStore = require('../lib/state-store.js');
+    } catch {
+      StateStore = null;
+    }
+  }
+  return StateStore;
+}
+
+function firstFlag(...names) {
+  return names.some((n) => String(process.env[n] || '').toLowerCase() === '1');
+}
 
 // Patterns that indicate potential hardcoded secrets
 const SECRET_PATTERNS = [
@@ -129,8 +148,26 @@ function summarizeCommand(command) {
   };
 }
 
+function persistGovernanceEvent(event) {
+  const store = getStore();
+  if (!store) return;
+  try {
+    store.governanceEvents.add({
+      rule: 'governance-capture',
+      eventType: event.eventType,
+      severity: (event.payload && event.payload.severity) || 'info',
+      sessionId: event.sessionId || null,
+      message: event.eventType,
+      context: event.payload || {},
+    }).catch(() => { /* never block the pipeline */ });
+  } catch {
+    /* ignore */
+  }
+}
+
 function emitGovernanceEvent(event) {
   process.stderr.write(`[governance] ${JSON.stringify(event)}\n`);
+  persistGovernanceEvent(event);
 }
 
 /**
@@ -251,12 +288,12 @@ function analyzeForGovernanceEvents(input, context = {}) {
  * @returns {string} The original input (pass-through)
  */
 function run(rawInput, options = {}) {
-  // Gate on feature flag
-  if (String(process.env.ECC_GOVERNANCE_CAPTURE || '').toLowerCase() !== '1') {
+  // Gate on feature flag (INFRAOPS_* canonical; legacy names honored).
+  if (!firstFlag('INFRAOPS_GOVERNANCE_CAPTURE', 'INFRA_OPS_GOVERNANCE_CAPTURE', 'ECC_GOVERNANCE_CAPTURE')) {
     return rawInput;
   }
 
-  const sessionId = process.env.ECC_SESSION_ID || null;
+  const sessionId = process.env.INFRAOPS_SESSION_ID || process.env.CLAUDE_SESSION_ID || process.env.ECC_SESSION_ID || null;
   const hookPhase = process.env.CLAUDE_HOOK_EVENT_NAME || 'unknown';
 
   if (options.truncated) {

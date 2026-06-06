@@ -89,12 +89,33 @@ A correct drift-detection pipeline:
 Patterns that raise an error on drift (ansiblejunky/ansible-project-configuration-drift)
 turn drift from a silent log line into a failing pipeline / alert.
 
+There is **no built-in `ansible_changed_tasks` magic variable** — asserting on it
+silently no-ops (the var is undefined, so `| length` is 0 and the gate never fires).
+Use one of these two correct approaches instead:
+
 ```yaml
-# Post-script check: fail if any "changed" tasks in output
-- name: Verify no drift (idempotence as compliance check)
+# Option A — per-play gate using a custom stat (set on every task you care about,
+# or via a callback). Aggregate with ansible.builtin.set_stats / a stats callback,
+# then assert on the recorded value:
+- name: Record changed count
+  ansible.builtin.set_stats:
+    data:
+      drift_changed: "{{ drift_changed | default(0) | int + 1 }}"
+  when: <task_result> is changed
+
+- name: Fail if drift detected
   ansible.builtin.assert:
-    that: "ansible_changed_tasks | length == 0"
-    fail_msg: "Drift detected — {{ ansible_changed_tasks | length }} tasks changed"
+    that: "drift_changed | default(0) | int == 0"
+    fail_msg: "Drift detected — {{ drift_changed }} task(s) would change"
+```
+
+```bash
+# Option B (simpler, CI-side) — parse the play recap. In --check mode any non-zero
+# "changed=" count is drift. Fail the job on it:
+ansible-playbook --check --diff -i inventories/prod site.yml | tee drift.log
+if grep -E 'changed=[1-9]' drift.log; then
+  echo "Drift detected"; exit 1
+fi
 ```
 
 ### Drift Detection in the Verify Stage

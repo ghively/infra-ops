@@ -23,12 +23,12 @@ approvals, or artifact tagging across environments.
 ### Branching Model: Trunk-Based + Per-Environment Directories
 
 Single `main` branch (trunk). Feature branches merge to `main` via MR. Per-environment
-configuration lives in `environments/` subdirectories — not in separate long-lived
+configuration lives in `inventories/` subdirectories — not in separate long-lived
 branches. Promotion is **pipeline-driven, not branch-driven**.
 
 ```
 repo/
-  environments/
+  inventories/
     dev/
       hosts.yml
       group_vars/
@@ -42,7 +42,7 @@ repo/
 ```
 
 The same `site.yml` playbook runs in every environment; only the inventory (`-i
-environments/<env>`) changes. Env-specific differences live in `group_vars/<env>`,
+inventories/<env>`) changes. Env-specific differences live in `group_vars/<env>`,
 never in `when: env == 'prod'` conditionals in the playbook.
 (multi-env-versioning.md §3.3; Liatrio trunk-based GitOps; DigitalOcean multi-stage)
 
@@ -50,13 +50,13 @@ never in `when: env == 'prod'` conditionals in the playbook.
 
 ```
 # .gitlab/CODEOWNERS
-/environments/prod/**           @your-org/ops-team
-/environments/staging/**        @your-org/platform-team
+/inventories/prod/**           @your-org/ops-team
+/inventories/staging/**        @your-org/platform-team
 /collections/requirements.yml  @your-org/platform-team
 /roles/**                       @your-org/platform-team
 ```
 
-Any MR touching `environments/prod/` requires `@ops-team` approval before it can
+Any MR touching `inventories/prod/` requires `@ops-team` approval before it can
 merge to `main`. Combined with GitLab deployment approval, this gives two-person
 integrity for all production changes. (multi-env-versioning.md §3.4; pci-dss-devops.md §8)
 
@@ -70,8 +70,18 @@ environments:
    bundle into `ansible-bundle-${CI_COMMIT_SHA}.tar.gz`, store in GitLab Package
    Registry.
 2. **Across environments:** dev, test, staging, prod all extract the same tarball;
-   only the `-i environments/<env>` flag changes.
+   only the `-i inventories/<env>` flag changes.
 3. **On release tag (`vX.Y.Z`):** retag the artifact; do not reinstall or rebuild.
+
+> Path convention: this plugin uses `inventories/<env>/` (one directory per
+> environment), consistent with the `ansible-patterns` and `gitlab-cicd-pipeline`
+> skills. Authored repos must not mix `inventories/` and `environments/`.
+
+**Verifiable same-artifact (provenance/attestation):** "promote the same artifact"
+must be *cryptographically* the same, not just the same filename. Attach a signed
+checksum or build attestation (e.g. cosign / SLSA provenance, or at minimum a signed
+SHA-256) at build, and verify it before each promotion. This satisfies the supply-chain
+expectation in PCI DSS 6.3.2. See the `supply-chain-and-sbom` skill.
 
 Referencing Execution Environments by digest (`sha256:…`) ensures the Ansible toolchain
 is also pinned — not just the playbooks. (multi-env-versioning.md §4.3; DESIGN.md §10)
@@ -138,7 +148,7 @@ Golden rule: pin exact versions; never use `latest` or floating ranges in produc
 
 ### Trust Boundary
 
-- `environments/prod/**` is CODEOWNERS-gated; only `@ops-team` can approve MRs.
+- `inventories/prod/**` is CODEOWNERS-gated; only `@ops-team` can approve MRs.
 - Protected-env approval gate (GitLab Premium) or Octopus manual-intervention gate
   blocks prod deploy until a human with the right role clicks Proceed.
 - The agent never holds prod deploy rights. (SPEC.md §2; DESIGN.md §10)
@@ -152,7 +162,7 @@ deploy_dev:
   environment: { name: development }
   resource_group: dev
   tags: [linux, deploy, ansible]
-  script: [tar xzf "$ARTIFACT", ansible-playbook -i environments/dev site.yml]
+  script: [tar xzf "$ARTIFACT", ansible-playbook -i inventories/dev site.yml]
 
 deploy_prod:
   stage: deploy-prod
@@ -162,7 +172,7 @@ deploy_prod:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
       when: manual
-  script: [tar xzf "$ARTIFACT", ansible-playbook -i environments/prod site.yml]
+  script: [tar xzf "$ARTIFACT", ansible-playbook -i inventories/prod site.yml]
 ```
 
 > TODO: Confirm staging environment name(s) from CMDB/environment discovery.

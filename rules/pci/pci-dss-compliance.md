@@ -1,3 +1,14 @@
+---
+paths:
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/.gitlab-ci.yml"
+  - "**/ansible/**"
+  - "**/playbooks/**"
+  - "**/roles/**"
+  - "**/inventories/**"
+---
+
 # PCI DSS Compliance Rules
 
 ## Scope

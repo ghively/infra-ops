@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/hsa/**"
+  - "**/in-zone/**"
+  - "**/card-production/**"
+  - "**/personalization/**"
+  - "**/perso/**"
+---
+
 # PCI Card Production (CP) & PIN Compliance Rules
 
 ## Scope

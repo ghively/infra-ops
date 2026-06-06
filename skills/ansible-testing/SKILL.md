@@ -50,15 +50,44 @@ Molecule idempotence gate is the **required** MR gate for any role touching crit
 
 ### ansible-lint Configuration
 
-Commit a `.ansible-lint` profile at the repo root. Run with `--strict` so style and
-unsafe-module rules are enforced, not advisory. Emit as a Code Quality report in GitLab.
-(gitlab-octopus-cicd.md §4.2)
+Commit a `.ansible-lint` profile at the repo root. The `production` profile is the
+strictest built-in set. Note `--strict` promotes *warnings* to *failures* — with an
+empty `warn_list` under the `production` profile it is largely redundant, so use it
+deliberately. Emit **SARIF** (portable, feeds the GitLab Security Dashboard) in
+addition to Code Quality JSON. Never run `--write` in CI (it auto-mutates files).
+(gitlab-octopus-cicd.md §4.2; see the `iac-sast-scanning` skill)
 
 ```yaml
 # .ansible-lint
 profile: production
-warn_list: []       # promote all warnings to errors
+warn_list: []          # production profile is already strict
 skip_list: []
+exclude_paths:
+  - .cache/
+  - molecule/
+```
+
+```bash
+ansible-lint --profile production --sarif-file gl-sast-ansible.sarif
+```
+
+### Tool version floors (deterministic rulesets)
+
+Pin the toolchain so the same input yields the same verdict every run: `ansible-core`
+≥ 2.18, `ansible-lint` ≥ 24.x (for the current production ruleset), `molecule` 6.x.
+Bake these into the EE image by digest. Floating `:latest` makes the gate
+non-reproducible and is forbidden.
+
+### Molecule 6 driver note (important)
+
+Molecule **6 no longer ships container drivers built in** — the default is the
+`default`/`delegated` driver; Docker/Podman drivers come from the separate
+`molecule-plugins` package. Install it explicitly and prefer **rootless Podman** for a
+PCI-hardened CI runner:
+
+```bash
+pip install "molecule>=6" "molecule-plugins[podman]"
+# molecule/<scenario>/molecule.yml → driver: { name: podman }
 ```
 
 ### Execution Environments (EEs)
@@ -70,8 +99,9 @@ the EE by digest (`sha256:…`) so CI is reproducible across runners.
 
 ### Windows Roles
 
-Windows roles cannot run Molecule in Docker containers (WinRM not available). Options:
-- Use a dedicated Windows VM runner with Molecule's delegated/vagrant driver.
+Windows roles cannot run Molecule in a Linux container (WinRM not available). Options:
+- Use a dedicated Windows VM runner with Molecule's `delegated`/vagrant driver
+  (from `molecule-plugins`).
 - Test Windows logic via `--check --diff` against a staging inventory.
 - Test pure PowerShell steps with Pester on the Windows runner (Runner 3).
 
