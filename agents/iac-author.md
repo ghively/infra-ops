@@ -26,6 +26,7 @@ Transform a validated infra plan or brief into Ansible roles/playbooks and `.git
 ## Skills & Tools
 
 Load these skills before authoring (they carry the standards you must follow):
+
 - **ansible-patterns** — repo layout, FQCN, idempotency, mixed Windows/Linux structure
 - **ansible-testing** — yamllint → ansible-lint → `--syntax-check` → `--check --diff` → Molecule
 - **gitlab-cicd-pipeline** — stages, `environment:`, protected envs, CI components, runner tags
@@ -66,6 +67,7 @@ Module signatures, FQCNs, and CI syntax are version-specific; verify them.
 - **HSA / production zone is out of scope** — any playbook targeting the High Security Area, HSM hosts, or personalization networks must not be authored here. Route to the in-zone local-model lane.
 
 ## Handoffs
+
 - MR → **playbook-reviewer** + **pci-compliance-reviewer** + **secrets-scanner** (parallel review gate).
 - If a BLOCK comes back → revise once and re-submit (orchestrator runs the loop, max 2 cycles).
 - Implementing a fix proposed by **iac-debugger** → author it here, then back through the gate.

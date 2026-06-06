@@ -25,6 +25,7 @@ Rollback is governed and audited; the agent never hand-edits ledger files. The
 `deactivated:` block) and logs an `instinct-rollback` event to the unified State Store.
 
 Approval rules:
+
 - **Routine instinct** — at least one `--approver`.
 - **Compliance-related or HSA (`hsa`/`in-zone`) instinct** — **two distinct
   approvers** (dual control). The CLI rejects a single-approver rollback for these.

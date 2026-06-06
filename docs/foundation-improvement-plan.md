@@ -37,6 +37,7 @@ ECC has a sophisticated foundation with **12+ hooks**, **7 state collections**, 
 ### 1.1 GateGuard Fact-Forcing Hook
 
 **What it does:** Demands investigation facts before allowing Edit/Write/MultiEdit
+
 - Edit/Write: List importers, affected API, verify data schemas
 - Destructive Bash: List targets, rollback plan
 - Forces investigation → creates awareness
@@ -57,6 +58,7 @@ ECC has a sophisticated foundation with **12+ hooks**, **7 state collections**, 
 ```
 
 **Why for infra-ops:**
+
 - Prevents accidental Ansible playbook modifications
 - Forces understanding of GitLab CI impact before changes
 - Critical for PCI environment (can't break prod)
@@ -66,12 +68,14 @@ ECC has a sophisticated foundation with **12+ hooks**, **7 state collections**, 
 ### 1.2 Governance Capture Hook
 
 **What it does:** Detects and logs governance-relevant events
+
 - `secret_detected`: Hardcoded secrets (AWS keys, GitHub tokens, JWTs, private keys)
 - `policy_violation`: Actions violating policies
 - `security_finding`: Security-relevant tool invocations
 - `approval_requested`: Operations requiring explicit approval
 
 **Patterns detected:**
+
 ```javascript
 const SECRET_PATTERNS = [
   { name: 'aws_key', pattern: /(?:AKIA|ASIA)[A-Z0-9]{16}/i },
@@ -92,6 +96,7 @@ const APPROVAL_COMMANDS = [
 **Implementation:** Port from ECC `scripts/hooks/governance-capture.js`
 
 **Why for infra-ops:**
+
 - PCI requirement: Track all secret exposures
 - Audit trail for policy violations
 - DSS requirement: Tamper-evident logging
@@ -103,6 +108,7 @@ const APPROVAL_COMMANDS = [
 **What it does:** Structured persistence for sessions, decisions, governance events
 
 **Schema (port from ECC):**
+
 ```json
 {
   "sessions": [],         // Session tracking
@@ -114,11 +120,13 @@ const APPROVAL_COMMANDS = [
 ```
 
 **Implementation:**
+
 1. Create `schemas/state-store.schema.json`
 2. Create `scripts/lib/state-store.js` for read/write
 3. Add SessionStart/PreCompact hooks for persistence
 
 **Why for infra-ops:**
+
 - Track knowledge ingestion provenance
 - Audit trail for PCI compliance
 - Enable "rollback" of promoted instincts
@@ -132,6 +140,7 @@ const APPROVAL_COMMANDS = [
 **What it does:** Shift agent behavior based on task type
 
 **Three modes:**
+
 - `dev.md` - Active development (write first, explain after)
 - `research.md` - Exploration (read widely, verify with evidence)
 - `review.md` - Thorough review (severity-ordered findings)
@@ -139,6 +148,7 @@ const APPROVAL_COMMANDS = [
 **Implementation:** Create `contexts/` directory with three .md files
 
 **Usage:**
+
 ```bash
 # Before a task
 /context dev   # For active coding
@@ -147,6 +157,7 @@ const APPROVAL_COMMANDS = [
 ```
 
 **Why for infra-ops:**
+
 - Research mode: Before proposing infrastructure changes
 - Dev mode: When authoring playbooks
 - Review mode: For playbook-reviewer agent
@@ -158,6 +169,7 @@ const APPROVAL_COMMANDS = [
 **What it does:** Captures tool use observations for pattern extraction
 
 **Data captured:**
+
 - Tool sequences (Bash → Read → Edit pattern)
 - File correlations (playbook change → inventory change)
 - Successful workflows for future reuse
@@ -165,6 +177,7 @@ const APPROVAL_COMMANDS = [
 **Implementation:** Port from ECC `scripts/hooks/observe-runner.js`
 
 **Why for infra-ops:**
+
 - Learn "this user always runs syntax-check after editing playbooks"
 - Build instinct ledger for governed self-improvement
 - TODO.md Phase 8 relies on this
@@ -190,6 +203,7 @@ const APPROVAL_COMMANDS = [
 **What it does:** Save state across context compaction
 
 **Collections:**
+
 - `SessionState` - Current context, working files
 - `Observation` - Tool use patterns
 - `ActivityTracking` - Token usage, tool counts
@@ -201,6 +215,7 @@ const APPROVAL_COMMANDS = [
 ## Implementation Order
 
 ### Phase 1 (v0.2.0) - Critical Safety
+
 1. ✅ Copy `gateguard-fact-force.js` from ECC
 2. ✅ Copy `governance-capture.js` from ECC
 3. ✅ Create `schemas/state-store.schema.json`
@@ -208,12 +223,14 @@ const APPROVAL_COMMANDS = [
 5. ✅ Test hooks in development environment
 
 ### Phase 2 (v0.3.0) - Context & Learning
+
 1. Create `contexts/dev.md`, `research.md`, `review.md`
 2. Copy `observe-runner.js` from ECC
 3. Create `scripts/lib/state-store.js`
 4. Add SessionStart/PreCompact hooks
 
 ### Phase 3 (v0.4.0) - Quality & Polish
+
 1. Add quality hooks (yamllint, ansible-syntax)
 2. Port memory persistence hooks
 3. Add context switcher command (`/context`)
@@ -223,6 +240,7 @@ const APPROVAL_COMMANDS = [
 ## File Inventory from ECC to Port
 
 ### Critical (Phase 1)
+
 ```
 ECC/scripts/hooks/gateguard-fact-force.js → infra-ops/scripts/hooks/
 ECC/scripts/hooks/governance-capture.js → infra-ops/scripts/hooks/
@@ -231,6 +249,7 @@ ECC/scripts/lib/shell-substitution.js → infra-ops/scripts/lib/ (GateGuard depe
 ```
 
 ### Context & Learning (Phase 2)
+
 ```
 ECC/contexts/*.md → infra-ops/contexts/
 ECC/scripts/hooks/observe-runner.js → infra-ops/scripts/hooks/
@@ -238,6 +257,7 @@ ECC/skills/continuous-learning-v2/hooks/observe.sh → infra-ops/skills/
 ```
 
 ### Quality (Phase 3)
+
 ```
 ECC/scripts/hooks/yamllint-hook.js → infra-ops/scripts/hooks/ (create)
 ECC/hooks/memory-persistence/* → infra-ops/hooks/memory-persistence/

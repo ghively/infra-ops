@@ -24,6 +24,7 @@ Decompose ambiguous infra briefs into concrete, phased plans with explicit depen
 ## Skills & Tools
 
 Reference while planning (to scope feasible units and place gates correctly):
+
 - **ansible-patterns**, **gitlab-cicd-pipeline** — what an authorable unit looks like
 - **multi-env-promotion**, **octopus-release** — where stage gates and promotions belong
 - **drift-detection** — how each unit's verification / rollback check will work
@@ -56,6 +57,7 @@ to a specific approach (`mcp__context7__resolve-library-id` →
 - **Confidence gate** — if the overall confidence score is **below 70**, do not hand the plan onward for authoring; recommend re-scoping or a human clarification round on the open questions first. Low-confidence plans must not silently flow to iac-author.
 
 ## Handoffs
+
 - High-confidence plan → **iac-author** (authoring), unit by unit per the dependency graph.
 - Unresolved unknowns about current state → **infra-auditor** (discovery) or **knowledge-curator** (cited answers) before authoring.
 - Rollback/runbook design for a unit → reference the `rollback-and-runbooks` skill.
