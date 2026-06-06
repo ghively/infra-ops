@@ -147,7 +147,11 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 - **Agents:** Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`, optional `color`).
   Open the body with the **Prompt Defense Baseline** (copy from `rules/common/prompt-defense-baseline.md`),
-  then Mission / Workflow / Constraints / Output. Do **not** list agents in `plugin.json` (auto-discovered).
+  then Mission / **Skills & Tools** / Workflow / Constraints / Output. Do **not** list agents in
+  `plugin.json` (auto-discovered). In **Skills & Tools**, name the skills the agent loads and—when
+  the agent authors or reviews library/framework code—grant the Context7 tools
+  (`mcp__context7__resolve-library-id`, `mcp__context7__get-library-docs`) and instruct it to fetch
+  current docs. Delegation routing lives in [`CLAUDE.md`](CLAUDE.md) (Claude orchestrates; subagents do the work).
 - **Skills:** `skills/<name>/SKILL.md` with frontmatter (`name`, `description`) and sections
   **When to Use / How It Works / Examples**. Keep them lazy-loadable (trigger keywords in the description).
 - **Hooks:** add to `hooks/hooks.json` (auto-loaded; do **not** add a `hooks` field to `plugin.json`).

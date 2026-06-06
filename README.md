@@ -133,10 +133,19 @@ infra-ops/
 │   ├── unit/                # Unit suites (local-lane, instinct-loop)
 │   └── run-all.js           # Test runner (npm test)
 ├── .gitlab-ci/              # Reusable CI components (ansible-deploy)
+├── CLAUDE.md                # Orchestration contract (delegation map, skills, Context7)
 ├── SPEC.md  TODO.md  CHANGELOG.md  CONTRIBUTING.md
 ├── package.json  .env.example
 └── README.md                # This file
 ```
+
+### Orchestration & MCP
+
+`CLAUDE.md` is the portable behavioral contract: Claude acts as a **lean orchestrator**
+that delegates specialist work to the eight subagents (each in its own context window)
+per a task→agent routing map. A **Context7** MCP server is bundled (`plugin.json`
+`mcpServers`) so authoring/review agents fetch **current** library docs (Ansible
+modules, GitLab CI keywords, Octopus/Vault APIs) instead of relying on memory.
 
 ## The Hard Trust Boundary
 
