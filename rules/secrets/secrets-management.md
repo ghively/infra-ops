@@ -1,3 +1,14 @@
+---
+paths:
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/.gitlab-ci.yml"
+  - "**/group_vars/**"
+  - "**/host_vars/**"
+  - "**/vault/**"
+  - "**/.env*"
+---
+
 # Secrets Management Rules
 
 ## Scope
