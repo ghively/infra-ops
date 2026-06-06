@@ -8,8 +8,9 @@
  * rollback, observation, and audit all land in one store rather than four.
  *
  * Ledger layout (versioned YAML per instinct, zone-segmented):
- *   knowledge/instincts/corpor/<id>.yml     corporate / DSS zone
- *   knowledge/instincts/in-zone/<id>.yml    HSA zone (air-gapped)
+ *   knowledge/instincts/corporate/<id>.yml   corporate / DSS zone
+ *   knowledge/instincts/hsa/<id>.yml         HSA zone (air-gapped)
+ *   (legacy aliases 'corpor'/'in-zone' are still accepted as zone tokens)
  *
  * Design basis: DESIGN.md §14 (governed learning loop) + SPEC.md §5.
  */
@@ -29,9 +30,13 @@ try {
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '../../');
 const INSTINCTS_ROOT = path.join(PLUGIN_ROOT, 'knowledge', 'instincts');
 
-// Map any accepted zone token to its on-disk directory name.
+// Map any accepted zone token to its canonical on-disk directory name.
+// Canonical: 'corporate' (PCI DSS) and 'hsa' (PCI CP + PIN). Legacy aliases
+// 'corpor'/'in-zone' are accepted for back-compat.
 function zoneDir(zone) {
-  return (zone === 'in-zone' || zone === 'hsa') ? 'in-zone' : 'corpor';
+  const z = String(zone || '').toLowerCase();
+  if (z === 'hsa' || z === 'in-zone') return 'hsa';
+  return 'corporate';
 }
 
 function ledgerDir(zone) {
@@ -189,7 +194,7 @@ async function runCli(argv) {
   const args = parseCliArgs(argv);
 
   if (args._mode === 'list') {
-    list(args.zone || 'corpor').forEach((id) => process.stdout.write(id + '\n'));
+    list(args.zone || 'corporate').forEach((id) => process.stdout.write(id + '\n'));
     return 0;
   }
 
@@ -198,7 +203,7 @@ async function runCli(argv) {
     if (!args.id) { process.stderr.write('❌ rollback requires --id\n'); return 1; }
     if (!args.reason) { process.stderr.write('❌ rollback requires --reason\n'); return 1; }
     if (approvers.length < 1) { process.stderr.write('❌ rollback requires at least one --approvers\n'); return 1; }
-    const zone = args.zone || 'corpor';
+    const zone = args.zone || 'corporate';
     // Compliance / HSA rollbacks require two distinct approvers.
     const needDual = zone === 'in-zone' || zone === 'hsa' || /^(1|true|yes)$/i.test(String(args.compliance || ''));
     if (needDual && new Set(approvers).size < 2) {

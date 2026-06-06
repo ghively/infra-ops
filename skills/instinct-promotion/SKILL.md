@@ -2,7 +2,7 @@
 name: instinct-promotion
 description: >
   Promote an observed pattern to a governed instinct in the zone-segmented ledger
-  (knowledge/instincts/corpor or in-zone). Enforces human approval, a minimum
+  (knowledge/instincts/corporate or hsa). Enforces human approval, a minimum
   confidence score, and a documentation citation for compliance items via the
   learning-promotion-gate. Triggers on: instinct promote, promote pattern, governed
   instinct, instinct ledger, learning promotion, /instinct-promote.
@@ -13,161 +13,80 @@ origin: infra-ops
 
 ## When to Use
 
-Use this skill when a pattern observed by the `observe-runner` hook is ready to be
-promoted to a governed instinct, and the promotion must pass the human-approval +
-documentation-citation gate before it is written to the ledger. Reach for it on
-prompts like "promote this pattern", "add an instinct", or `/instinct-promote`.
+Use this skill when a pattern observed by the `observe-runner` hook (recorded in the
+State Store) has proven itself and should become a **governed instinct** — a durable,
+versioned, evidence-cited rule the agent applies going forward. Reach for it on
+prompts like "promote this pattern", "make this an instinct", or `/instinct-promote`.
+
+A pattern is **promotable** only when all of these hold (otherwise it is noise):
+- it recurs across multiple observations (not a one-off),
+- it has a clear, statable rule and a measurable benefit,
+- its blast radius is understood (what it changes about future behavior),
+- for compliance-related rules, it is backed by a **specific** documentation citation
+  (doc + section/revision — not "best practices").
 
 ## How It Works
 
-This skill manages the promotion of observed patterns to instincts in the instinct ledger. All promotions are gated by human approval and documentation citation.
-
-## Usage
+Promotion is **governed**: the agent never writes the ledger directly. The flow is
 
 ```
-/instinct-promote --id <id> --zone <zone> --content <pattern>
+observe-runner → candidate → /instinct-promote → learning-promotion-gate
+   → (HSA only) dual-control-promotion-gate → instinct-ledger writes the entry
+   → governance event recorded in the unified State Store
 ```
 
-## Parameters
+The `learning-promotion-gate` enforces, and **denies** the promotion unless:
+1. **Human approval** — an `--approver` identifier is present.
+2. **Minimum confidence** — `>= 0.7` (recommended `>= 0.85`).
+3. **Documentation citation** — required when the content is compliance-related
+   (mentions pci/dss/pin/chd/card-production/hsm/cpsa).
+4. **Valid zone** — `corporate` (PCI DSS) or `hsa` (PCI CP + PIN). HSA promotions must
+   run in the HSA zone (`INFRA_HSA_ZONE=1`) and additionally pass dual control
+   (two distinct approvers) via `dual-control-promotion-gate`.
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--id` | Yes | Unique instinct identifier (e.g., `instinct-001`) |
-| `--zone` | Yes | Target zone: `corpor` or `in-zone` (HSA) |
-| `--content` | Yes | Natural language description of the pattern |
-| `--confidence` | No | Confidence score (0.0-1.0, default: from evidence) |
-| `--citation` | Conditional | Documentation citation (required for compliance items) |
-| `--approver` | Yes | Approver identifier (username) |
-| `--evidence` | No | Array of observation IDs and citations |
+On success the entry is written to `knowledge/instincts/<zone>/<id>.yml` with
+`status: active`, and the attempt (allow or deny) is logged to the State Store
+`governanceEvents` collection. Zone tokens `corpor`/`in-zone` are accepted as legacy
+aliases for `corporate`/`hsa`.
 
-## Requirements
+## Examples
 
-Before an instinct can be promoted, the following must be satisfied:
-
-1. **Human Approval**: Approver identifier and signature/timestamp
-2. **Minimum Confidence**: 0.7 (recommended: 0.85)
-3. **Documentation Citation**: Required for compliance-related instincts
-4. **Zone Verification**: Promotion must occur in the target zone
-5. **Supporting Evidence**: At least one observation supporting the pattern
-
-## Workflow
-
-### 1. Observation
-
-Patterns are observed by the `observe-runner` hook and stored in the State Store `observations` collection.
-
-### 2. Proposal
-
-Based on observations, propose instinct candidates:
-
-```
-/instinct-proposal --zone corpor
-```
-
-This reviews observations and proposes candidates for promotion.
-
-### 3. Review
-
-Review the proposed instinct:
-
-- Verify the pattern is valid and useful
-- Check confidence score is sufficient
-- Ensure compliance items have citations
-- Verify zone assignment is correct
-
-### 4. Promotion
-
-Promote the instinct:
-
-```
-/instinct-promote \
-  --id instinct-001 \
-  --zone corpor \
-  --content "Always use FQCN in Ansible playbooks" \
-  --confidence 0.85 \
-  --citation "Ansible Best Practices" \
-  --approver user-123 \
-  --evidence obs-001,obs-005
-```
-
-### 5. Verification
-
-The learning-promotion-gate hook validates:
-
-- All requirements are met
-- Human approval is valid
-- Documentation citation exists (for compliance)
-- Zone sandbox verification passes
-
-### 6. Activation
-
-On success, the instinct is written to the ledger:
-
-- `knowledge/instincts/corpor/instinct-001.yml` (corporate zone)
-- `knowledge/instincts/in-zone/instinct-001.yml` (HSA zone)
-
-## Zone Separation
-
-Instincts are zone-segmented to prevent cross-contamination:
-
-- **corpor/**: Corporate zone instincts (DSS-scoped)
-- **in-zone/**: HSA zone instincts (PCI Card Production zone)
-
-Instincts promoted for the HSA zone MUST be promoted from within the HSA zone (air-gapped).
-
-## Compliance-Related Instincts
-
-For instincts related to PCI compliance, the following additional requirements apply:
-
-- Documentation citation MUST reference specific PCI requirements (e.g., "PCI DSS Req 7.2")
-- Dual control MAY be required (handled by dual-control-promotion-gate)
-- Zone verification MUST confirm HSA zone for HSA instincts
-
-## Example
+### Promote a corporate-zone instinct
 
 ```bash
-# Observe pattern from State Store
-# Observation: "Users who forget FQCN have more playbook errors"
-
-# Propose instinct
-/instinct-proposal --zone corpor
-
-# Review shows candidate:
-# - Content: "Use FQCN for all Ansible modules"
-# - Confidence: 0.85
-# - Evidence: obs-001, obs-005
-
-# Promote instinct
-/instinct-promote \
-  --id instinct-fqcn-001 \
-  --zone corpor \
-  --content "When authoring Ansible playbooks, always use FQCN (Fully Qualified Collection Name) for all modules. This ensures compatibility across Ansible versions and improves playbook readability." \
-  --confidence 0.85 \
-  --citation "Ansible Best Practices Documentation" \
-  --approver senior-op-1 \
-  --evidence obs-001,obs-005
-
-# Result: Instinct written to knowledge/instincts/corpor/instinct-fqcn-001.yml
+node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-gate.js" --promote \
+  --id fqcn-001 --zone corporate \
+  --content "Author Ansible modules with their FQCN to stay version-stable." \
+  --confidence 0.9 --approver senior-op-1 --evidence obs-001,obs-005
+# → writes knowledge/instincts/corporate/fqcn-001.yml ; exits non-zero on denial
 ```
 
-## Rollback
+### Validate without writing (dry run)
 
-If an instinct is found to be incorrect or harmful, use `/instinct-rollback` to revert to a previous version or deactivate the instinct.
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-gate.js" --promote \
+  --id tls-min --zone corporate --content "Enforce TLS 1.2+ on all services." \
+  --confidence 0.9 --approver op1 --citation "PCI DSS v4.0.1 Req 4.2.1" --dry-run
+```
 
-## Governance
+A compliance-related content string (here it mentions TLS/PCI) is **denied without a
+`--citation`** — and the citation must be specific (`"PCI DSS v4.0.1 Req 4.2.1"`), not
+vague ("best practices").
 
-All instinct promotions are logged to the `governanceEvents` collection in the State Store with:
+### HSA-zone instinct (requires dual control first)
 
-- Timestamp
-- Instinct ID
-- Zone
-- Approver
-- Result (allowed/denied)
-- Reason (if denied)
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/dual-control-promotion-gate.js" --check \
+  --id perso-x --zone hsa --approvers senior-op-1,cpsa-assessor \
+  --citation "PCI CP Logical Security v3.0 §X"
+# then, in-zone (INFRA_HSA_ZONE=1):
+INFRA_HSA_ZONE=1 node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-gate.js" \
+  --promote --id perso-x --zone hsa --content "…" --confidence 0.9 \
+  --approver senior-op-1 --citation "PCI CP Logical Security v3.0 §X"
+```
 
-## References
+## Trust boundary
 
-- `scripts/hooks/learning-promotion-gate.js` - Validation logic
-- `scripts/hooks/dual-control-promotion-gate.js` - Dual control for HSA
-- `knowledge/instincts/` - Instinct ledger storage
-- `scripts/hooks/observe-runner.js` - Observation capture
+- The agent **proposes**; a human **approves**. No silent self-promotion.
+- Never promote an instinct that encodes access to PAN, keys, PINs, or HSM config.
+- Rollback/deactivation is governed too — see the `instinct-rollback` skill.

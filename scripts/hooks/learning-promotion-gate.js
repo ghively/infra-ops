@@ -32,7 +32,8 @@
 
 const ledger = require('../lib/instinct-ledger.js');
 
-const VALID_ZONES = ['corpor', 'in-zone', 'hsa'];
+// Canonical: corporate | hsa. Legacy aliases corpor | in-zone accepted for back-compat.
+const VALID_ZONES = ['corporate', 'hsa', 'corpor', 'in-zone'];
 const COMPLIANCE_KEYWORDS = ['pci', 'dss', 'cpsa', 'pin', 'chd', 'card-production', 'hsm'];
 
 function parsePromotionRequest(input) {
@@ -41,7 +42,7 @@ function parsePromotionRequest(input) {
     instinctId: p.id || p.instinct_id || null,
     version: p.version || 1,
     content: p.content || p.pattern || '',
-    zone: p.zone || 'corpor',
+    zone: p.zone || 'corporate',
     confidence: typeof p.confidence === 'number' ? p.confidence : parseFloat(p.confidence || '0') || 0,
     evidence: p.evidence || [],
     approver: p.approver || p.promoted_by || null,
