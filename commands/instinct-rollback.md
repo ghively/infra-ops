@@ -28,12 +28,25 @@ $ARGUMENTS:
 
 ## Workflow
 
-1. **Identify** the instinct and confirm it exists and is active.
+1. **Identify** the instinct and confirm it exists and is active:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/instinct-ledger.js" --list --zone <zone>
+   ```
+
 2. **Choose** rollback (revert to a prior version) or deactivation (mark inactive).
-3. **Collect approvals** — one approver for routine instincts, two for
-   compliance-related ones.
-4. **Execute** — the ledger entry is updated (`status` and a `rollback`/`deactivated`
-   block), and the action is logged to the governance ledger.
+3. **Collect approvals** — one approver for routine instincts, two distinct
+   approvers for compliance-related or HSA (`in-zone`) instincts.
+4. **Execute** — invoke the ledger CLI. It updates the entry (`status` plus a
+   `rollback`/`deactivated` block) and logs to the shared governance store:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/instinct-ledger.js" --rollback \
+     --id <id> --zone <zone> --reason "<text>" --approvers <a>[,<b>] \
+     [--version <n>] [--deactivate]
+   ```
+
+   HSA/compliance rollbacks are rejected without two distinct approvers.
 
 ## Trust boundary
 
