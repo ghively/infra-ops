@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/iac-authoring-standards.md` — consolidated, citable guide to the best practices
+  the `iac-author` agent follows (FQCN, idempotency, vars/inventory, secrets/Vault,
+  the five-stage testing ladder, CI/CD, the review gate, the trust boundary). Linked
+  from README, SPEC, and the docs index.
 - Phase-7 (in-HSA) **tooling authored as proposals** (build-only; inert corporate-side):
   - `agents/perso-iac-author.md`, `agents/perso-iac-reviewer.md`,
     `agents/perso-cp-compliance-reviewer.md` — LOCAL-ONLY in-zone agents with the
@@ -38,8 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env-var namespace standardized on `INFRAOPS_*`: `yamllint-hook` and
   `ansible-syntax-hook` (and `hooks.json`) now read the canonical flag while still
   honoring legacy `INFRA_OPS_*` as a fallback, matching the other hooks.
-- Docs: corrected stale counts (README/TODO now say 19 skills, 10 agents); refreshed
-  the architecture-gap CI/tests row.
+- Docs: brought the README fully current — counts (13 agents, 21 skills, 13 hooks),
+  the project-structure tree (perso-* agents, new skills/hooks/tests, `cpsa-approval.md`,
+  new docs), an Authoring Standards section, and an expanded environment-variable table.
+  SPEC/TODO/architecture-gap counts reconciled alongside.
 
 ### Fixed
 
