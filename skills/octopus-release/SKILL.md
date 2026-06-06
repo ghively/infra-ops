@@ -130,8 +130,23 @@ not supported. (octopus-multitentacle.md §1.1)
 | Deployment Creator | Staging + Prod | Ops team only |
 | Project Viewer | All | Auditors (read-only) |
 
-Rotate API keys every 90 days. Use SSO+MFA via AD/OIDC. Never share user accounts —
-audit trails become useless. (octopus-multitentacle.md §4.2)
+Prefer **OIDC / short-lived access tokens** (or service-account API keys with an
+expiry) over static keys where the Octopus version supports it; treat 90-day static
+keys as the fallback and rotate them. Use SSO+MFA via AD/OIDC. Never share user
+accounts — audit trails become useless. (octopus-multitentacle.md §4.2)
+
+### Config-as-Code, Runbooks, and Deployment Freezes (Octopus 2025.x)
+
+- **Config-as-Code (OCL):** store the deployment process and variables — and, in
+  2025.1+, **runbooks** — as version-controlled OCL in Git. For a PCI estate this makes
+  the deployment *process itself* peer-reviewable and change-controlled like the Ansible
+  repo. Secrets stay in Octopus/Vault, **never** in OCL.
+- **Runbooks (first-class):** operational actions (restart, rotate, DR, break-glass) are
+  RBAC-gated, audited Octopus **runbooks**, distinct from the deploy process. See the
+  `rollback-and-runbooks` skill. Rollback = re-deploy the previous **release** (Octopus
+  keeps the exact prior package) through the manual-intervention gate.
+- **Deployment Freezes (GA, project-level):** use native deployment freezes for
+  change-freeze / maintenance windows instead of ad-hoc disabling of jobs.
 
 ### Build Once, Promote the Same Immutable Artifact
 
