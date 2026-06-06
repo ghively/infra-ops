@@ -122,8 +122,9 @@ design-vs-as-built status. Summary:
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
 - ✅ 22 skills (incl. `iac-tooling-selection`, in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+3 `perso-*` in-zone agents authored as proposals), 6 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
-- ✅ Enforced uniform IaC structure: `templates/` canonical skeletons, `validate-structure.js`,
-  and the `structure-conformance` CI gate (deviation fails the pipeline); `/scaffold` command
+- ✅ Enforced uniform IaC structure: 8 `templates/` canonical skeletons (ansible/terraform/
+  packer/python/bash/powershell), `validate-structure.js` + `validate-deployment.js`, and the
+  `structure-conformance` CI gate (structure + deployment; deviation fails the pipeline); `/scaffold`
 - ✅ Phase-7 tooling authored (corporate-side, build-only): `perso-*` agents, HSA runbooks,
   in-zone dual-control gate (`--cpsa-ref`) + tests; authorization in `knowledge/cpsa-approval.md`
 - ✅ DLP (`pan-egress-filter`) with `INFRAOPS_DLP_FAIL_CLOSED` fail-closed option

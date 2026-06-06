@@ -116,9 +116,10 @@ infra-ops/
 │   ├── infra-discover.md  playbook-review.md  drift-check.md
 │   ├── knowledge-ingest.md  scaffold.md
 │   └── instinct-promote.md  instinct-rollback.md
-├── templates/               # Canonical IaC skeletons (the agent stamps every unit from these)
-│   ├── ansible-role/  ansible-repo/
-│   └── terraform-module/  terraform-env/
+├── templates/               # Canonical IaC skeletons (8 types; the agent stamps every unit from these)
+│   ├── ansible-role/  ansible-repo/  terraform-module/  terraform-env/
+│   ├── packer-template/
+│   └── python-tool/  bash-tool/  powershell-tool/
 ├── contexts/                # Context modes (dev / research / review)
 ├── hooks/
 │   └── hooks.json           # Hook event bindings (9 event-wired hooks)
@@ -131,8 +132,10 @@ infra-ops/
 │   │   ├── learning-promotion-gate.js  dual-control-promotion-gate.js
 │   │   └── hsa-boundary-guard.js  block-no-verify.js   # in-zone guards
 │   ├── validate-structure.js   # Deterministic structure-conformance gate (uniform layout)
+│   ├── validate-deployment.js  # Deterministic deployment-uniformity gate (pipeline shape)
 │   └── lib/                 # Shared libraries
 │       ├── structure-spec.js       # Canonical IaC layout spec (single source of truth)
+│       ├── deployment-policy.js    # Canonical pipeline policy (stages/gates/prod-safety)
 │       ├── state-store.js          # Unified state/governance store
 │       ├── instinct-ledger.js      # Instinct persistence + governance logging
 │       ├── ollama-router.js        # Local-only inference lane
@@ -181,17 +184,23 @@ deterministic merge gate — reviewer agents advise, these gates bind.
 
 ## Authoring Standards
 
-**Uniform structure is baked in and enforced — not advised.** Every new IaC unit is
-stamped from a fixed canonical skeleton in [`templates/`](templates/) (`ansible-role`,
-`ansible-repo`, `terraform-module`, `terraform-env`) via the
-[`/scaffold`](commands/scaffold.md) command. The layout is defined once in
-[`scripts/lib/structure-spec.js`](scripts/lib/structure-spec.js) and enforced
-deterministically by [`scripts/validate-structure.js`](scripts/validate-structure.js):
-the `iac-author` agent must pass it before an MR, and the
+**Structure *and* deployment are baked in and enforced — not advised.** Every new IaC
+unit is stamped from a fixed canonical skeleton in [`templates/`](templates/) — 8 types
+(`ansible-role`, `ansible-repo`, `terraform-module`, `terraform-env`, `packer-template`,
+`python-tool`, `bash-tool`, `powershell-tool`) — via the [`/scaffold`](commands/scaffold.md)
+command. Two deterministic gates enforce it:
+
+- **Structure** — defined once in [`structure-spec.js`](scripts/lib/structure-spec.js),
+  enforced by [`validate-structure.js`](scripts/validate-structure.js).
+- **Deployment** — every `.gitlab-ci.yml` must match the canonical pipeline shape
+  (standard stages, the binding gates, environment scoping, **manual + protected-branch
+  production**), enforced by [`validate-deployment.js`](scripts/validate-deployment.js).
+
+The `iac-author` agent must pass both before an MR, and the
 [`structure-conformance`](.gitlab-ci/components/structure-conformance/template.yml) CI
-component runs the same check over every `roles/*`, `modules/*`, and `envs/*` in the
-target repo — **any deviation fails the pipeline.** So structure and deployment are
-uniform by construction.
+component runs them over every `roles/*`, `modules/*`, `envs/*` and the pipeline in the
+target repo — **any deviation fails the build.** So structure and deployment are uniform
+by construction.
 
 **Choosing the technology** comes first. The
 [`iac-tooling-selection`](skills/iac-tooling-selection/SKILL.md) skill +

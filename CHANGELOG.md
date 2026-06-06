@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **More canonical unit types + a deployment-uniformity gate** (extends the enforced
+  structure):
+  - 4 new scaffolds/types: `templates/{packer-template,python-tool,bash-tool,powershell-tool}/`
+    with matching spec entries — 8 unit types total.
+  - `scripts/lib/deployment-policy.js` + `scripts/validate-deployment.js` — deterministic
+    gate asserting every `.gitlab-ci.yml` has the standard stages, the binding components,
+    `environment:` scoping, and **manual + protected-branch production** (no auto-apply).
+    `mentionsProduction` ignores false positives like `ansible-lint --profile production`.
+  - `deployment-conformance` job added to the `structure-conformance` CI component.
+  - `tests/unit/deployment.test.js` (5 checks); `structure.test.js` now 12 checks.
 - **Enforced uniform structure** — the canonical IaC layout is now baked in and gated,
   not advisory:
   - `templates/{ansible-role,ansible-repo,terraform-module,terraform-env}/` — the fixed

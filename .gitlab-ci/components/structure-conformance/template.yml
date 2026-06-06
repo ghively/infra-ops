@@ -18,6 +18,7 @@
 variables:
   NODE_IMAGE: "node:20-alpine"               # pin by digest in the consuming project
   VALIDATE_STRUCTURE: "scripts/validate-structure.js"
+  VALIDATE_DEPLOYMENT: "scripts/validate-deployment.js"
 
 structure-conformance:
   stage: validate
@@ -32,6 +33,18 @@ structure-conformance:
     - if [ -d roles ];   then for d in roles/*/;   do [ -d "$d" ] && validate ansible-role     "$d"; done; fi
     - if [ -d modules ]; then for d in modules/*/; do [ -d "$d" ] && validate terraform-module "$d"; done; fi
     - if [ -d envs ];    then for d in envs/*/;    do [ -d "$d" ] && validate terraform-env    "$d"; done; fi
+    - if [ -d packer ];  then for d in packer/*/;  do [ -d "$d" ] && validate packer-template  "$d"; done; fi
+    - if [ -d scripts/python ]; then for d in scripts/python/*/; do [ -d "$d" ] && validate python-tool "$d"; done; fi
     - exit $status
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Deployment uniformity: every .gitlab-ci.yml matches the canonical pipeline shape
+# (standard stages, the binding gates, environment scoping, manual+protected prod).
+deployment-conformance:
+  stage: validate
+  image: ${NODE_IMAGE}
+  script:
+    - node "$VALIDATE_DEPLOYMENT" --path .gitlab-ci.yml
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
