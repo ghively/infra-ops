@@ -86,6 +86,8 @@ runaway fan-out and token blow-up.
 | `drift-detection` | infra-auditor |
 | `secrets-vault` | iac-author, pci-compliance-reviewer, secrets-scanner |
 | `iac-sast-scanning` | playbook-reviewer, pci-compliance-reviewer |
+| `pre-commit-and-secret-scanning` | iac-author, secrets-scanner |
+| `supply-chain-and-sbom` | iac-author, pci-compliance-reviewer |
 | `pci-dss-compliance`, `pci-cp-compliance` | pci-compliance-reviewer |
 | `incident-response` | sensitive-local-analyst, pci-compliance-reviewer |
 | `change-documentation` | change-scribe, iac-author |

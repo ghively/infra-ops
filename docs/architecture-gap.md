@@ -28,7 +28,7 @@ Legend: ✅ built & wired · 🟡 partial / advisory · ⬜ documented only (not
 | **Hooks** | per-zone sets incl. `hsa-boundary-guard`, `block-no-verify` | 11 ✅ | 3 ✅ | ✅ 11 scripts; 9 wired in `hooks.json`; 2 promotion gates are CLI-invoked (not event hooks); some DESIGN-named hooks never built |
 | **State Store** | one shared store + append-only ledger | `state-store.js` (7 collections) + SIEM | (omitted) | ✅ unified: `state-store.js` (9 collections) is the one store; gates log through `instinct-ledger.js` → it. `governance-ledger` JSONL audit + `siem-forwarder` are separate **by design** (audit/forwarding, not state) |
 | **Learning loop** | observe→propose→verify→promote→rollback, gated | all ✅ | bullet only | ✅ wired: `observe-runner`→store; `/instinct-promote`→`learning-promotion-gate --promote`→`instinct-ledger`→governance event; `/instinct-rollback`→`instinct-ledger --rollback`; HSA dual-control via `--check` |
-| **Skills** | per-zone lists | 17 ✅ | 11 🟡 | ✅ 17 (added iac-sast-scanning, rollback-and-runbooks, ci-pipeline-debugging, incident-response; instinct skills rewritten) |
+| **Skills** | per-zone lists | 19 ✅ | 11 🟡 | ✅ 19 (+iac-sast-scanning, rollback-and-runbooks, ci-pipeline-debugging, incident-response, pre-commit-and-secret-scanning, supply-chain-and-sbom; instinct skills rewritten) |
 | **Commands** | — | 6 ✅ | 4 🟡 | ✅ 6 (instinct-promote/-rollback added) |
 | **CI / tests** | test gates per phase | implied green | `npm test` | ✅ `npm test` runs 4 validators + 2 unit suites; previously broken (missing `run-all.js`, broken hook validator) |
 
