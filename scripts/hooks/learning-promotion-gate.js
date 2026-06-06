@@ -2,317 +2,201 @@
 /**
  * Infra-Ops Learning Promotion Gate
  *
- * Final safety gate for instinct promotion requiring:
- * - Human approval (signature + timestamp)
+ * Final safety gate for instinct promotion. Enforces:
+ * - Human approval (approver identifier)
  * - Documentation citation (for compliance items)
  * - Minimum confidence score (0.7)
- * - Zone sandbox verification
+ * - Valid zone (and HSA-zone constraint)
+ * - Supporting evidence (warning if absent)
  *
- * This is the final gate before learned patterns become instincts.
+ * Persistence (writing the instinct + logging governance) is delegated to the
+ * shared instinct-ledger library, so all governance events land in the single
+ * State Store rather than a gate-private file.
  *
- * Environment Variables:
- * - INFRA_BYPASS_LEARNING_GATE: "1" for emergency bypass (AUDIT LOGGED)
+ * Two invocation modes:
+ *   CLI (primary; what /instinct-promote calls):
+ *     node learning-promotion-gate.js --promote --id <id> --zone <zone> \
+ *       --content <text> --approver <user> [--confidence <n>] [--citation <ref>] \
+ *       [--evidence <id,id>] [--dry-run]
+ *     Exits 0 on success, non-zero on denial.
+ *
+ *   Hook (stdin JSON): denies a promotion tool call that fails validation by
+ *     emitting a PreToolUse deny decision.
+ *
+ * Environment:
+ *   INFRA_BYPASS_LEARNING_GATE=1   emergency bypass (AUDIT LOGGED)
+ *   INFRA_HSA_ZONE=1               required for in-zone/hsa promotions
  */
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const ledger = require('../lib/instinct-ledger.js');
 
-// State Store path
-const STATE_STORE_PATH = process.env.INFRA_OPS_STATE_STORE ||
-  path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', '.infra-ops', 'state-store.json');
+const VALID_ZONES = ['corpor', 'in-zone', 'hsa'];
+const COMPLIANCE_KEYWORDS = ['pci', 'dss', 'cpsa', 'pin', 'chd', 'card-production', 'hsm'];
 
-// Instinct ledger paths
-const INSTINCT_LEDGER = {
-  corpor: path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', 'knowledge', 'instincts', 'corpor'),
-  in_zone: path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', 'knowledge', 'instincts', 'in-zone')
-};
-
-/**
- * Parse promotion request from tool input
- */
-function parsePromotionRequest(toolInput) {
-  const parameters = toolInput.parameters || toolInput;
-
+function parsePromotionRequest(input) {
+  const p = input.parameters || input;
   return {
-    instinctId: parameters.id || parameters.instinct_id || null,
-    version: parameters.version || 1,
-    content: parameters.content || parameters.pattern || '',
-    zone: parameters.zone || 'corpor',
-    confidence: parameters.confidence || 0.0,
-    evidence: parameters.evidence || [],
-    approver: parameters.approver || parameters.promoted_by || null,
-    approverSignature: parameters.approver_signature || parameters.signature || null,
-    citation: parameters.citation || null,
-    timestamp: parameters.timestamp || new Date().toISOString()
+    instinctId: p.id || p.instinct_id || null,
+    version: p.version || 1,
+    content: p.content || p.pattern || '',
+    zone: p.zone || 'corpor',
+    confidence: typeof p.confidence === 'number' ? p.confidence : parseFloat(p.confidence || '0') || 0,
+    evidence: p.evidence || [],
+    approver: p.approver || p.promoted_by || null,
+    citation: p.citation || null,
+    timestamp: p.timestamp || new Date().toISOString(),
   };
 }
 
-/**
- * Validate promotion requirements
- */
 function validatePromotion(request) {
   const errors = [];
   const warnings = [];
 
-  // Check 1: Human approval (signature + timestamp)
-  if (!request.approver) {
-    errors.push('LEARNING_GATE: Requires approver identifier');
+  if (!request.instinctId) errors.push('LEARNING_GATE: Requires an instinct id (--id)');
+  if (!request.approver) errors.push('LEARNING_GATE: Requires approver identifier (--approver)');
+
+  const isCompliance = COMPLIANCE_KEYWORDS.some((k) => (request.content || '').toLowerCase().includes(k));
+  if (isCompliance && !request.citation) {
+    errors.push('LEARNING_GATE: Compliance-related instincts require a documentation citation (e.g., "PCI DSS Req 7.2")');
   }
 
-  if (!request.approverSignature && !request.timestamp) {
-    errors.push('LEARNING_GATE: Requires approver signature or timestamp');
-  }
-
-  // Check 2: Documentation citation (for compliance-related instincts)
-  const complianceKeywords = ['pci', 'dss', 'cpsa', 'pin', 'chd', 'card-production', 'hsm'];
-  const isComplianceRelated = complianceKeywords.some(keyword =>
-    (request.content || '').toLowerCase().includes(keyword)
-  );
-
-  if (isComplianceRelated && !request.citation) {
-    errors.push('LEARNING_GATE: Compliance-related instincts require documentation citation (e.g., "PCI DSS Req 7.2")');
-  }
-
-  // Check 3: Minimum confidence score
   if (request.confidence < 0.7) {
     errors.push(`LEARNING_GATE: Confidence below threshold (${request.confidence} < 0.7)`);
   } else if (request.confidence < 0.85) {
     warnings.push(`LEARNING_GATE: Confidence below recommended (${request.confidence} < 0.85)`);
   }
 
-  // Check 4: Zone sandbox verification
-  const validZones = ['corpor', 'in-zone', 'hsa'];
-  if (!validZones.includes(request.zone)) {
+  if (!VALID_ZONES.includes(request.zone)) {
     errors.push(`LEARNING_GATE: Invalid zone "${request.zone}"`);
   }
 
-  // Check 5: HSA zone requires dual-control
   if (request.zone === 'in-zone' || request.zone === 'hsa') {
-    const isHSAZone = String(process.env.INFRA_HSA_ZONE || '').toLowerCase() === '1';
-    if (!isHSAZone) {
-      errors.push('LEARNING_GATE: HSA instinct promotion must occur in HSA zone');
+    if (String(process.env.INFRA_HSA_ZONE || '').toLowerCase() !== '1') {
+      errors.push('LEARNING_GATE: HSA instinct promotion must occur in the HSA zone (INFRA_HSA_ZONE=1)');
     }
-    // Note: Dual-control check is delegated to dual-control-promotion-gate
+    // Dual-control is enforced separately by dual-control-promotion-gate.
   }
 
-  // Check 6: Evidence exists
   if (!request.evidence || request.evidence.length === 0) {
     warnings.push('LEARNING_GATE: No supporting evidence provided');
   }
 
-  // Check 7: Instinct ID uniqueness
-  const instinctPath = path.join(
-    request.zone === 'in-zone' || request.zone === 'hsa' ? INSTINCT_LEDGER.in_zone : INSTINCT_LEDGER.corpor,
-    `${request.instinctId}.yml`
-  );
-
-  if (fs.existsSync(instinctPath)) {
-    warnings.push(`LEARNING_GATE: Instinct ID ${request.instinctId} already exists (will update)`);
+  if (request.instinctId && ledger.exists(request.zone, request.instinctId)) {
+    warnings.push(`LEARNING_GATE: Instinct ${request.instinctId} already exists (will overwrite)`);
   }
 
   return { errors, warnings };
 }
 
-/**
- * Log promotion attempt to governance events
- */
-function logPromotionAttempt(request, result, reason) {
-  try {
-    const stateStorePath = STATE_STORE_PATH;
-    let state = {};
-
-    if (fs.existsSync(stateStorePath)) {
-      state = JSON.parse(fs.readFileSync(stateStorePath, 'utf8'));
-    }
-
-    state.governanceEvents = state.governanceEvents || [];
-    state.governanceEvents.push({
-      id: `gov-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      rule: 'learning-promotion-gate',
-      severity: result === 'denied' ? 'critical' : 'info',
-      message: `Instinct promotion ${result}: ${reason}`,
-      context: {
-        instinct_id: request.instinctId,
-        zone: request.zone,
-        approver: request.approver,
-        confidence: request.confidence
-      }
-    });
-
-    // Prune old events (max 1000)
-    if (state.governanceEvents.length > 1000) {
-      state.governanceEvents = state.governanceEvents.slice(-1000);
-    }
-
-    fs.writeFileSync(stateStorePath, JSON.stringify(state, null, 2));
-  } catch (err) {
-    console.error(`[learning-gate] Failed to log event: ${err.message}`);
-  }
-}
-
-/**
- * Write instinct to ledger
- */
-function writeInstinct(request) {
-  const ledgerDir = request.zone === 'in-zone' || request.zone === 'hsa'
-    ? INSTINCT_LEDGER.in_zone
-    : INSTINCT_LEDGER.corpor;
-
-  // Ensure directory exists
-  fs.mkdirSync(ledgerDir, { recursive: true });
-
-  const instinctPath = path.join(ledgerDir, `${request.instinctId}.yml`);
-
-  // Format instinct as YAML
-  const instinct = {
-    id: request.instinctId,
-    version: request.version,
-    confidence: request.confidence,
-    evidence: request.evidence,
-    promoted_at: request.timestamp,
-    promoted_by: request.approver,
-    status: 'active',
-    content: request.content
+function denyDecision(reason) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
   };
-
-  // Write as YAML (simple formatting)
-  const yaml = [
-    `id: ${instinct.id}`,
-    `version: ${instinct.version}`,
-    `confidence: ${instinct.confidence}`,
-    `evidence:`,
-    ...(instinct.evidence.map(e => [
-      `  - observation_id: ${e.observation_id || 'unknown'}`,
-      `    citation: "${e.citation || ''}"`
-    ]).flat()),
-    `promoted_at: "${instinct.promoted_at}"`,
-    `promoted_by: "${instinct.promoted_by}"`,
-    `status: ${instinct.status}`,
-    `content: |`,
-    ...instinct.content.split('\n').map(line => `  ${line}`)
-  ].join('\n');
-
-  fs.writeFileSync(instinctPath, yaml);
-  return instinctPath;
 }
 
 /**
- * Core gate logic
+ * Validate + (optionally) write. Returns { ok, errors, warnings, path }.
  */
-function run(rawInput) {
+async function processPromotion(request, { write = true } = {}) {
+  if (String(process.env.INFRA_BYPASS_LEARNING_GATE || '').toLowerCase() === '1') {
+    await ledger.logGovernance({
+      rule: 'learning-promotion-gate', severity: 'critical',
+      message: 'EMERGENCY BYPASS ACTIVATED', context: { instinct_id: request.instinctId, zone: request.zone },
+    });
+    process.stderr.write('⚠️  LEARNING_GATE BYPASS ACTIVE — this is audited\n');
+    let bypassPath;
+    if (write) bypassPath = await ledger.promote(request);
+    return { ok: true, errors: [], warnings: ['bypass'], path: bypassPath };
+  }
+
+  const { errors, warnings } = validatePromotion(request);
+  if (errors.length > 0) {
+    await ledger.logGovernance({
+      rule: 'learning-promotion-gate', severity: 'critical',
+      message: `Instinct promotion denied: ${errors.join('; ')}`,
+      context: { instinct_id: request.instinctId, zone: request.zone, approver: request.approver },
+    });
+    return { ok: false, errors, warnings };
+  }
+
+  let writtenPath;
+  if (write) writtenPath = await ledger.promote(request);
+  return { ok: true, errors: [], warnings, path: writtenPath };
+}
+
+// ---- CLI ----
+function parseCliArgs(argv) {
+  const out = { _mode: null };
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--promote') out._mode = 'promote';
+    else if (a === '--validate') out._mode = 'validate';
+    else if (a === '--dry-run') out.dryRun = true;
+    else if (a.startsWith('--')) out[a.slice(2)] = argv[++i];
+  }
+  return out;
+}
+
+async function runCli(argv) {
+  const args = parseCliArgs(argv);
+  const request = parsePromotionRequest({
+    id: args.id, zone: args.zone, content: args.content, confidence: args.confidence,
+    citation: args.citation, approver: args.approver,
+    evidence: args.evidence ? String(args.evidence).split(',').map((id) => ({ observation_id: id.trim() })) : [],
+  });
+
+  const write = args._mode === 'promote' && !args.dryRun;
+  const result = await processPromotion(request, { write });
+
+  result.warnings.forEach((w) => process.stderr.write(`⚠️  ${w}\n`));
+  if (!result.ok) {
+    process.stderr.write(`❌ LEARNING_GATE DENIED:\n${result.errors.join('\n')}\n`);
+    return 1;
+  }
+  if (result.path) process.stdout.write(`✅ Instinct written to ${result.path}\n`);
+  else process.stdout.write('✅ LEARNING_GATE PASSED (no write — validate/dry-run)\n');
+  return 0;
+}
+
+// ---- Hook (stdin) ----
+const PROMOTION_TOOLS = ['instinct_promote', 'instinct_promotion', 'learning_promote', 'pattern_promote'];
+
+async function runHook(raw) {
   let input;
   try {
-    input = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
+    input = typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch {
-    return rawInput;
+    return null;
   }
+  if (!PROMOTION_TOOLS.includes(input.tool_name || '')) return null;
 
-  const toolName = input.tool_name || '';
-  const toolInput = input.tool_input || {};
-
-  // Only gate promotion tools
-  const promotionTools = [
-    'instinct_promote',
-    'instinct_promotion',
-    'learning_promote',
-    'pattern_promote'
-  ];
-
-  if (!promotionTools.includes(toolName)) {
-    return rawInput;
+  const request = parsePromotionRequest(input.tool_input || {});
+  // In hook mode we validate only; the actual write happens via the CLI path.
+  const result = await processPromotion(request, { write: false });
+  if (!result.ok) {
+    return denyDecision(`[infra-ops] Instinct promotion blocked:\n${result.errors.join('\n')}`);
   }
-
-  const request = parsePromotionRequest(toolInput);
-
-  // Check for emergency bypass (AUDIT LOGGED)
-  if (String(process.env.INFRA_BYPASS_LEARNING_GATE || '').toLowerCase() === '1') {
-    logPromotionAttempt(request, 'allowed', 'EMERGENCY BYPASS ACTIVATED');
-    console.error('⚠️  LEARNING_GATE BYPASS ACTIVE - This will be audited');
-    return rawInput;
-  }
-
-  // Validate promotion requirements
-  const validation = validatePromotion(request);
-
-  if (validation.errors.length > 0) {
-    const errorMessage = validation.errors.join('\n');
-    logPromotionAttempt(request, 'denied', errorMessage);
-
-    return {
-      ...rawInput,
-      stderr: (rawInput.stderr || '') + `\n❌ LEARNING_GATE DENIED:\n${errorMessage}\n`
-    };
-  }
-
-  if (validation.warnings.length > 0) {
-    const warningMessage = validation.warnings.join('\n');
-    console.error(`⚠️  LEARNING_GATE WARNINGS:\n${warningMessage}`);
-  }
-
-  // Write instinct to ledger
-  try {
-    const instinctPath = writeInstinct(request);
-    console.error(`✅ LEARNING_GATE PASSED - Instinct written to: ${instinctPath}`);
-    logPromotionAttempt(request, 'allowed', 'All requirements met');
-  } catch (err) {
-    console.error(`⚠️  LEARNING_GATE: Failed to write instinct: ${err.message}`);
-    logPromotionAttempt(request, 'failed', `Write error: ${err.message}`);
-  }
-
-  return rawInput;
+  return null;
 }
 
-/**
- * CLI entry point for testing
- */
-async function main() {
-  const args = process.argv.slice(2);
-  const testRequest = {
-    tool_name: 'instinct_promote',
-    tool_input: {
-      id: 'instinct-001',
-      version: 1,
-      content: 'When authoring Ansible playbooks, always use FQCN (Fully Qualified Collection Name).',
-      zone: 'corpor',
-      confidence: 0.85,
-      evidence: [
-        { observation_id: 'obs-001', citation: 'Best practices for Ansible 2.+' }
-      ],
-      approver: 'user-123',
-      signature: 'abc123',
-      citation: 'Ansible Best Practices',
-      timestamp: new Date().toISOString()
-    }
-  };
-
-  console.error('Testing learning promotion gate...');
-  const result = run(testRequest);
-
-  if (result.stderr && result.stderr.includes('DENIED')) {
-    console.error('Result: DENIED');
-    process.exit(1);
-  } else {
-    console.error('Result: ALLOWED');
-    process.exit(0);
-  }
-}
-
-/**
- * Stdin entry point
- */
 if (require.main === module) {
-  if (process.argv.includes('--test')) {
-    main();
+  const argv = process.argv.slice(2);
+  if (argv.includes('--promote') || argv.includes('--validate')) {
+    runCli(argv).then((code) => process.exit(code));
   } else {
     let raw = '';
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', chunk => { raw += chunk; });
-    process.stdin.on('end', () => {
-      const result = run(raw);
-      process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result));
+    process.stdin.on('data', (c) => { raw += c; });
+    process.stdin.on('end', async () => {
+      const decision = await runHook(raw);
+      if (decision) process.stdout.write(JSON.stringify(decision));
+      process.exit(0);
     });
   }
 }
@@ -320,7 +204,8 @@ if (require.main === module) {
 module.exports = {
   parsePromotionRequest,
   validatePromotion,
-  logPromotionAttempt,
-  writeInstinct,
-  run
+  processPromotion,
+  parseCliArgs,
+  runCli,
+  runHook,
 };

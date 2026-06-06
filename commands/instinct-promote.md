@@ -32,12 +32,27 @@ $ARGUMENTS:
 
 1. **Review the candidate** — confirm the pattern is valid, the confidence is
    sufficient, the zone is correct, and compliance items carry a citation.
-2. **Submit for promotion** — the `learning-promotion-gate` validates approval,
-   confidence, citation, and zone; HSA (`in-zone`) items additionally require the
-   `dual-control-promotion-gate`.
-3. **On success** — the instinct is written to
+2. **For HSA (`in-zone`) items, satisfy dual control first:**
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/dual-control-promotion-gate.js" --check \
+     --id <id> --zone in-zone --approvers <a>,<b> --citation "<ref>"
+   ```
+
+3. **Submit for promotion** — invoke the gate CLI. It validates approver,
+   confidence, citation, and zone, then (on success) writes the instinct and logs
+   to the shared governance store:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-gate.js" --promote \
+     --id <id> --zone <corpor|in-zone> --content "<pattern>" --approver <user> \
+     [--confidence <0..1>] [--citation "<ref>"] [--evidence <id,id>]
+   ```
+
+   Use `--dry-run` to validate without writing. The command exits non-zero on denial.
+4. **On success** — the instinct is written to
    `knowledge/instincts/<zone>/<id>.yml` and the attempt is recorded to the
-   governance ledger.
+   governance store (`governanceEvents` collection).
 
 ## Trust boundary
 
