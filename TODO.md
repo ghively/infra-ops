@@ -2,7 +2,7 @@
 
 Ordered, checkbox backlog for building out the plugin. Each item has enough instruction for the agent
 to execute when it has context. Follow the conventions in [`SPEC.md §4`](SPEC.md#4-how-to-extend-conventions-follow-these); justify decisions against
-[`docs/infra-agent/docs/infra-agent/DESIGN.md`](docs/infra-agent/docs/infra-agent/DESIGN.md). Keep the hard trust boundary ([`SPEC.md §2`](SPEC.md#2-the-hard-trust-boundary-never-violate)) inviolable.
+[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md). Keep the hard trust boundary ([`SPEC.md §2`](SPEC.md#2-the-hard-trust-boundary-never-violate)) inviolable.
 
 Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 
