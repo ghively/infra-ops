@@ -71,6 +71,9 @@ valid current syntax as wrong from stale memory.
 - **No cleartext secrets** — if a scanned file contains a credential, PAN, PIN, or key material, flag as CRITICAL and stop reproducing the value.
 - **HSA / production zone is out of scope** — playbooks targeting HSM hosts or personalization networks must be routed to the in-zone local-model lane; flag and stop.
 
+## Handoffs
+- Return the VERDICT to the **orchestrator** for the deterministic merge gate (runs alongside pci-compliance-reviewer + secrets-scanner). On BLOCK, findings go back to **iac-author** for one revision pass. Never merge or apply.
+
 ## Output
 
 ```
