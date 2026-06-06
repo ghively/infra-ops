@@ -7,12 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Lint tooling: `eslint.config.js` (ESLint v9 flat config, CommonJS + Node globals)
+  and `.markdownlint.json`, so `npm run lint` runs and passes. `lint` script now
+  covers the whole tree (`eslint .`) instead of `scripts/` only.
+
+### Changed
+
+- Env-var namespace standardized on `INFRAOPS_*`: `yamllint-hook` and
+  `ansible-syntax-hook` (and `hooks.json`) now read the canonical flag while still
+  honoring legacy `INFRA_OPS_*` as a fallback, matching the other hooks.
+- Docs: corrected stale counts (README/TODO now say 19 skills, 10 agents); refreshed
+  the architecture-gap CI/tests row.
+
+### Fixed
+
+- Removed dead `require`s flagged by ESLint (`os` in `governance-ledger`, `fs` in
+  `sensitivity-router`, `execSync` in `validate-agents`); normalized an unused catch
+  binding. Markdown structural lint issues (blank-line/indent hygiene) auto-corrected.
+
 ## [0.10.0] - 2026-06-06
 
 Agent-layer hardening from a four-stream best-practices research pass (Claude Code
 orchestration, IaC skill quality, multi-agent design, MCP servers).
 
 ### Added
+
 - Agents: `iac-debugger` (sonnet) and `secrets-scanner` (haiku), both emitting a
   machine-readable VERDICT token.
 - Skills: `iac-sast-scanning` (+ `.gitlab-ci/components/iac-sast` gate),
@@ -23,6 +44,7 @@ orchestration, IaC skill quality, multi-agent design, MCP servers).
   read-only GitLab/Octopus servers.
 
 ### Changed
+
 - All 8 existing agents curated: handoffs, verdict/routed tokens, trigger-phrased
   descriptions, iac-author model-routing fix + Molecule branch, reviewers cite the
   path-injected rules as the single source of truth.
@@ -31,6 +53,7 @@ orchestration, IaC skill quality, multi-agent design, MCP servers).
 - Rewrote the two instinct skills to the standard When/How/Examples format.
 
 ### Fixed
+
 - Deterministic standards injection: added `paths:` globs to the PCI, secrets, and
   GitLab-CI rules (they had none, so they weren't auto-injected).
 - `drift-detection` asserted on the non-existent `ansible_changed_tasks` var (silent
@@ -43,6 +66,7 @@ Remediation release: closed the gap between the docs' claims and the running cod
 and built out the two foundationally-diverged pillars (local lane + learning loop).
 
 ### Added
+
 - Real local inference lane: `scripts/lib/ollama-router.js` (local-only HTTP, no
   cloud SDK, refuses non-local endpoints) wired into the `sensitive-local-analyst` agent
 - `scripts/lib/instinct-ledger.js`: single source of truth for instinct persistence
@@ -54,6 +78,7 @@ and built out the two foundationally-diverged pillars (local lane + learning loo
 - `docs/architecture-gap.md`: authoritative design-vs-as-built status
 
 ### Changed
+
 - `sensitivity-router` upgraded from an stderr log to a real PreToolUse gate
 - `learning-promotion-gate` / `dual-control-promotion-gate` rewritten to use the
   unified ledger, expose real CLIs, and emit valid deny decisions
@@ -61,6 +86,7 @@ and built out the two foundationally-diverged pillars (local lane + learning loo
 - Migrated from ECC/plugins/infra-ops to standalone repo
 
 ### Fixed
+
 - `state-store.js` pruned every newly-added entry (compared `Date.now()` to an
   ISO-string `createdAt`), so the store always read back empty
 - `validate-hooks.js` rejected the real Claude Code hooks.json schema
@@ -70,6 +96,7 @@ and built out the two foundationally-diverged pillars (local lane + learning loo
 ## [0.1.0] - 2026-06-03
 
 ### Added
+
 - Plugin manifest + single-plugin marketplace (`.claude-plugin/`)
 - Safety hook: `pan-egress-filter` (PreToolUse DLP)
 - Audit hook: `governance-ledger` (PostToolUse, fingerprinted)

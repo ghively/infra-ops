@@ -29,6 +29,7 @@ tokens. (ansible-iac-gitops.md §3; pci-dss-devops.md §8)
 ### HashiCorp Vault — the Source of Truth
 
 Vault is preferred over ansible-vault for enterprise estates:
+
 - **Dynamic/short-lived secrets** (rotated automatically).
 - **Fine-grained ACLs** (per-path, per-environment).
 - **Tamper-evident audit log** of every secret access.
@@ -116,6 +117,7 @@ deploy_prod:
 ```
 
 Environment-specific secret paths:
+
 ```
 secret/data/ansible/dev/db_password     ← dev jobs only
 secret/data/ansible/test/db_password    ← test jobs only

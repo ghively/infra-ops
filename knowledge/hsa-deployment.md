@@ -67,6 +67,7 @@ This document describes the air-gapped deployment architecture for the High Secu
 ### Phase 2: Air-Gap Transfer
 
 **Procedure:**
+
 1. Build deployment artifact in corporate zone
 2. Verify artifact hash (SHA-256)
 3. Transfer via authorized media (encrypted USB, secure file transfer)
@@ -74,6 +75,7 @@ This document describes the air-gapped deployment architecture for the High Secu
 5. Destroy transfer media after verification
 
 **Media Requirements:**
+
 - FIPS 140-2 Level 2 certified USB drives
 - Full-disk encryption (AES-256)
 - Chain of custody documentation
@@ -112,6 +114,7 @@ export OLLAMA_HOST=127.0.0.1:11434
 **Recommended:** Qwen2.5-Coder-32B or Qwen3-Coder-30B-A3B
 
 **Why:**
+
 - Strong coding capabilities for Ansible playbook review
 - Runs efficiently on available hardware
 - No external dependencies after initial pull
@@ -170,12 +173,14 @@ See: `scripts/hooks/dual-control-promotion-gate.js`
 ### HSM Configuration (Operators Only)
 
 **Operators manually configure:**
+
 - Thales/SafeNet Network HSMs
 - Partition and client certificates
 - Key management workflows
 - Backup and recovery procedures
 
 **Agent provides:**
+
 - Example configurations (in playbooks)
 - Validation scripts (syntax-check only)
 - Documentation (HSM-specific runbooks)

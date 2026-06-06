@@ -47,6 +47,7 @@ This agent transforms a merged diff into records; it does not fetch third-party 
 - **HSA / production zone** — if the MR touches HSA-scope content, flag the record as requiring in-zone review before publication and do not publish sensitive context details.
 
 ## Handoffs
+
 - Populate the per-change record's `compliance_flags` from the **pci-compliance-reviewer**
   verdict/findings attached to the MR (close the loop — do not leave it `[]` when the
   reviewer raised flags). Attach the per-release SBOM reference if one was produced.
@@ -55,6 +56,7 @@ This agent transforms a merged diff into records; it does not fetch third-party 
 ## Output
 
 **Changelog entry** (appended to `docs/changes/CHANGELOG.md`):
+
 ```markdown
 ## [<version or date>] — MR !<number>
 
@@ -66,6 +68,7 @@ This agent transforms a merged diff into records; it does not fetch third-party 
 ```
 
 **ADR** (written to `docs/decisions/YYYY-MM-DD-<slug>.md`):
+
 ```markdown
 # ADR-<N>: <decision title>
 
@@ -84,6 +87,7 @@ MR: !<number>
 ```
 
 **Per-change record** (written to `docs/changes/records/<MR-number>.yaml`):
+
 ```yaml
 mr: <number>
 title: <MR title>

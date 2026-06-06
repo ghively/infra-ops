@@ -5,7 +5,7 @@
  * PostToolUse hook that captures tool usage patterns for continuous learning.
  * Writes observations to the State Store observations collection.
  *
- * Enable: Set INFRA_OPS_OBSERVE=1
+ * Enable: Set INFRAOPS_OBSERVE=1 (legacy INFRA_OPS_OBSERVE still honored)
  */
 
 'use strict';
@@ -19,7 +19,7 @@ function getStateStore() {
   if (!StateStore) {
     try {
       StateStore = require('../lib/state-store.js');
-    } catch (error) {
+    } catch (_) {
       return null;
     }
   }

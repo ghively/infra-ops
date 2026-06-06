@@ -39,6 +39,7 @@ channel does not immediately compromise the other. (octopus-multitentacle.md §6
 ### GitLab CI → Octopus Integration Steps
 
 GitLab CI should:
+
 1. Build and test the artifact.
 2. Push the package to the Octopus built-in feed (`octopus package upload`).
 3. Push build information (commit SHA, branch, pipeline URL) (`octopus build-information`).
@@ -94,6 +95,7 @@ regex) to control which package versions are eligible per channel.
 ### Manual Intervention = the Human Dual-Control Prod Gate
 
 The `Manual Intervention` built-in step:
+
 - Pauses deployment before prod steps.
 - Requires a member of the `Production Approvers` team (RBAC-scoped, cannot be the
   pipeline triggerer).

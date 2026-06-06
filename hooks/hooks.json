@@ -46,7 +46,7 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/yamllint-hook.js\"",
             "timeout": 3,
             "environment": {
-              "INFRA_OPS_YAMLLINT": "1"
+              "INFRAOPS_YAMLLINT": "1"
             }
           },
           {
@@ -54,7 +54,7 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/ansible-syntax-hook.js\"",
             "timeout": 5,
             "environment": {
-              "INFRA_OPS_ANSIBLE_SYNTAX": "1"
+              "INFRAOPS_ANSIBLE_SYNTAX": "1"
             }
           }
         ],

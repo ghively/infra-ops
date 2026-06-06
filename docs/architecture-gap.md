@@ -30,7 +30,7 @@ Legend: ✅ built & wired · 🟡 partial / advisory · ⬜ documented only (not
 | **Learning loop** | observe→propose→verify→promote→rollback, gated | all ✅ | bullet only | ✅ wired: `observe-runner`→store; `/instinct-promote`→`learning-promotion-gate --promote`→`instinct-ledger`→governance event; `/instinct-rollback`→`instinct-ledger --rollback`; HSA dual-control via `--check` |
 | **Skills** | per-zone lists | 19 ✅ | 11 🟡 | ✅ 19 (+iac-sast-scanning, rollback-and-runbooks, ci-pipeline-debugging, incident-response, pre-commit-and-secret-scanning, supply-chain-and-sbom; instinct skills rewritten) |
 | **Commands** | — | 6 ✅ | 4 🟡 | ✅ 6 (instinct-promote/-rollback added) |
-| **CI / tests** | test gates per phase | implied green | `npm test` | ✅ `npm test` runs 4 validators + 2 unit suites; previously broken (missing `run-all.js`, broken hook validator) |
+| **CI / tests** | test gates per phase | implied green | `npm test` | ✅ `npm test` runs 4 validators + 3 unit suites (all green); `npm run lint` (eslint flat config + markdownlint) green. Previously broken (missing `run-all.js`, broken hook validator, no lint config) |
 
 ---
 

@@ -81,6 +81,7 @@ Source: Red Hat CoP "Good Practices for Ansible"; ansible-iac-gitops.md §1; mod
     args:
       creates: /var/lib/widget/.initialized   # makes it idempotent
   ```
+
   (ansible-iac-gitops.md §§1,6; ansible-testing skill)
 
 - **Validate role inputs with `meta/argument_specs.yml`** — declare each role variable's
