@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/.gitlab-ci.yml"
+  - "**/.gitlab-ci/**"
+  - "**/*.gitlab-ci.yml"
+---
+
 # GitLab CI/CD Rules
 
 ## Scope
