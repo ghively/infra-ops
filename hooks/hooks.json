@@ -67,13 +67,19 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/governance-capture.js\"",
-            "timeout": 5
+            "timeout": 5,
+            "environment": {
+              "INFRAOPS_GOVERNANCE_CAPTURE": "1"
+            }
           },
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/observe-runner.js\"",
             "async": true,
-            "timeout": 3
+            "timeout": 3,
+            "environment": {
+              "INFRAOPS_OBSERVE": "1"
+            }
           },
           {
             "type": "command",
