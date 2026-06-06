@@ -1,0 +1,21 @@
+---
+# molecule/default/molecule.yml — the idempotence scenario every role ships with.
+dependency:
+  name: galaxy
+driver:
+  name: podman
+platforms:
+  - name: instance
+    image: quay.io/centos/centos:stream9
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - syntax
+    - converge
+    - idempotence   # second converge must report zero changes
+    - verify
+    - destroy

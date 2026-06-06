@@ -45,7 +45,8 @@ authored here.
 | `governance-ledger` + State Store (`scripts/lib/state-store.js`) | ✅ Implemented |
 | 13 specialist agents (10 corporate + 3 in-zone `perso-*`) | ✅ Implemented |
 | 21 domain skills | ✅ Implemented |
-| 6 commands | ✅ Implemented |
+| 7 commands (incl. `/scaffold`) | ✅ Implemented |
+| Canonical templates + structure-conformance gate | ✅ Enforced (`validate-structure.js`) |
 | 13 hook scripts (9 event-wired + 4 CLI/in-zone gates) | ✅ Implemented |
 | Ansible / GitLab / secrets / PCI rules + authoring-standards guide | ✅ Implemented |
 | In-HSA tooling (`perso-*` agents, runbooks, guards, dual-control gate) | 🟡 Built as proposals (`knowledge/cpsa-approval.md §1`) |
@@ -111,10 +112,13 @@ infra-ops/
 │   ├── pre-commit-and-secret-scanning/  supply-chain-and-sbom/
 │   ├── pci-pin-awareness/  perso-change-control/   # in-zone (DESIGN §3)
 │   └── instinct-promotion/  instinct-rollback/   # governed learning loop
-├── commands/                # 6 slash commands
+├── commands/                # 7 slash commands
 │   ├── infra-discover.md  playbook-review.md  drift-check.md
-│   ├── knowledge-ingest.md
+│   ├── knowledge-ingest.md  scaffold.md
 │   └── instinct-promote.md  instinct-rollback.md
+├── templates/               # Canonical IaC skeletons (the agent stamps every unit from these)
+│   ├── ansible-role/  ansible-repo/
+│   └── terraform-module/  terraform-env/
 ├── contexts/                # Context modes (dev / research / review)
 ├── hooks/
 │   └── hooks.json           # Hook event bindings (9 event-wired hooks)
@@ -126,7 +130,9 @@ infra-ops/
 │   │   ├── yamllint-hook.js  ansible-syntax-hook.js
 │   │   ├── learning-promotion-gate.js  dual-control-promotion-gate.js
 │   │   └── hsa-boundary-guard.js  block-no-verify.js   # in-zone guards
+│   ├── validate-structure.js   # Deterministic structure-conformance gate (uniform layout)
 │   └── lib/                 # Shared libraries
+│       ├── structure-spec.js       # Canonical IaC layout spec (single source of truth)
 │       ├── state-store.js          # Unified state/governance store
 │       ├── instinct-ledger.js      # Instinct persistence + governance logging
 │       ├── ollama-router.js        # Local-only inference lane
@@ -152,7 +158,7 @@ infra-ops/
 │   ├── unit/                # Unit suites (local-lane, instinct-loop, data-plane,
 │   │                        #             dual-control, hsa-guard)
 │   └── run-all.js           # Test runner (npm test)
-├── .gitlab-ci/              # Reusable CI components (ansible-deploy, iac-sast gate)
+├── .gitlab-ci/              # Reusable CI components (ansible-deploy, iac-sast, structure-conformance)
 ├── CLAUDE.md                # Orchestration contract (delegation map, skills, Context7)
 ├── SPEC.md  TODO.md  CHANGELOG.md  CONTRIBUTING.md
 ├── package.json  .env.example
@@ -174,6 +180,18 @@ the **binding** enforcement is hooks + the `iac-sast-scanning` CI gate + the
 deterministic merge gate — reviewer agents advise, these gates bind.
 
 ## Authoring Standards
+
+**Uniform structure is baked in and enforced — not advised.** Every new IaC unit is
+stamped from a fixed canonical skeleton in [`templates/`](templates/) (`ansible-role`,
+`ansible-repo`, `terraform-module`, `terraform-env`) via the
+[`/scaffold`](commands/scaffold.md) command. The layout is defined once in
+[`scripts/lib/structure-spec.js`](scripts/lib/structure-spec.js) and enforced
+deterministically by [`scripts/validate-structure.js`](scripts/validate-structure.js):
+the `iac-author` agent must pass it before an MR, and the
+[`structure-conformance`](.gitlab-ci/components/structure-conformance/template.yml) CI
+component runs the same check over every `roles/*`, `modules/*`, and `envs/*` in the
+target repo — **any deviation fails the pipeline.** So structure and deployment are
+uniform by construction.
 
 **Choosing the technology** comes first. The
 [`iac-tooling-selection`](skills/iac-tooling-selection/SKILL.md) skill +

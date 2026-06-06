@@ -1,0 +1,13 @@
+---
+# tasks/main.yml — entry point for the __ROLE_NAME__ role.
+# FQCN modules only; idempotent; OS-targeted by structure (see rules/ansible/*).
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  when: false  # replace `false` with a real condition once OS vars files exist
+
+- name: __ROLE_NAME__ | ensure package is present
+  ansible.builtin.package:
+    name: "{{ __role_name___packages }}"
+    state: present
+  become: true

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enforced uniform structure** — the canonical IaC layout is now baked in and gated,
+  not advisory:
+  - `templates/{ansible-role,ansible-repo,terraform-module,terraform-env}/` — the fixed
+    skeletons every unit is stamped from (`/scaffold` command).
+  - `scripts/lib/structure-spec.js` (single source of truth) + `scripts/validate-structure.js`
+    (deterministic gate, exits non-zero on any deviation).
+  - `.gitlab-ci/components/structure-conformance` — binding CI gate over `roles/*`,
+    `modules/*`, `envs/*` in the target repo; deviation fails the pipeline.
+  - `tests/unit/structure.test.js` (8 checks) — templates ↔ spec never drift; deviations
+    are rejected. `iac-author` now MUST scaffold from a template and pass the validator
+    before an MR.
 - Multi-tool IaC + automation competence: the agent now reasons across the whole
   toolchain, not just Ansible.
   - `skills/iac-tooling-selection` — decision framework for Terraform vs OpenTofu vs
