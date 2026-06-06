@@ -100,6 +100,7 @@ the EE by digest (`sha256:…`) so CI is reproducible across runners.
 ### Windows Roles
 
 Windows roles cannot run Molecule in a Linux container (WinRM not available). Options:
+
 - Use a dedicated Windows VM runner with Molecule's `delegated`/vagrant driver
   (from `molecule-plugins`).
 - Test Windows logic via `--check --diff` against a staging inventory.

@@ -26,6 +26,7 @@ Verify that proposed infrastructure changes do not introduce PCI DSS violations.
 ## Skills & Tools
 
 Load before reviewing:
+
 - **pci-dss-compliance** — the corporate DSS control checklist this agent applies
 - **pci-cp-compliance** — to recognize and route out CP/PIN-scope items (do not assess them here)
 - **secrets-vault** — to verify secrets are Vault-referenced, never plaintext
@@ -71,6 +72,7 @@ Context7 before ruling a finding (`mcp__context7__resolve-library-id` →
 - **HSA out of scope** — any finding that would require reasoning about HSM configuration, key ceremonies, or PCI Card Production controls must be explicitly flagged as out-of-scope for this agent and routed to the in-zone local-model lane.
 
 ## Handoffs
+
 - Return the VERDICT to the **orchestrator** for the deterministic merge gate (CRITICAL = hard BLOCK, 100% gate). CP/PIN-scope findings → route to the in-zone local lane, do not assess here. On BLOCK, findings go back to **iac-author**. Never merge or apply.
 
 ## Output

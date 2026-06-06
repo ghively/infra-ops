@@ -24,6 +24,7 @@ Produce a structured, severity-tiered review of every Ansible playbook, role, or
 ## Skills & Tools
 
 Load before reviewing (they define the standards you check against):
+
 - **ansible-testing** — the yamllint/ansible-lint/syntax/check-mode pipeline you run
 - **ansible-patterns** — the idempotency / FQCN / OS-structure rules you enforce
 - **gitlab-cicd-pipeline** — CI stage / environment / runner expectations
@@ -72,6 +73,7 @@ valid current syntax as wrong from stale memory.
 - **HSA / production zone is out of scope** — playbooks targeting HSM hosts or personalization networks must be routed to the in-zone local-model lane; flag and stop.
 
 ## Handoffs
+
 - Return the VERDICT to the **orchestrator** for the deterministic merge gate (runs alongside pci-compliance-reviewer + secrets-scanner). On BLOCK, findings go back to **iac-author** for one revision pass. Never merge or apply.
 
 ## Output

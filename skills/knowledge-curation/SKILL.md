@@ -26,6 +26,7 @@ learning loop. Also load when deciding which model lane a query must use.
 The agent cannot directly answer scoping questions (which corporate systems are DSS
 vs CP scope, HSA network topology, HSM vendor) because those answers depend on
 internal documentation. The correct flow is:
+
 1. Ingest the relevant document.
 2. Retrieve the answer from the ingested doc.
 3. Surface it as a **confidence-scored proposal with a citation** to the source.

@@ -9,6 +9,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 ---
 
 ## Phase 0 — Foundations (PoC on a shared host)
+
 - [x] Plugin manifest + marketplace (`.claude-plugin/`)
 - [x] Safety hook: `pan-egress-filter` (PreToolUse DLP)
 - [x] Audit hook: `governance-ledger` (PostToolUse, fingerprinted)
@@ -25,6 +26,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 - [ ] Decide whether `pan-egress-filter` should be **fail-closed** behind an env flag for sensitive runs.
 
 ## Phase 1 — Capture current state + knowledge base
+
 - [x] `infra-auditor` agent: read-only discovery of the GitLab project, the two playbooks, runner
       config, and the lone-box topology. Output a published map → `knowledge/environment.md`.
 - [x] `knowledge-curator` agent + `knowledge-curation` skill + `/knowledge-ingest`: ingest your docs,
@@ -33,6 +35,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
       Octopus Tentacle inventory. Surface for human confirmation.
 
 ## Phase 2 — Guardrails as code
+
 - [x] `rules/common/prompt-defense-baseline.md` (reused in every agent body).
 - [x] `rules/ansible/*` (coding-style, testing, security) — `paths:`-scoped to `**/*.yml`, `**/ansible/**`.
 - [x] `rules/secrets.md`, `rules/gitlab-ci.md`, `rules/pci.md` (paths-scoped).
@@ -40,6 +43,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 - [x] Hook: `sensitivity-router` — route CHD-adjacent prompts to the local lane.
 
 ## Phase 3 — CI quality gates
+
 - [x] `ansible-testing` skill + GitLab CI components: `yamllint → ansible-lint → --syntax-check →
       --check --diff → molecule (idempotence)`. Author as reusable CI components.
 - [x] Hook: `yamllint-hook.js` — auto-lint YAML files on Edit/Write.
@@ -48,11 +52,13 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
       with commit SHA + pipeline ID, non-empty diff = alert.
 
 ## Phase 4 — Authoring + Dev deploy
+
 - [x] `iac-author` + `playbook-reviewer` + `pci-compliance-reviewer` flesh-out.
 - [x] `change-documentation` skill: reworked documentation playbook (idempotent, FQCN, OS-aware).
 - [x] Wire CI to deploy to **Dev** behind the gate; never test/staging/prod from the agent.
 
 ## Phase 5 — Promotion + Octopus
+
 - [x] `octopus-release` skill + `multi-env-promotion` skill: dev→test→staging→prod promoting one
       immutable artifact; GitLab approvals + Octopus lifecycle/manual-intervention.
 - [x] `secrets-vault` skill: Vault references + runtime lookups; agent never sees plaintext.
@@ -60,12 +66,14 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
       (docs/infra-agent/DESIGN.md §11).
 
 ## Phase 6 — Drift, audit & docs loop
+
 - [x] Forward `governance-ledger` + GitLab/Octopus audit to a tamper-evident SIEM; retention per CP §6.4.
 - [x] `change-scribe` auto-docs on merge (in-repo + Wiki publish).
 - [x] SIEM forwarder library: `scripts/lib/siem-forwarder.js`.
 - [x] Docs directories: `docs/changes/`, `docs/decisions/`.
 
 ## Phase 7 — In-HSA deployment (heaviest; CPSA-gated)
+
 - [x] `pci-cp-compliance` skill (CP Logical + PIN).
 - [x] HSA deployment documentation: `knowledge/hsa-deployment.md`.
 - [x] Hook: `dual-control-promotion-gate.js` — CPSA-gated dual control for HSA.
@@ -74,6 +82,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
       (docs/infra-agent/DESIGN.md §14 Phase 7).
 
 ## Phase 8 — Governed self-improvement
+
 - [x] `learning-promotion-gate` hook: block instinct promotion lacking human approval + doc citation.
 - [x] Instinct ledger structure: `knowledge/instincts/corpor/`, `knowledge/instincts/in-zone/`.
 - [x] `instinct-promotion` skill: promote observed patterns to governed instincts.
@@ -82,6 +91,7 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 ---
 
 ### Always-true guardrails (re-check on every change)
+
 - Agent proposes; humans/pipelines dispose. No prod execution by the agent.
 - No PAN / keys / PINs / HSM access, ever. CHD-adjacent → local lane.
 - Cite documentation for scoping/compliance claims; never guess.
@@ -98,9 +108,11 @@ See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for the authorita
 design-vs-as-built status. Summary:
 
 ### Built & wired (tested via `npm test`)
+
 - ✅ Foundation hooks (GateGuard, Governance Capture, State Store, Observation)
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
-- ✅ 13 skills, 8 agents, 6 commands
+- ✅ 19 skills, 10 agents, 6 commands
+- ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
 - ✅ DLP (`pan-egress-filter`) with `INFRAOPS_DLP_FAIL_CLOSED` fail-closed option
 - ✅ Real local inference lane (`scripts/lib/ollama-router.js`) + enforcing
   `sensitivity-router` (advisory default; deny under `INFRAOPS_SENSITIVE_FAIL_CLOSED`)
@@ -109,8 +121,10 @@ design-vs-as-built status. Summary:
 - ✅ SIEM forwarding capability; CPSA-gated HSA deployment **documentation**
 
 ### Remaining before 1.0
+
 - [ ] HSA / in-zone deployment + `perso-*` agents — **CPSA-gated; do not build yet**
 - [ ] Stand up local model (OLLAMA_BASE_URL); register a tool-calling model
 - [ ] Create GitLab service accounts; publish `knowledge/environment.md`
 - [ ] Produce cited draft answers to the open scoping questions (DESIGN §17)
-- [ ] Resolve env-var namespace: standardize remaining `INFRA_OPS_*` flags on `INFRAOPS_*`
+- [x] Resolve env-var namespace: standardize remaining `INFRA_OPS_*` flags on `INFRAOPS_*`
+      (canonical `INFRAOPS_*` everywhere; legacy `INFRA_OPS_*` still honored as a fallback)

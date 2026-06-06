@@ -9,13 +9,11 @@
  * - Corporate zone: Cloud model allowed
  * - CHD-adjacent work: Must use local-only model
  *
- * Enable: Set INFRA_OPS_SENSITIVITY_ROUTE=1
+ * Enable: Set INFRAOPS_SENSITIVITY_ROUTE=1 (legacy INFRA_OPS_SENSITIVITY_ROUTE still honored)
  * Configure: Set OLLAMA_BASE_URL to local model endpoint
  */
 
 'use strict';
-
-const fs = require('fs');
 
 // Keywords that indicate CHD-adjacent work
 const CHD_KEYWORDS = [

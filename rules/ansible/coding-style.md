@@ -61,6 +61,7 @@ produce `ansible-lint` warnings.
 ## Idempotency
 
 Every task must be safe to run multiple times with no side effects.
+
 - Use `state: present/absent/latest` semantics where available.
 - Avoid `ansible.builtin.command`/`shell` without `changed_when`/`creates`/`removes`.
 - A second consecutive run must report zero changed tasks (enforced by Molecule
@@ -105,6 +106,7 @@ inventories/
 ## OS Targeting
 
 **Target OS by structure, not by trusting runtime `when:` guards alone.**
+
 - Put Windows tasks in Windows-specific plays targeting `hosts: windows` groups.
 - Put Linux tasks in Linux-specific plays targeting `hosts: linux` groups.
 - Use `group_vars/windows/` and `group_vars/linux/` for connection variables.

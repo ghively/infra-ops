@@ -52,6 +52,7 @@ read-only credentials. Snippets:
 ```
 
 ### Discouraged (crown-jewels adjacent)
+
 - **HashiCorp Vault MCP** — a misscoped token could read key components / PIN / CHD
   secret *values*, violating hard rule #2. If ever enabled: a **metadata/`list`-only**
   policy on non-CHD mounts, never `read` on secret data, run local-only, with
@@ -59,6 +60,7 @@ read-only credentials. Snippets:
   Context7 over a live Vault connection.
 
 ### Not applicable / skip
+
 - **Ansible AAP MCP** — the estate runs plain Ansible + GitLab CI, not Automation
   Platform; revisit only if/when AAP is adopted (and then read-only). There is no MCP
   server for the Ansible CLI/linters — that layer is CLIs-as-hooks (below).
@@ -66,6 +68,7 @@ read-only credentials. Snippets:
   agents lack under the hook guardrails. Skip in a PCI estate.
 
 ## Trust-boundary constraints (must hold for any server above)
+
 1. **Read-only only.** A write-capable GitLab/Octopus token would break propose-never-
    dispose (merge MRs, trigger deploys, auto-promote). Enforce `GITLAB_READ_ONLY_MODE`
    / Octopus `--read-only`. The official GitLab server is **not** read-only by default
@@ -76,6 +79,7 @@ read-only credentials. Snippets:
    that egresses.
 
 ## CLI tools wired as hooks / CI (quality enforcement)
+
 The deterministic enforcement layer (see the `iac-sast-scanning` skill) uses CLIs, not
 MCP: yamllint + ansible-syntax (PostToolUse hooks today) → ansible-lint (SARIF) →
 gitleaks + TruffleHog → Checkov/KICS → `--check --diff` (ARA-recorded) → Molecule.

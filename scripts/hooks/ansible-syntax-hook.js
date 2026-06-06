@@ -6,7 +6,7 @@
  * on Ansible playbooks after Edit/Write operations. Provides immediate
  * feedback on playbook syntax issues.
  *
- * Enable: Set INFRA_OPS_ANSIBLE_SYNTAX=1
+ * Enable: Set INFRAOPS_ANSIBLE_SYNTAX=1 (legacy INFRA_OPS_ANSIBLE_SYNTAX still honored)
  * Requires: ansible-playbook (needs Ansible installation)
  */
 
@@ -118,8 +118,10 @@ function runSyntaxCheck(filePath) {
  * Core hook logic.
  */
 function run(rawInput) {
-  // Gate on feature flag
-  if (String(process.env.INFRA_OPS_ANSIBLE_SYNTAX || '').toLowerCase() !== '1') {
+  // Gate on feature flag (INFRAOPS_* canonical; legacy INFRA_OPS_* honored).
+  const syntaxOn = [process.env.INFRAOPS_ANSIBLE_SYNTAX, process.env.INFRA_OPS_ANSIBLE_SYNTAX]
+    .some((v) => String(v || '').toLowerCase() === '1');
+  if (!syntaxOn) {
     return rawInput;
   }
 

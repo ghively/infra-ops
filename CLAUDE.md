@@ -41,6 +41,7 @@ separately under `knowledge/` and is loaded only when needed.
 | Generating changelog / ADR / change records from a merged diff | **change-scribe** | haiku |
 
 ### The review gate (deterministic — runs three agents in parallel)
+
 Every authored change goes concurrently to **playbook-reviewer** (correctness/
 idempotency), **pci-compliance-reviewer** (PCI controls), and **secrets-scanner**
 (static secret/PAN scan). Each returns a machine-readable verdict token on its first
@@ -48,18 +49,22 @@ output line (`VERDICT: PASS|WARN|BLOCK`). **Merge gate (no discretion): if *any*
 three returns BLOCK, the change is blocked.** WARN is advisory; PASS×3 clears the gate.
 
 ### Evaluator → remediation loop (drives repeatable quality)
+
 For authored code: **iac-author → (3 reviewers in parallel) → if any BLOCK, return the
 consolidated findings to iac-author for ONE revision pass → re-review.** Cap at **2
 revision cycles**, then stop and escalate to a human with the open findings. Never
 merge around a BLOCK.
 
 ### When to stay in the orchestrator (do not delegate)
+
 - Trivial single-file lookups, routing decisions, and assembling/summarizing
   subagent results. Keep these light; everything heavier gets delegated.
 
 ### How to delegate well — the Delegation Envelope (every Task call MUST include)
+
 Subagents start with a **fresh context** and do not see this conversation. Each Task
 prompt must therefore carry:
+
 - **Objective** — one sentence naming the specific outcome this subagent owns.
 - **Inputs** — paths / diff / pipeline-ID / plan reference. Pass *pointers, not pasted
   file bodies* (let the subagent Read what it needs); for "current state" point at
@@ -68,6 +73,7 @@ prompt must therefore carry:
 - **Boundaries** — zone (corporate only), propose-only, no-CHD, and the hand-off target.
 
 ### No re-delegation / no loops
+
 Subagents return results to **you** (the orchestrator); they do not call each other.
 Chaining (plan → author → review → scribe) is the orchestrator's job. This prevents
 runaway fan-out and token blow-up.
@@ -114,6 +120,7 @@ the exact topic.
 ## Guardrails enforced by hooks (not prompts)
 
 These run automatically; know they exist:
+
 - `pan-egress-filter` — blocks PAN/secrets at the tool boundary (fail-closed option).
 - `sensitivity-router` — routes/denies CHD-adjacent tool calls toward the local lane.
 - `gateguard-fact-force` — demands investigation (blast radius + rollback) before edits.

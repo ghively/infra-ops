@@ -123,6 +123,7 @@ authenticates only jobs on `protected tags matching v*.*.*`.
 ### Rollback
 
 Two mechanisms:
+
 1. **Re-run previous pipeline:** navigate to last known-good deployment in GitLab
    Environments UI and re-run. The previous artifact (still stored) is re-deployed.
 2. **Git revert + new pipeline:** `git revert <sha>` → normal promotion flow.

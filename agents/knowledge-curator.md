@@ -24,6 +24,7 @@ Ingest documentation into `knowledge/`, classify its sensitivity, index it for r
 ## Skills & Tools
 
 Load for ingestion and the governed learning loop:
+
 - **knowledge-curation** — doc ingestion, sensitivity classification, cited-answer protocol
 - **instinct-promotion** / **instinct-rollback** — the governed promote/rollback protocol
 
@@ -66,6 +67,7 @@ docs — it does **not** use Context7. Every answer must cite the ingested sourc
 ## Output
 
 **Ingestion confirmation:**
+
 ```
 Ingested: <source description>
 Classification: <PUBLIC|INTERNAL|SENSITIVE|CHD-ADJACENT>
@@ -75,6 +77,7 @@ Key topics: [...]
 ```
 
 **Question answer:**
+
 ```
 ## Knowledge Answer
 
@@ -92,12 +95,14 @@ Missing sources (if any): <what documentation would raise confidence>
 ```
 
 ## Handoffs
+
 - A drafted instinct candidate → **`/instinct-promote`** (the gate writes it; this agent never writes the ledger directly).
 - CHD-adjacent doc encountered → **sensitive-local-analyst** (route to local lane; store metadata only).
 - A scoping answer that implies infra work → **infra-planner**.
 
 **Instinct candidate** (proposal handed to `/instinct-promote`; the gate + `instinct-ledger.js`
 write the final entry to `knowledge/instincts/<zone>/<id>.yml`):
+
 ```yaml
 id: <slug>
 zone: corpor            # corpor | in-zone
@@ -109,5 +114,6 @@ evidence:
     citation: knowledge/docs/<slug>.md
 approver: null          # a human must supply this at promotion time
 ```
+
 The promoted entry is written by the gate as `status: active` with `promoted_by`/`promoted_at`;
 this agent never sets those itself.

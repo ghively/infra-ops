@@ -48,6 +48,7 @@ must be deterministic and repeatable across runs.
 - **Deterministic** — same input yields the same findings; do not editorialize beyond the checklist.
 
 ## Handoffs
+
 Return the verdict to the orchestrator for the merge gate. Confirmed CHD/key exposure → flag for **sensitive-local-analyst** + `incident-response`. Vault-reference style issues → **pci-compliance-reviewer** context.
 
 ## Output
