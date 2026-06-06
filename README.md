@@ -142,10 +142,16 @@ infra-ops/
 ### Orchestration & MCP
 
 `CLAUDE.md` is the portable behavioral contract: Claude acts as a **lean orchestrator**
-that delegates specialist work to the eight subagents (each in its own context window)
-per a task→agent routing map. A **Context7** MCP server is bundled (`plugin.json`
-`mcpServers`) so authoring/review agents fetch **current** library docs (Ansible
-modules, GitLab CI keywords, Octopus/Vault APIs) instead of relying on memory.
+that delegates specialist work to the ten subagents (each in its own context window)
+per a task→agent routing map, with a Delegation Envelope, an evaluator→remediation
+loop, and a deterministic merge gate. **Context7** and **sequential-thinking** MCP
+servers are bundled (`plugin.json` `mcpServers`); read-only GitLab/Octopus servers are
+operator-enabled — see **[`docs/mcp-servers.md`](docs/mcp-servers.md)**.
+
+How standards are *known and enforced*: path-scoped **rules** (`rules/**`) auto-inject
+when matching files are in context (deterministic), **skills** teach application, and
+the **binding** enforcement is hooks + the `iac-sast-scanning` CI gate + the
+deterministic merge gate — reviewer agents advise, these gates bind.
 
 ## The Hard Trust Boundary
 
