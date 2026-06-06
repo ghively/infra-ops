@@ -77,6 +77,47 @@ const SPECS = {
       { file: 'versions.tf', pattern: 'required_version', why: 'pin the core version (required_version)' },
     ],
   },
+
+  'packer-template': {
+    description: 'Canonical Packer image-build layout (immutable images)',
+    requiredFiles: ['build.pkr.hcl', 'variables.pkr.hcl', 'README.md'],
+    requiredDirs: [],
+    contentChecks: [
+      { file: 'build.pkr.hcl', pattern: 'required_plugins', why: 'pin Packer plugins (required_plugins)' },
+      { file: 'build.pkr.hcl', pattern: 'build\\s*\\{', why: 'must declare a build block' },
+      { file: 'build.pkr.hcl', pattern: 'source\\s', why: 'must declare a source' },
+    ],
+  },
+
+  'python-tool': {
+    description: 'Canonical Python automation tool layout',
+    requiredFiles: ['main.py', 'requirements.txt', 'README.md'],
+    requiredDirs: ['tests'],
+    contentChecks: [
+      { file: 'main.py', pattern: "if __name__ == ['\"]__main__['\"]", why: 'must have a main entry guard' },
+      { file: 'main.py', pattern: 'def main', why: 'must define main()' },
+      { file: 'requirements.txt', pattern: '==|~=|>=', why: 'dependencies must be version-pinned' },
+    ],
+  },
+
+  'bash-tool': {
+    description: 'Canonical Bash automation tool layout',
+    requiredFiles: ['main.sh', 'README.md'],
+    requiredDirs: ['tests'],
+    contentChecks: [
+      { file: 'main.sh', pattern: 'set -euo pipefail', why: 'must enable strict mode (set -euo pipefail)' },
+    ],
+  },
+
+  'powershell-tool': {
+    description: 'Canonical PowerShell automation tool layout',
+    requiredFiles: ['main.ps1', 'README.md'],
+    requiredDirs: ['tests'],
+    contentChecks: [
+      { file: 'main.ps1', pattern: 'Set-StrictMode', why: 'must enable Set-StrictMode' },
+      { file: 'main.ps1', pattern: 'ErrorActionPreference', why: "must set \\$ErrorActionPreference = 'Stop'" },
+    ],
+  },
 };
 
 const TYPES = Object.keys(SPECS);

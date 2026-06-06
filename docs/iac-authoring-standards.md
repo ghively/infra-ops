@@ -44,6 +44,10 @@ across the estate:
 | Ansible project | `templates/ansible-repo/` | `--type ansible-repo` |
 | Terraform/OpenTofu module | `templates/terraform-module/` | `--type terraform-module` |
 | Terraform/OpenTofu env | `templates/terraform-env/` | `--type terraform-env` |
+| Packer image | `templates/packer-template/` | `--type packer-template` |
+| Python tool | `templates/python-tool/` | `--type python-tool` |
+| Bash tool | `templates/bash-tool/` | `--type bash-tool` |
+| PowerShell tool | `templates/powershell-tool/` | `--type powershell-tool` |
 
 - **Single source of truth:** `scripts/lib/structure-spec.js` declares the required
   files/dirs and content checks per type.
@@ -55,8 +59,14 @@ across the estate:
 - **Self-checked:** `tests/unit/structure.test.js` asserts the bundled templates always
   conform and that deviations are rejected, so the spec and templates cannot drift.
 
+**Deployment is enforced too.** Every `.gitlab-ci.yml` must match the canonical pipeline
+shape — declared `stages:`, the binding `iac-sast` + `structure-conformance` components,
+`environment:` scoping, and **manual + protected-branch production** (no auto-apply to
+prod). `scripts/lib/deployment-policy.js` defines it; `scripts/validate-deployment.js`
+and the `deployment-conformance` CI job enforce it (`tests/unit/deployment.test.js`).
+
 This is the difference between *advising* a structure and *enforcing* one: a
-non-conformant unit cannot pass CI, regardless of any agent's judgement.
+non-conformant unit or pipeline cannot pass CI, regardless of any agent's judgement.
 
 ---
 

@@ -173,11 +173,13 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 | Component | Status | Purpose |
 |---|---|---|
-| `templates/{ansible-role,ansible-repo,terraform-module,terraform-env}/` | ✅ | The fixed, canonical skeletons the agent stamps every unit from |
-| `scripts/lib/structure-spec.js` | ✅ | Machine-readable single source of truth for the uniform layout |
-| `scripts/validate-structure.js` | ✅ | Deterministic gate — rejects (non-zero) any unit that deviates |
-| `.gitlab-ci/components/structure-conformance` | ✅ | Binding CI gate; runs the validator over roles/modules/envs in the target repo |
-| `tests/unit/structure.test.js` | ✅ | Asserts templates ↔ spec never drift, and that deviations are rejected |
+| `templates/*` (8 types) | ✅ | Fixed skeletons the agent stamps from: ansible-role/-repo, terraform-module/-env, packer-template, python-tool, bash-tool, powershell-tool |
+| `scripts/lib/structure-spec.js` | ✅ | Machine-readable single source of truth for the uniform layout (per type) |
+| `scripts/validate-structure.js` | ✅ | Deterministic structure gate — rejects (non-zero) any unit that deviates |
+| `scripts/lib/deployment-policy.js` | ✅ | Canonical pipeline policy (stages, gates, env scoping, manual+protected prod) |
+| `scripts/validate-deployment.js` | ✅ | Deterministic deployment gate — rejects non-uniform `.gitlab-ci.yml` |
+| `.gitlab-ci/components/structure-conformance` | ✅ | Binding CI gate; runs both validators over roles/modules/envs + the pipeline |
+| `tests/unit/{structure,deployment}.test.js` | ✅ | Assert templates/spec never drift and that deviations are rejected |
 
 ---
 
