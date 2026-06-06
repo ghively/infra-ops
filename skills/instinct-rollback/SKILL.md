@@ -1,6 +1,23 @@
+---
+name: instinct-rollback
+description: >
+  Roll back a governed instinct to a previous version or deactivate it, with
+  two-person approval for compliance-related instincts and a full governance-ledger
+  audit trail. Triggers on: instinct rollback, deactivate instinct, revert instinct,
+  rollback pattern, /instinct-rollback.
+origin: infra-ops
+---
+
 # Instinct Rollback Skill
 
-## Overview
+## When to Use
+
+Use this skill when a promoted instinct is found to be incorrect, harmful, or no
+longer applicable and must be reverted to a prior version or deactivated. Reach for
+it on prompts like "roll back that instinct", "deactivate the instinct", or
+`/instinct-rollback`.
+
+## How It Works
 
 This skill manages the rollback of instincts to previous versions or deactivation. All rollbacks require two-person approval for compliance-related instincts and are logged to the governance ledger.
 

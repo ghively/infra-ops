@@ -4,9 +4,9 @@ This is the working spec for the **infra-ops** Claude Code plugin: a lean orches
 specialist subagents that manage an Ansible / self-hosted GitLab CI/CD / Octopus Deploy estate for a
 **credit-card manufacturer** (PCI DSS + PCI Card Production + PCI PIN scope).
 
-The full rationale, citations, and decision record live in **[`docs/infra-agent/docs/infra-agent/DESIGN.md`](docs/infra-agent/docs/infra-agent/DESIGN.md)**
+The full rationale, citations, and decision record live in **[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md)**
 (v2) and its research in [`docs/infra-agent/research/`](docs/infra-agent/research/). This SPEC is the buildable subset: what
-exists, what's stubbed, and how the agent fills the gaps. **Read [`docs/infra-agent/DESIGN.md`](docs/infra-agent/docs/infra-agent/DESIGN.md) before extending anything.**
+exists, what's stubbed, and how the agent fills the gaps. **Read [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) before extending anything.**
 
 > This plugin is intentionally a **scaffold**. Baseline tooling is wired and installable; most
 > domain depth is left as TODOs (see `TODO.md`) for the agent to build once it has real context from

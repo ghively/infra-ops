@@ -1,6 +1,24 @@
+---
+name: instinct-promotion
+description: >
+  Promote an observed pattern to a governed instinct in the zone-segmented ledger
+  (knowledge/instincts/corpor or in-zone). Enforces human approval, a minimum
+  confidence score, and a documentation citation for compliance items via the
+  learning-promotion-gate. Triggers on: instinct promote, promote pattern, governed
+  instinct, instinct ledger, learning promotion, /instinct-promote.
+origin: infra-ops
+---
+
 # Instinct Promotion Skill
 
-## Overview
+## When to Use
+
+Use this skill when a pattern observed by the `observe-runner` hook is ready to be
+promoted to a governed instinct, and the promotion must pass the human-approval +
+documentation-citation gate before it is written to the ledger. Reach for it on
+prompts like "promote this pattern", "add an instinct", or `/instinct-promote`.
+
+## How It Works
 
 This skill manages the promotion of observed patterns to instincts in the instinct ledger. All promotions are gated by human approval and documentation citation.
 
