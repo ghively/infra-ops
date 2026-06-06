@@ -30,7 +30,9 @@ expands.
   the machine; Octopus owns the release). Not yet wired into this plugin.
 - **PCI posture:** card manufacturer → corporate IT under **PCI DSS**; the personalization/data-prep
   High Security Area under **PCI Card Production (Logical+Physical) + PCI PIN**. Current PoC is
-  corporate-zone only. The HSA/in-zone deployment is a later, CPSA-gated phase (docs/infra-agent/DESIGN.md §14 Phase 7).
+  corporate-zone only. The HSA/in-zone **tooling** (perso-* agents, runbooks, in-zone dual-control
+  gate) is authored as proposals (`knowledge/cpsa-approval.md §1`); in-zone **deployment/go-live**
+  remains a later, CPSA-L-gated phase (`knowledge/cpsa-approval.md §2`; docs/infra-agent/DESIGN.md §14 Phase 7).
 
 > The agent should **not assume** beyond this. Unknowns (network segmentation, HSM vendor, exact
 > DSS-vs-CP system split) are answered by ingesting your documentation and proposing **cited** answers
@@ -78,6 +80,14 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | knowledge-curator | sonnet (corp) / local (in-zone) | ✅ | Ingest+classify docs, answer with citations, maintain instinct ledger |
 | iac-debugger | sonnet | ✅ | Diagnose red pipelines / failed runs → cited root cause + proposed fix (read-only) |
 | secrets-scanner | haiku | ✅ | Deterministic pre-merge secret/PAN static scan; emits VERDICT for the merge gate |
+| perso-iac-author | LOCAL (in-zone) | 🟡 proposal | In-HSA authoring (LOCAL-ONLY); inert until air-gap transfer + CPSA go-live. No PAN/keys/PIN/HSM. |
+| perso-iac-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA correctness/idempotency review (read-only, VERDICT token) |
+| perso-cp-compliance-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA PCI CP Logical + PIN compliance review (read-only, VERDICT token) |
+
+> The three `perso-*` agents are **LOCAL-ONLY in-zone proposals** authored under the
+> build authorization in `knowledge/cpsa-approval.md §1`. They are not part of the
+> corporate routing in `CLAUDE.md`; they run under a separate air-gapped in-zone
+> orchestrator only after the CPSA-L go-live sign-off (§2) is filled.
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
@@ -116,7 +126,7 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
 | yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
 | ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
-| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion (invoked by `/instinct-promote` via `--check`) |
+| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion; in-zone path requires 2 distinct approvers + citation + `--cpsa-ref` + `INFRAOPS_HSA_ZONE=1` (tests: `tests/unit/dual-control.test.js`) |
 | learning-promotion-gate | CLI/hook | ✅ | Block instinct promotion lacking human approval + doc citation (`--promote`/`--validate` CLI) |
 
 ### Libraries (`scripts/lib/*.js`)
