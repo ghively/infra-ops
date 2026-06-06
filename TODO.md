@@ -82,6 +82,8 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 - [x] Rules: `rules/pci/pci-cp-compliance.md` — CP + PIN requirements.
 - [x] `perso-*` in-zone agents authored as proposals (LOCAL-ONLY): `perso-iac-author`,
       `perso-iac-reviewer`, `perso-cp-compliance-reviewer`. Build-only; inert until transferred.
+- [x] In-zone guard hooks (DESIGN §3): `hsa-boundary-guard.js` (block any PAN/key/PIN/HSM
+      reference, fail-closed) and `block-no-verify.js`; tests in `tests/unit/hsa-guard.test.js`.
 - [x] Citable authorization record: `knowledge/cpsa-approval.md` (build authorized §1).
 - [ ] **Do not proceed with in-zone *deployment / go-live* until the CPSA-L sign-off in
       `knowledge/cpsa-approval.md §2` is filled** (docs/infra-agent/DESIGN.md §14 Phase 7).
