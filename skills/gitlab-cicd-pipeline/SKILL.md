@@ -112,8 +112,55 @@ include:
       scenario: default
 ```
 
-Keep components small and single-purpose; pass behavior via `inputs:`.
-(gitlab-octopus-cicd.md §1.4)
+Keep components small and single-purpose; pass behavior via `inputs:`. Publish your own
+components to the **CI/CD Catalog**. **Pin consumed components by commit SHA** (preferred)
+or a release tag — never a floating minor — for supply-chain integrity (PCI DSS 6.3.2),
+especially for third-party/external components.
+(gitlab-octopus-cicd.md §1.4; see the `supply-chain-and-sbom` skill)
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/infra/ci-components/ansible-lint@<commit-sha>   # SHA-pinned
+```
+
+### Avoid doubled pipelines + keep jobs interruptible
+
+Without guards, a push to an MR branch runs **both** a branch pipeline and an MR
+pipeline. Use `workflow:rules` to run one, and `interruptible: true` so superseded
+pipelines are auto-cancelled (saves runner time on the shared box):
+
+```yaml
+default:
+  interruptible: true
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS   # skip branch pipeline if an MR is open
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+```
+
+### OIDC / `id_tokens` for runtime secrets (no static tokens)
+
+Mint short-lived, JWT-bound credentials at job time instead of storing long-lived
+secrets in CI variables. The deploy/Vault jobs request an `id_token`; Vault's JWT role
+validates the `aud` against its `bound_audiences` (see the `secrets-vault` skill):
+
+```yaml
+deploy_prod:
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: https://vault.internal.example
+  script:
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=prod-deploy jwt=$VAULT_ID_TOKEN)"
+    - ansible-playbook -i inventories/prod site.yml
+```
+
+### Child/parent pipelines for per-role fan-out
+
+For a many-role estate, fan Molecule out across roles with child pipelines
+(`trigger:` + `strategy: depend`) so each role's matrix runs (and fails) independently
+without one giant monolithic pipeline. (the brief's per-role pipeline ask)
 
 ### Protected Branches + CODEOWNERS (change-control evidence)
 
