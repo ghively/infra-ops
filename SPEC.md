@@ -128,6 +128,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
 | dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion; in-zone path requires 2 distinct approvers + citation + `--cpsa-ref` + `INFRAOPS_HSA_ZONE=1` (tests: `tests/unit/dual-control.test.js`) |
 | learning-promotion-gate | CLI/hook | ✅ | Block instinct promotion lacking human approval + doc citation (`--promote`/`--validate` CLI) |
+| hsa-boundary-guard | PreToolUse (in-zone) | ✅ | In-zone tripwire: deny any tool input referencing PAN/keys/components/PINs/HSM (fail-closed). Registered in the HSA hooks config only (tests: `tests/unit/hsa-guard.test.js`) |
+| block-no-verify | PreToolUse (in-zone) | ✅ | Deny Bash attempts to bypass verification hooks (`--no-verify`, `git commit -n`, hooksPath neutralization) |
 
 ### Libraries (`scripts/lib/*.js`)
 

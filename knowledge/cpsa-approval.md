@@ -74,7 +74,9 @@ Authored under the §1 build authorization:
 - `agents/perso-cp-compliance-reviewer.md` — LOCAL-ONLY in-zone PCI CP + PIN compliance reviewer (proposal).
 - `knowledge/hsa-deployment.md` — expanded operational runbooks (bring-up, transfer, promotion, rollback).
 - `scripts/hooks/dual-control-promotion-gate.js` — in-zone promotion path: requires a CPSA reference, two distinct approvers, a citation, and the in-zone flag.
-- `tests/unit/dual-control.test.js` — coverage for the gate's in-zone path.
+- `scripts/hooks/hsa-boundary-guard.js` — in-zone PreToolUse tripwire (fail-closed) denying any PAN/key/component/PIN/HSM reference.
+- `scripts/hooks/block-no-verify.js` — in-zone PreToolUse guard denying verification-hook bypass.
+- `tests/unit/dual-control.test.js`, `tests/unit/hsa-guard.test.js` — coverage for the gate and the guards.
 
 ## References
 
