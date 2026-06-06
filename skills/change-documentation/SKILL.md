@@ -57,10 +57,14 @@ publish-wiki:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - |
-      git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.wiki.git wiki
+      # Do NOT put the token in the clone URL (it leaks into the process list / job log).
+      # Pass it as a masked+protected header on a project access token scoped to the wiki.
+      git -c http.extraheader="Authorization: Bearer ${WIKI_TOKEN}" \
+        clone "https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.wiki.git" wiki
       cp -r docs/decisions wiki/
       cp CHANGELOG.md wiki/
-      cd wiki && git add -A && git commit -m "sync from ${CI_COMMIT_SHA}" && git push
+      cd wiki && git add -A && git commit -m "sync from ${CI_COMMIT_SHA}" \
+        && git -c http.extraheader="Authorization: Bearer ${WIKI_TOKEN}" push
 ```
 
 The Wiki is human-readable; the in-repo files are version-controlled and git-diffable.
