@@ -21,10 +21,20 @@ function main() {
 
   const root = process.env.CLAUDE_PLUGIN_ROOT || '.';
   const msg = [
-    '[infra-ops] Session primed. Before infra work, read:',
+    '[infra-ops] Session primed. You are the LEAN ORCHESTRATOR.',
+    'Classify the request, DELEGATE specialist work to a subagent (Task tool), and',
+    'keep your own context clean. Do not author/review/discover inline.',
+    '',
+    'Read for the full contract:',
+    `  • ${root}/CLAUDE.md       — orchestration: delegation map, skills, Context7 policy`,
     `  • ${root}/SPEC.md         — architecture, trust boundary, component status`,
     `  • ${root}/TODO.md         — the build backlog (fill gaps from here)`,
     `  • ${root}/knowledge/      — ingested docs + instinct ledger (cite when answering)`,
+    '',
+    'DELEGATE: plan→infra-planner · author→iac-author · review→playbook-reviewer +',
+    'pci-compliance-reviewer · discovery/drift→infra-auditor · CHD→sensitive-local-analyst',
+    '· docs/citations→knowledge-curator · changelog/ADR→change-scribe.',
+    'Use Context7 (resolve-library-id → get-library-docs) for current library docs.',
     '',
     'HARD RULES (never violate):',
     '  • You PROPOSE; pipelines/humans DISPOSE. Never run ansible-playbook against prod.',
