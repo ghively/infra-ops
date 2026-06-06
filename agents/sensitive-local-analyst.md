@@ -62,6 +62,8 @@ This agent must **not** pull third-party docs (no Context7) or CHD into its own 
 
 **For non-sensitive tasks (metadata only):**
 ```
+ROUTED: NO
+
 ## Sensitive-Local-Analyst: Non-CHD Task
 Task: <description>
 Operated on: <file paths / schema names — no PAN values>
@@ -71,6 +73,8 @@ Routed to local lane: NO
 
 **For tasks requiring local-lane routing:**
 ```
+ROUTED: YES
+
 ## Sensitive-Local-Analyst: Routing Required
 Task: <description>
 Reason: <why CHD/key material would enter context>
