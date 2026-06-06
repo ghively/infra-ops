@@ -84,6 +84,8 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
       `perso-iac-reviewer`, `perso-cp-compliance-reviewer`. Build-only; inert until transferred.
 - [x] In-zone guard hooks (DESIGN §3): `hsa-boundary-guard.js` (block any PAN/key/PIN/HSM
       reference, fail-closed) and `block-no-verify.js`; tests in `tests/unit/hsa-guard.test.js`.
+- [x] In-zone skills (DESIGN §3): `pci-pin-awareness` (recognize/refuse/route PIN data) and
+      `perso-change-control` (test→live dual-control / SoD); wired into the `perso-*` agents.
 - [x] Citable authorization record: `knowledge/cpsa-approval.md` (build authorized §1).
 - [ ] **Do not proceed with in-zone *deployment / go-live* until the CPSA-L sign-off in
       `knowledge/cpsa-approval.md §2` is filled** (docs/infra-agent/DESIGN.md §14 Phase 7).
@@ -118,7 +120,7 @@ design-vs-as-built status. Summary:
 
 - ✅ Foundation hooks (GateGuard, Governance Capture, State Store, Observation)
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
-- ✅ 19 skills, 10 corporate agents (+3 `perso-*` in-zone agents authored as proposals), 6 commands
+- ✅ 21 skills (incl. in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+3 `perso-*` in-zone agents authored as proposals), 6 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
 - ✅ Phase-7 tooling authored (corporate-side, build-only): `perso-*` agents, HSA runbooks,
   in-zone dual-control gate (`--cpsa-ref`) + tests; authorization in `knowledge/cpsa-approval.md`

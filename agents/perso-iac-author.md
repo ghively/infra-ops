@@ -32,6 +32,8 @@ Load before authoring (in-zone copies only):
 - **ansible-patterns** — repo layout, FQCN, idempotency, mixed Windows/Linux structure
 - **ansible-testing** — yamllint → ansible-lint → `--syntax-check` → `--check --diff` → Molecule
 - **pci-cp-compliance** — CP Logical + PIN control awareness so authored code stays inside the boundary
+- **pci-pin-awareness** — recognize PIN data/keys so they are never authored into a file
+- **perso-change-control** — prepare a compliant change record + check/diff + rollback for human promotion
 - **secrets-vault** — Vault *references* only; the agent never sees or writes plaintext secret values
 
 No Context7 and no internet lookups exist in-zone; rely on in-zone documentation mirrors.
