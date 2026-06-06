@@ -65,6 +65,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 > For authoritative design-vs-as-built status (including the local-lane enforcement
 > caveat and what remains HSA/CPSA-gated), see **[`docs/architecture-gap.md`](docs/architecture-gap.md)**.
+> For the engineering standards the `iac-author` agent follows, see
+> **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)**.
 
 ### Agents (`agents/*.md`, auto-discovered)
 
