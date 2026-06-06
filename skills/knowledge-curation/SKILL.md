@@ -82,7 +82,10 @@ ECC precedents: iterative-retrieval, knowledge-ops, search-first."
 ### The Governed Learning Loop
 
 Instincts are confidence-scored, evidence-cited answers that have been human-approved
-and stored as versioned YAML in `knowledge/instincts/`. The loop:
+and stored as versioned YAML in the **zone-segmented** ledger
+(`knowledge/instincts/corporate/<id>.yml`, `knowledge/instincts/hsa/<id>.yml`). This
+agent **drafts candidates**; promotion/rollback are performed by the governed commands
+(`/instinct-promote`, `/instinct-rollback`) — never by hand-editing the ledger. The loop:
 
 ```
 1. OBSERVE (hooks, ~100% reliable):
@@ -99,13 +102,14 @@ and stored as versioned YAML in `knowledge/instincts/`. The loop:
    must not widen blast radius. (DESIGN.md §14.2)
 
 4. PROMOTE (human-approval REQUIRED):
-   learning-promotion-gate hook blocks any promotion lacking human approval.
-   Compliance items additionally require a doc citation. (SPEC.md §3 hooks)
-   On approval: status → "active"; version bumped; promotion event appended to
-   governance ledger (who/when/evidence).
+   /instinct-promote → learning-promotion-gate blocks any promotion lacking human
+   approval; compliance items additionally require a doc citation; HSA items require
+   dual control. instinct-ledger writes the entry (status → active) and logs the
+   promotion event to the unified governance store (who/when/evidence).
 
 5. ROLLBACK:
-   every promotion is reversible; git revert the instinct YAML file.
+   every promotion is reversible via /instinct-rollback (revert a version or
+   deactivate) — governed and audited, never a raw git revert of the ledger.
 ```
 
 "No unsupervised self-modification. The loop proposes; humans promote. The agent
@@ -114,7 +118,7 @@ never rewrites its own behavior without change-controlled approval." (DESIGN.md 
 ### Instinct Ledger Format
 
 ```yaml
-# knowledge/instincts/host-scope.yml
+# knowledge/instincts/corporate/inst-2026-001.yml
 - id: inst-2026-001
   claim: "server prod-web-01 is in the PCI DSS CDE (not HSA)"
   evidence:

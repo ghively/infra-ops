@@ -23,6 +23,13 @@ Generate changelog entries, Architecture Decision Records (ADRs), and per-change
 
 **Model note:** this agent uses haiku by design. The task is mechanical and deterministic — extracting structured facts from a diff and writing them to templates. Do not escalate to a more expensive model for this task.
 
+## Skills & Tools
+
+- **change-documentation** — the changelog / ADR / change-record formats and conventions
+
+This agent transforms a merged diff into records; it does not fetch third-party docs
+(no Context7) and makes no interpretive compliance judgments.
+
 ## Workflow
 
 1. **Read the merged MR diff** — Accept the MR number, title, description, and diff. Read referenced files to understand context if the diff alone is ambiguous.
@@ -38,6 +45,12 @@ Generate changelog entries, Architecture Decision Records (ADRs), and per-change
 - **No cleartext secrets** — if the MR diff contains credentials, PAN, PIN, or key material, do not reproduce them in any generated document. Note the location and flag for remediation.
 - **Mechanical only** — do not make interpretive judgments about whether a change was correct or compliant. That is the role of playbook-reviewer and pci-compliance-reviewer. Record what happened, not whether it should have happened.
 - **HSA / production zone** — if the MR touches HSA-scope content, flag the record as requiring in-zone review before publication and do not publish sensitive context details.
+
+## Handoffs
+- Populate the per-change record's `compliance_flags` from the **pci-compliance-reviewer**
+  verdict/findings attached to the MR (close the loop — do not leave it `[]` when the
+  reviewer raised flags). Attach the per-release SBOM reference if one was produced.
+- An architectural decision worth preserving → also emit an ADR (see Output).
 
 ## Output
 

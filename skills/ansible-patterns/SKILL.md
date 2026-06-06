@@ -70,7 +70,23 @@ Source: Red Hat CoP "Good Practices for Ansible"; ansible-iac-gitops.md §1; mod
 
 - **Never `command` or `shell` where a module exists** — breaks idempotency and
   `--check --diff` drift detection; caught by `ansible-lint` + Molecule idempotence gate.
+  When genuinely unavoidable, use **`ansible.builtin.command` (not `shell`)** with the
+  sanctioned idempotency guard — `creates:`/`removes:` for state, or `changed_when:` for
+  read-only queries — and a comment explaining why no module covers it:
+
+  ```yaml
+  # Sanctioned escape hatch: no module covers this, guarded for idempotency
+  - name: Initialize the widget store (only once)
+    ansible.builtin.command: widgetctl init
+    args:
+      creates: /var/lib/widget/.initialized   # makes it idempotent
+  ```
   (ansible-iac-gitops.md §§1,6; ansible-testing skill)
+
+- **Validate role inputs with `meta/argument_specs.yml`** — declare each role variable's
+  type, required-ness, and description. This is a production-profile expectation and a
+  strong correctness control for AI-authored roles (the role fails fast on a bad/missing
+  arg instead of misbehaving downstream).
 
 - **Mixed Windows + Linux by structure, not conditionals** — separate plays per OS group
   or separate playbook files. `group_vars/windows/` sets `ansible_connection: winrm` (or
@@ -82,7 +98,11 @@ Source: Red Hat CoP "Good Practices for Ansible"; ansible-iac-gitops.md §1; mod
 
 ```yaml
 # group_vars/windows/main.yml
-ansible_connection: psrp          # prefer psrp over winrm for new setups
+# Choose the connection per your AD/transport posture — do not assume a default.
+# Kerberos over WinRM-HTTPS (5986) remains the PCI-defensible choice for AD-joined
+# hosts; psrp is a valid alternative. ansible.windows/SSH-on-Windows has matured in
+# ansible-core 2.18+ but is still estate-dependent.
+ansible_connection: winrm         # or psrp — per transport posture
 ansible_winrm_transport: kerberos # AD-joined preferred; NTLM+TLS for non-domain
 ansible_port: 5986
 ```
@@ -92,9 +112,10 @@ ansible_port: 5986
 
 ### `ansible.cfg` (committed audit artifact)
 
-Pin: `inventory`, `roles_path`, `collections_path`, `stdout_callback = yaml`,
-`callbacks_enabled = ara` (ARA for run tracking), `host_key_checking = True`,
-`forks = 20`. A committed config is itself a change-controlled artifact.
+Pin: `inventory`, `roles_path`, `collections_path`, `interpreter_python = auto_silent`,
+`stdout_callback = yaml`, `callbacks_enabled = ara` (ARA for run tracking),
+`host_key_checking = True`, `forks = 20`. A committed config is itself a
+change-controlled artifact.
 (ansible-iac-gitops.md §1; DESIGN.md §13)
 
 ### Trust Boundary

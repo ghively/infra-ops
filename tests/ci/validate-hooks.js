@@ -1,15 +1,54 @@
 #!/usr/bin/env node
 
 /**
- * Validate hooks configuration
- * Checks hooks.json for proper structure and script references
+ * Validate hooks configuration.
+ *
+ * Understands the real Claude Code hooks.json schema:
+ *
+ *   {
+ *     "$schema": "...",                // optional
+ *     "hooks": {                       // event map
+ *       "<EventName>": [
+ *         {
+ *           "matcher": "Bash|Edit",
+ *           "hooks": [
+ *             { "type": "command", "command": "node \"...script.js\"" }
+ *           ]
+ *         }
+ *       ]
+ *     }
+ *   }
+ *
+ * Checks:
+ *   - top-level "hooks" is an object (event map)
+ *   - each event maps to an array of matcher groups
+ *   - each matcher group has a "hooks" array of command entries
+ *   - each command entry references a script file that exists on disk
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const HOOKS_FILE = path.resolve(__dirname, '../../hooks/hooks.json');
-const HOOKS_SCRIPTS_DIR = path.resolve(__dirname, '../../scripts/hooks');
+const REPO_ROOT = path.resolve(__dirname, '../../');
+const HOOKS_FILE = path.join(REPO_ROOT, 'hooks/hooks.json');
+
+// Pull every plausible script path out of a `command` string. Commands look like:
+//   node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/foo.js"
+// We resolve ${CLAUDE_PLUGIN_ROOT} to the repo root and check the file exists.
+function extractScriptPaths(command) {
+  const paths = [];
+  const re = /([^\s"']*scripts\/[^\s"']+\.js)/g;
+  let m;
+  while ((m = re.exec(command)) !== null) {
+    paths.push(m[1]);
+  }
+  return paths;
+}
+
+function resolveScriptPath(scriptRef) {
+  const cleaned = scriptRef.replace(/\$\{CLAUDE_PLUGIN_ROOT\}\/?/g, '');
+  return path.join(REPO_ROOT, cleaned);
+}
 
 function validateHooksConfig() {
   if (!fs.existsSync(HOOKS_FILE)) {
@@ -17,35 +56,47 @@ function validateHooksConfig() {
     return [];
   }
 
-  const hooksContent = fs.readFileSync(HOOKS_FILE, 'utf8');
   const errors = [];
-
-  let hooksConfig;
+  let config;
   try {
-    hooksConfig = JSON.parse(hooksContent);
+    config = JSON.parse(fs.readFileSync(HOOKS_FILE, 'utf8'));
   } catch (e) {
     return [`Invalid JSON in hooks.json: ${e.message}`];
   }
 
-  // Check each hook
-  for (const [event, hookConfig] of Object.entries(hooksConfig)) {
-    if (!Array.isArray(hookConfig)) {
-      errors.push(`Hook ${event} must be an array`);
+  const eventMap = config.hooks || config;
+  if (typeof eventMap !== 'object' || Array.isArray(eventMap)) {
+    return ['hooks.json must contain a "hooks" object mapping event names to arrays'];
+  }
+
+  for (const [event, groups] of Object.entries(eventMap)) {
+    if (event === '$schema') continue;
+    if (!Array.isArray(groups)) {
+      errors.push(`Event ${event} must map to an array of matcher groups`);
       continue;
     }
 
-    for (const hook of hookConfig) {
-      if (!hook.script) {
-        errors.push(`Hook ${event} missing script reference`);
-        continue;
+    groups.forEach((group, gi) => {
+      if (!Array.isArray(group.hooks)) {
+        errors.push(`${event}[${gi}] must contain a "hooks" array`);
+        return;
       }
 
-      // Check if script file exists
-      const scriptPath = path.resolve(__dirname, '../../', hook.script);
-      if (!fs.existsSync(scriptPath)) {
-        errors.push(`Hook script not found: ${hook.script}`);
-      }
-    }
+      group.hooks.forEach((hook, hi) => {
+        if (!hook.command) {
+          errors.push(`${event}[${gi}].hooks[${hi}] missing "command"`);
+          return;
+        }
+
+        const scripts = extractScriptPaths(hook.command);
+        for (const scriptRef of scripts) {
+          const resolved = resolveScriptPath(scriptRef);
+          if (!fs.existsSync(resolved)) {
+            errors.push(`${event}[${gi}].hooks[${hi}] references missing script: ${scriptRef}`);
+          }
+        }
+      });
+    });
   }
 
   return errors;

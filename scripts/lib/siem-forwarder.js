@@ -20,21 +20,27 @@
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
-const fs = require('fs');
-const path = require('path');
 
-// State Store path
-const STATE_STORE_PATH = process.env.INFRA_OPS_STATE_STORE ||
-  path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', '.infra-ops', 'state-store.json');
+// Read from the unified State Store library (single source of truth).
+let StateStore;
+try {
+  StateStore = require('./state-store.js');
+} catch {
+  StateStore = null;
+}
 
 /**
- * SIEM forwarder configuration
+ * SIEM forwarder configuration.
+ *
+ * The documented one-liner is INFRAOPS_AUDIT_FORWARD (a webhook endpoint). The
+ * SIEM_* variables remain available for richer setups (Splunk HEC / Elastic).
  */
 function getConfig() {
+  const endpoint = process.env.SIEM_ENDPOINT || process.env.INFRAOPS_AUDIT_FORWARD || '';
   return {
-    enabled: String(process.env.SIEM_ENABLED || '').toLowerCase() === '1',
+    enabled: String(process.env.SIEM_ENABLED || '').toLowerCase() === '1' || !!process.env.INFRAOPS_AUDIT_FORWARD,
     type: process.env.SIEM_TYPE || 'webhook',
-    endpoint: process.env.SIEM_ENDPOINT || '',
+    endpoint,
     token: process.env.SIEM_TOKEN || '',
     source: process.env.SIEM_SOURCE || 'infra-ops',
     sourcetype: process.env.SIEM_SOURCETYPE || 'json',
@@ -44,26 +50,12 @@ function getConfig() {
 }
 
 /**
- * Load State Store
+ * Forward a single record in real time (used by governance-ledger). Fire-and-forget
+ * friendly: resolves on success, rejects on transport error.
  */
-function loadStateStore() {
-  try {
-    if (fs.existsSync(STATE_STORE_PATH)) {
-      const raw = fs.readFileSync(STATE_STORE_PATH, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch (err) {
-    // State store not readable
-  }
-  return {
-    sessions: [],
-    skillRuns: [],
-    decisions: [],
-    governanceEvents: [],
-    knowledgeBase: [],
-    installState: [],
-    workItems: []
-  };
+function forwardRecord(record, config = getConfig()) {
+  if (!config.enabled || !config.endpoint) return Promise.resolve({ skipped: true });
+  return sendEvent(formatEvent(record, 'audit_record', config), config);
 }
 
 /**
@@ -184,12 +176,20 @@ function sendEvent(event, config) {
   });
 }
 
+async function readCollection(name) {
+  if (!StateStore || !StateStore[name]) return [];
+  try {
+    return await StateStore[name].getAll();
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Forward governance events to SIEM
  */
-function forwardGovernanceEvents(config) {
-  const state = loadStateStore();
-  const events = state.governanceEvents || [];
+async function forwardGovernanceEvents(config) {
+  const events = await readCollection('governanceEvents');
 
   return Promise.allSettled(
     events.map(event => {
@@ -208,9 +208,8 @@ function forwardGovernanceEvents(config) {
 /**
  * Forward skill runs to SIEM
  */
-function forwardSkillRuns(config) {
-  const state = loadStateStore();
-  const runs = state.skillRuns || [];
+async function forwardSkillRuns(config) {
+  const runs = await readCollection('skillRuns');
 
   return Promise.allSettled(
     runs.map(run => {
@@ -229,9 +228,8 @@ function forwardSkillRuns(config) {
 /**
  * Forward session activity to SIEM
  */
-function forwardSessionActivity(config) {
-  const state = loadStateStore();
-  const sessions = state.sessions || [];
+async function forwardSessionActivity(config) {
+  const sessions = await readCollection('sessions');
 
   return Promise.allSettled(
     sessions.map(session => {
@@ -292,6 +290,7 @@ module.exports = {
   getConfig,
   formatEvent,
   sendEvent,
+  forwardRecord,
   forwardGovernanceEvents,
   forwardSkillRuns,
   forwardSessionActivity

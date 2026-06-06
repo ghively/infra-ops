@@ -1,0 +1,81 @@
+# IaC SAST & Security Gate (binding)
+#
+# GitLab CI component: the machine-enforced security gate for Ansible + GitLab CI
+# changes. Reviewer agents advise; THIS fails the pipeline. Each scanner emits SARIF
+# so findings surface inline on the MR and aggregate in the Security Dashboard.
+#
+# Usage: Include in your .gitlab-ci.yml:
+#   include:
+#     - components: 'infra-ops@latest'
+#       ref: main
+#       file: '/.gitlab-ci/components/iac-sast/template.yml'
+#
+# Determinism: pin every image by digest (shown as :PINNED placeholders). Floating
+# :latest is forbidden — it makes the gate non-reproducible.
+#
+# Trust boundary: corporate/DSS-zone CI only; never wire into the air-gapped HSA.
+# Scanners are read-only over the repo and never reach prod.
+
+stages:
+  - lint
+  - security
+
+variables:
+  # Override with digest-pinned images in the consuming project.
+  ANSIBLE_LINT_IMAGE: "registry.example/ee/ansible-lint:PINNED"
+  GITLEAKS_IMAGE: "zricethezav/gitleaks:PINNED"      # org moved to gitleaks/gitleaks
+  TRUFFLEHOG_IMAGE: "trufflesecurity/trufflehog:PINNED"
+  CHECKOV_IMAGE: "bridgecrew/checkov:PINNED"
+
+# --- lint: ansible-lint production profile, SARIF (non-blocking surfacing) ---
+ansible-lint:
+  stage: lint
+  image: ${ANSIBLE_LINT_IMAGE}
+  script:
+    - ansible-lint --profile production --sarif-file gl-sast-ansible.sarif || true
+  artifacts:
+    reports:
+      sast: gl-sast-ansible.sarif
+    when: always
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# --- security: gitleaks (FAIL-CLOSED — a secret leak blocks the pipeline) ---
+gitleaks:
+  stage: security
+  image: ${GITLEAKS_IMAGE}
+  script:
+    - gitleaks detect --redact --report-format sarif --report-path gl-secrets.sarif
+  artifacts:
+    reports:
+      secret_detection: gl-secrets.sarif
+    when: always
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# --- security: TruffleHog verified secrets (deeper than regex) ---
+trufflehog:
+  stage: security
+  image: ${TRUFFLEHOG_IMAGE}
+  script:
+    - trufflehog filesystem . --only-verified --fail --json > trufflehog.json
+  artifacts:
+    paths: [trufflehog.json]
+    when: always
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# --- security: Checkov IaC misconfig (Ansible framework), SARIF ---
+checkov:
+  stage: security
+  image: ${CHECKOV_IMAGE}
+  script:
+    - checkov -d . --framework ansible --output sarif --output-file-path .
+    # Deterministic gate: CRITICAL/HIGH fail; suppressions need inline justification.
+    - checkov -d . --framework ansible --compact --quiet --hard-fail-on HIGH
+  artifacts:
+    reports:
+      sast: results_sarif.sarif
+    when: always
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'

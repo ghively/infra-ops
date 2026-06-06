@@ -28,7 +28,7 @@ const DEFAULT_STATE_DIR = path.join(
   'state-store'
 );
 
-const STATE_DIR = process.env.INFRA_OPS_STATE_DIR || DEFAULT_STATE_DIR;
+const STATE_DIR = process.env.INFRAOPS_STATE_DIR || process.env.INFRA_OPS_STATE_DIR || DEFAULT_STATE_DIR;
 
 // Collection file names
 const COLLECTION_FILES = {
@@ -130,20 +130,26 @@ function pruneCollection(collectionName, entries) {
   }
 
   const now = Date.now();
+
+  // createdAt may be an ISO string (set by add()) or an epoch number. Normalize to
+  // epoch ms; entries with an unknown/unparseable timestamp are kept (never dropped
+  // just because we cannot date them).
+  const epochOf = (entry) => {
+    const raw = entry.createdAt || entry.created_at;
+    if (typeof raw === 'number') return raw;
+    const parsed = Date.parse(raw);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
   const pruned = entries.filter(entry => {
-    // Keep entries that are newer than TTL
-    const createdAt = entry.createdAt || entry.created_at || 0;
-    return (now - createdAt) < ENTRY_TTL_MS;
+    const created = epochOf(entry);
+    if (created === null) return true; // keep entries of unknown age
+    return (now - created) < ENTRY_TTL_MS;
   });
 
   // If still over max count, keep the most recent entries
   if (pruned.length > MAX_ENTRIES_PER_COLLECTION) {
-    // Sort by createdAt descending and keep the newest entries
-    pruned.sort((a, b) => {
-      const timeA = a.createdAt || a.created_at || 0;
-      const timeB = b.createdAt || b.created_at || 0;
-      return timeB - timeA;
-    });
+    pruned.sort((a, b) => (epochOf(b) || 0) - (epochOf(a) || 0));
     pruned.splice(MAX_ENTRIES_PER_COLLECTION);
   }
 

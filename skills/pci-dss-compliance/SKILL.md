@@ -81,6 +81,10 @@ Versioned, peer-reviewed IaC **is** the change-control evidence:
   deployer or circumvent the MR flow.
 - Maintain an SBOM/dependency inventory for all bespoke automation (Ansible roles,
   scripts, Octopus templates) + third-party components — satisfies PCI DSS 6.3.2.
+  Make it actionable: generate with `syft` for EE images and a collection/role
+  inventory from `requirements.lock.yml`; attach it per release (see the
+  `supply-chain-and-sbom` skill). Boundary note: 6.4.3 / 11.6.1 (client-side
+  payment-page script integrity / tamper detection) are out of scope for this skill.
 
 (pci-dss-devops.md §2; DESIGN.md §7)
 
