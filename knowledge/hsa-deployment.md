@@ -148,9 +148,15 @@ agent only authors/advises. Nothing here touches keys, PINs, or the HSM.
    read + branch/MR write only; **no protected-branch, no deploy rights** for the agent.
 4. **In-zone Octopus** — install the Octopus server + a Tentacle inside the zone for
    release orchestration; promotion lifecycles require manual intervention (human gate).
-5. **Hooks** — install the in-zone hook set: `dual-control-promotion-gate`,
-   `governance-ledger` (append-only, forwarded off-box to WORM), and the boundary
-   guards. Confirm `INFRAOPS_HSA_ZONE=1` is set in the in-zone environment.
+5. **Hooks** — register the in-zone hook set in the HSA's own `hooks.json` (these are
+   intentionally **not** in the corporate config):
+   - `hsa-boundary-guard` (PreToolUse, fail-closed) — denies any tool input referencing
+     PAN/keys/components/PINs/HSM. The runtime tripwire for the crown-jewels boundary.
+   - `block-no-verify` (PreToolUse) — denies attempts to bypass verification hooks.
+   - `dual-control-promotion-gate` — two-person + CPSA-ref gate on promotions.
+   - `governance-ledger` (append-only, forwarded off-box to WORM).
+   Confirm `INFRAOPS_HSA_ZONE=1` is set in the in-zone environment. Coverage for the
+   guards lives in `tests/unit/hsa-guard.test.js`.
 6. **Verify** — run `npm test` on the transferred tooling; confirm the dual-control
    gate denies a promotion missing any control (see runbook below).
 
