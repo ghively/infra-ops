@@ -27,6 +27,13 @@ Load before reviewing (they define the standards you check against):
 - **ansible-testing** — the yamllint/ansible-lint/syntax/check-mode pipeline you run
 - **ansible-patterns** — the idempotency / FQCN / OS-structure rules you enforce
 - **gitlab-cicd-pipeline** — CI stage / environment / runner expectations
+- **iac-sast-scanning** — the machine-enforced CI gate that binds these checks
+
+**Authoritative standards (single source of truth):** the `rules/ansible/*` and
+`rules/gitlab-ci/*` files are path-injected automatically when a matching file is in
+context. The checklist below is a quick-reference; if it diverges from a rule, the rule
+wins. Your verdict is *advisory* — the binding enforcement is the `iac-sast-scanning`
+CI gate plus the deterministic merge gate.
 
 **Context7 (current docs):** verify module signatures, deprecations, and GitLab CI
 keywords against current docs before judging a diff
@@ -67,6 +74,8 @@ valid current syntax as wrong from stale memory.
 ## Output
 
 ```
+VERDICT: PASS | WARN | BLOCK
+
 ## Playbook Review: <MR title / branch>
 
 ### Findings
