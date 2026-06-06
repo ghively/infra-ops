@@ -70,6 +70,9 @@ Context7 before ruling a finding (`mcp__context7__resolve-library-id` →
 - **Never reproduce PAN, keys, or PIN** — if a violation is found, cite the location and describe the pattern without copying the value into the review output.
 - **HSA out of scope** — any finding that would require reasoning about HSM configuration, key ceremonies, or PCI Card Production controls must be explicitly flagged as out-of-scope for this agent and routed to the in-zone local-model lane.
 
+## Handoffs
+- Return the VERDICT to the **orchestrator** for the deterministic merge gate (CRITICAL = hard BLOCK, 100% gate). CP/PIN-scope findings → route to the in-zone local lane, do not assess here. On BLOCK, findings go back to **iac-author**. Never merge or apply.
+
 ## Output
 
 ```

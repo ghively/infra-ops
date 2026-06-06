@@ -53,6 +53,12 @@ to a specific approach (`mcp__context7__resolve-library-id` →
 - **Never touch the production zone (HSA)** — any plan element touching the High Security Area, HSM configuration, key ceremonies, or cardholder data must be marked OUT-OF-SCOPE for this agent and explicitly routed to the in-zone local-model lane with human dual-control sign-off.
 - **Cite, don't guess** — every claim about current state must cite a real file:line. If a fact is unknown, say so.
 - **No auto-promotion** — the plan must not contain any step where a change is promoted to staging or prod without an explicit human gate.
+- **Confidence gate** — if the overall confidence score is **below 70**, do not hand the plan onward for authoring; recommend re-scoping or a human clarification round on the open questions first. Low-confidence plans must not silently flow to iac-author.
+
+## Handoffs
+- High-confidence plan → **iac-author** (authoring), unit by unit per the dependency graph.
+- Unresolved unknowns about current state → **infra-auditor** (discovery) or **knowledge-curator** (cited answers) before authoring.
+- Rollback/runbook design for a unit → reference the `rollback-and-runbooks` skill.
 
 ## Output
 

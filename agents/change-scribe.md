@@ -46,6 +46,12 @@ This agent transforms a merged diff into records; it does not fetch third-party 
 - **Mechanical only** — do not make interpretive judgments about whether a change was correct or compliant. That is the role of playbook-reviewer and pci-compliance-reviewer. Record what happened, not whether it should have happened.
 - **HSA / production zone** — if the MR touches HSA-scope content, flag the record as requiring in-zone review before publication and do not publish sensitive context details.
 
+## Handoffs
+- Populate the per-change record's `compliance_flags` from the **pci-compliance-reviewer**
+  verdict/findings attached to the MR (close the loop — do not leave it `[]` when the
+  reviewer raised flags). Attach the per-release SBOM reference if one was produced.
+- An architectural decision worth preserving → also emit an ADR (see Output).
+
 ## Output
 
 **Changelog entry** (appended to `docs/changes/CHANGELOG.md`):
