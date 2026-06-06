@@ -40,23 +40,42 @@ Req 10 audit of secret access)
 
 ### `community.hashi_vault` Runtime Lookup
 
-The repo (and the agent) holds only the **path**, never the secret value:
+The repo (and the agent) holds only the **path**, never the secret value. In
+`community.hashi_vault` 7.x, **do not pass a raw `token=` inline on every lookup** —
+configure auth once via the collection's environment variables / `ansible.cfg`
+`[hashi_vault_collection]`, or do a single `community.hashi_vault.vault_login` and reuse
+the session. Prefer `auth_method: jwt` / `approle` / `aws` over a static token.
 
 ```yaml
-# In a play — the secret is fetched at run-time by the runner, not stored
+# Env-driven auth (set VAULT_ADDR + the auth env vars on the runner); lookups carry
+# only the path. The runner fetches at run-time; nothing is stored in the repo.
 - name: Deploy with DB password from Vault
   ansible.builtin.template:
     src: db.conf.j2
     dest: /etc/myapp/db.conf
   vars:
-    db_password: "{{ lookup('community.hashi_vault.vault_kv2_get',
-                    'ansible/prod/db_password',
-                    url='https://vault.example.com',
-                    token=lookup('env','VAULT_TOKEN')) }}"
+    db_password: "{{ lookup('community.hashi_vault.vault_kv2_get', 'ansible/prod/db_password').secret.value }}"
   no_log: true        # REQUIRED: prevents value appearing in logs/ARA output
 ```
 
+Useful modules: `community.hashi_vault.vault_login` (establish a session),
+`vault_kv2_get`/`vault_read` (read), and the dynamic-secret pattern below.
 Source: ansible-iac-gitops.md §3; modular-ansible-repos.md §3.
+
+### Dynamic (short-lived) secrets — preferred over static
+
+Vault's strongest control is **short-lived, auto-revoked** credentials (PCI DSS 8.6.x
+favors short-lived over static). Read a dynamic DB credential from a Vault database
+secrets-engine role instead of a stored password:
+
+```yaml
+- name: Get a short-lived DB credential
+  community.hashi_vault.vault_read:
+    path: database/creds/app-prod      # Vault issues a fresh user/pass, auto-revoked at TTL
+  register: db_cred
+  no_log: true
+# db_cred.data.data.username / .password — used immediately, never persisted
+```
 
 ### `no_log: true` — Non-Negotiable
 
@@ -113,16 +132,21 @@ the observed AI failure mode: "knows vault syntax but sometimes hardcodes values
 shouldn't." (ansible-iac-gitops.md §3 §6)
 
 ```yaml
-# .gitlab-ci.yml (gitleaks gate)
+# .gitlab-ci.yml (gitleaks gate) — pin the digest (the skill forbids :latest); note the
+# project moved to the gitleaks/gitleaks org.
 secret-detection:
   stage: lint
-  image: zricethezav/gitleaks:latest
+  image: zricethezav/gitleaks@sha256:<pinned>   # or ghcr.io/gitleaks/gitleaks@sha256:<pinned>
   tags: [linux, docker, ci]
   script:
-    - gitleaks detect --source . --exit-code 1
+    - gitleaks detect --source . --redact --exit-code 1
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 ```
+
+Add **TruffleHog** (verified-secrets) as a complementary CI stage — it confirms a match
+is a *live* credential, deeper than gitleaks' regex. See the `iac-sast-scanning` skill
+for the full secret/SAST chain.
 
 ### Variable Naming Convention
 

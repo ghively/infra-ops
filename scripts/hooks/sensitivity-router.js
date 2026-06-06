@@ -76,74 +76,89 @@ function isInZonePath(filePath) {
 }
 
 /**
- * Check if the local model is available.
+ * Check if the local inference lane is available (OLLAMA_BASE_URL configured).
  */
 function isLocalModelAvailable() {
   return !!process.env.OLLAMA_BASE_URL;
 }
 
 /**
- * Emit a routing directive to stderr.
+ * Is the router globally disabled? Active by default; set INFRAOPS_SENSITIVITY_ROUTE=0
+ * to turn it off entirely. (Legacy INFRA_OPS_SENSITIVITY_ROUTE is still honored.)
  */
-function emitRoute(localOnly) {
-  if (localOnly) {
-    process.stderr.write('[sensitivity-router] CHD-adjacent content detected - routing to local model lane\n');
-  }
+function isDisabled() {
+  const v = process.env.INFRAOPS_SENSITIVITY_ROUTE ?? process.env.INFRA_OPS_SENSITIVITY_ROUTE;
+  return String(v ?? '').toLowerCase() === '0';
 }
 
 /**
- * Core hook logic.
+ * Fail-closed mode: DENY CHD-adjacent tool calls (for hardened / in-zone operation)
+ * instead of merely advising. Off by default to avoid false-positive breakage from
+ * the broad keyword set in ordinary corporate work.
  */
-function run(rawInput) {
-  // Gate on feature flag
-  if (String(process.env.INFRA_OPS_SENSITIVITY_ROUTE || '').toLowerCase() !== '1') {
-    return rawInput;
-  }
+function isFailClosed() {
+  return /^(1|true|yes)$/i.test(String(process.env.INFRAOPS_SENSITIVE_FAIL_CLOSED || ''));
+}
+
+/**
+ * Decide what to do with a tool call. Returns:
+ *   { action: 'allow' }
+ *   { action: 'advise', reason }   non-blocking guidance
+ *   { action: 'deny', reason }     block; route to the local lane
+ */
+function decide(rawInput) {
+  if (isDisabled()) return { action: 'allow' };
 
   let input;
   try {
     input = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
   } catch {
-    return rawInput;
+    return { action: 'allow' };
   }
 
-  // Check for CHD-adjacent content in tool input
-  const toolInput = input.tool_input || {};
+  const toolInput = (input && input.tool_input) || {};
   let chdDetected = false;
 
-  // Check file paths
-  if (toolInput.file_path && isInZonePath(toolInput.file_path)) {
-    chdDetected = true;
-  }
+  if (toolInput.file_path && isInZonePath(toolInput.file_path)) chdDetected = true;
+  if (toolInput.command && isCHDAdjacent(toolInput.command)) chdDetected = true;
+  if (toolInput.content && isCHDAdjacent(toolInput.content)) chdDetected = true;
+  if (toolInput.new_string && isCHDAdjacent(toolInput.new_string)) chdDetected = true;
+  if (toolInput.query && isCHDAdjacent(toolInput.query)) chdDetected = true;
 
-  // Check command content (for Bash)
-  if (toolInput.command && isCHDAdjacent(toolInput.command)) {
-    chdDetected = true;
-  }
+  if (!chdDetected) return { action: 'allow' };
 
-  // Check content (for Edit/Write)
-  if (toolInput.content && isCHDAdjacent(toolInput.content)) {
-    chdDetected = true;
-  }
+  const laneHint = isLocalModelAvailable()
+    ? 'Route this work through the local lane: delegate to the sensitive-local-analyst ' +
+      'agent or run inference via `node scripts/lib/ollama-router.js`.'
+    : 'The local lane is NOT configured (OLLAMA_BASE_URL is unset). Stand up a local ' +
+      'Ollama box and export OLLAMA_BASE_URL before processing CHD-adjacent content.';
 
-  // Check new_string for Edit operations
-  if (toolInput.new_string && isCHDAdjacent(toolInput.new_string)) {
-    chdDetected = true;
-  }
+  const reason = '[infra-ops] CHD-adjacent content detected. ' +
+    'CHD-adjacent work must not be processed by a cloud model. ' + laneHint;
 
-  // Check query string
-  if (toolInput.query && isCHDAdjacent(toolInput.query)) {
-    chdDetected = true;
+  if (isFailClosed()) {
+    return { action: 'deny', reason };
   }
+  return { action: 'advise', reason };
+}
 
-  // Emit routing directive if CHD detected
-  if (chdDetected) {
-    if (!isLocalModelAvailable()) {
-      process.stderr.write('[sensitivity-router] ERROR: CHD-adjacent content detected but local model unavailable. Set OLLAMA_BASE_URL.\n');
-    }
-    emitRoute(true);
+/**
+ * Back-compat wrapper: returns the original input (allow) or a deny-decision string.
+ */
+function run(rawInput) {
+  const d = decide(rawInput);
+  if (d.action === 'deny') {
+    return JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: d.reason,
+      },
+    });
   }
-
+  if (d.action === 'advise') {
+    process.stderr.write('[sensitivity-router] ' + d.reason + '\n');
+  }
   return rawInput;
 }
 
@@ -155,13 +170,28 @@ if (require.main === module) {
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', chunk => { raw += chunk; });
   process.stdin.on('end', () => {
-    const result = run(raw);
-    process.stdout.write(result);
+    const d = decide(raw);
+    if (d.action === 'deny') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason: d.reason,
+        },
+      }));
+    } else if (d.action === 'advise') {
+      process.stderr.write('[sensitivity-router] ' + d.reason + '\n');
+    }
+    // allow → no stdout (passthrough)
+    process.exit(0);
   });
 }
 
 module.exports = {
   isCHDAdjacent,
   isInZonePath,
+  isLocalModelAvailable,
+  isFailClosed,
+  decide,
   run
 };

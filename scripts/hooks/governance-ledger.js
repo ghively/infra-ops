@@ -60,6 +60,17 @@ function main() {
     process.stderr.write('[governance-ledger] write skipped: ' + err.message + '\n');
   }
 
+  // Forward to a SIEM in real time when configured (INFRAOPS_AUDIT_FORWARD or SIEM_*).
+  // Fire-and-forget: never block or fail the tool pipeline on a forwarding error.
+  if (process.env.INFRAOPS_AUDIT_FORWARD || String(process.env.SIEM_ENABLED || '') === '1') {
+    try {
+      const siem = require('../lib/siem-forwarder.js');
+      siem.forwardRecord(record).catch(() => { /* ignore transport errors */ });
+    } catch {
+      /* forwarder unavailable — ledger write already succeeded */
+    }
+  }
+
   // Passthrough stdin so we never interfere with other hooks.
   process.stdout.write(raw);
   process.exit(0);

@@ -105,6 +105,7 @@ function resolveSessionId(input) {
   return (
     (input && input.sessionId) ||
     process.env.CLAUDE_SESSION_ID ||
+    process.env.INFRAOPS_SESSION_ID ||
     process.env.INFRA_OPS_SESSION_ID ||
     null
   );
@@ -114,8 +115,10 @@ function resolveSessionId(input) {
  * Core hook logic.
  */
 async function run(rawInput) {
-  // Gate on feature flag
-  if (String(process.env.INFRA_OPS_OBSERVE || '').toLowerCase() !== '1') {
+  // Gate on feature flag (INFRAOPS_* canonical; legacy INFRA_OPS_* honored).
+  const observeOn = [process.env.INFRAOPS_OBSERVE, process.env.INFRA_OPS_OBSERVE]
+    .some((v) => String(v || '').toLowerCase() === '1');
+  if (!observeOn) {
     return rawInput;
   }
 

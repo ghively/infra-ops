@@ -2,247 +2,173 @@
 /**
  * Infra-Ops Dual-Control Promotion Gate
  *
- * CPSA-gated hook that blocks instinct/role promotion within the HSA zone
- * without two-person approval and documentation citation.
+ * CPSA-gated check that blocks instinct promotion within the HSA zone without
+ * two-person (distinct) approval and a documentation citation.
  *
- * Required for: PCI DSS Req 7.2 (Two-person control for critical systems)
+ * Required for: PCI DSS Req 7.2 (two-person control for critical systems) and
+ * PCI Card Production logical-security separation of duties.
  *
- * Environment Variables:
- * - INFRA_HSA_ZONE: "1" when operating in HSA zone
- * - INFRA_BYPASS_DUAL_CONTROL: "1" for emergency bypass (AUDIT LOGGED)
+ * Governance logging is delegated to the shared instinct-ledger library so events
+ * land in the single State Store.
  *
- * Usage: Called by instinct-promotion skill before promotion actions
+ * Modes:
+ *   CLI:   node dual-control-promotion-gate.js --check --id <id> --zone <zone> \
+ *            --approvers a,b --citation "<ref>" [--confidence <n>]
+ *          Exits 0 if dual-control satisfied, non-zero otherwise.
+ *   Hook:  stdin JSON; denies a promotion tool call that fails dual control.
+ *
+ * Environment:
+ *   INFRA_HSA_ZONE=1               required for in-zone/hsa promotions
+ *   INFRA_BYPASS_DUAL_CONTROL=1    emergency bypass (AUDIT LOGGED)
  */
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const ledger = require('../lib/instinct-ledger.js');
 
-// State Store path
-const STATE_STORE_PATH = process.env.INFRA_OPS_STATE_STORE ||
-  path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', '.infra-ops', 'state-store.json');
-
-// Instinct ledger paths
-const INSTINCT_LEDGER = {
-  corpor: path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', 'knowledge', 'instincts', 'corpor'),
-  in_zone: path.join(process.env.CLAUDE_PLUGIN_ROOT || '.', 'knowledge', 'instincts', 'in-zone')
-};
-
-/**
- * Parse promotion request from tool input
- */
-function parsePromotionRequest(toolInput) {
-  // Look for promotion parameters in various tool calls
-  const parameters = toolInput.parameters || toolInput;
-
+function parseRequest(input) {
+  const p = input.parameters || input;
+  let approvers = p.approvers || [];
+  if (typeof approvers === 'string') approvers = approvers.split(',').map((s) => s.trim()).filter(Boolean);
   return {
-    instinctId: parameters.id || parameters.instinct_id || null,
-    zone: parameters.zone || 'corpor',
-    confidence: parameters.confidence || 0.0,
-    approvers: parameters.approvers || [],
-    citation: parameters.citation || null,
-    timestamp: parameters.timestamp || new Date().toISOString()
+    instinctId: p.id || p.instinct_id || null,
+    zone: p.zone || 'corporate',
+    confidence: typeof p.confidence === 'number' ? p.confidence : parseFloat(p.confidence || '0') || 0,
+    approvers,
+    citation: p.citation || null,
+    timestamp: p.timestamp || new Date().toISOString(),
   };
 }
 
-/**
- * Validate dual-control requirements
- */
 function validateDualControl(request) {
   const errors = [];
   const warnings = [];
 
-  // Check 1: Two-person approval
-  if (!request.approvers || request.approvers.length < 2) {
-    errors.push(`DUAL_CONTROL: Requires at least 2 approvers (got ${request.approvers?.length || 0})`);
-  } else {
-    // Verify approvers are distinct
-    const uniqueApprovers = new Set(request.approvers);
-    if (uniqueApprovers.size < 2) {
-      errors.push('DUAL_CONTROL: Approvers must be distinct persons');
-    }
+  const names = (request.approvers || []).map((a) => (typeof a === 'string' ? a : a.name));
+  if (names.length < 2) {
+    errors.push(`DUAL_CONTROL: Requires at least 2 approvers (got ${names.length})`);
+  } else if (new Set(names).size < 2) {
+    errors.push('DUAL_CONTROL: Approvers must be distinct persons');
   }
 
-  // Check 2: Documentation citation for compliance items
   if (!request.citation) {
     errors.push('DUAL_CONTROL: Requires documentation citation (e.g., "PCI DSS Req 7.2")');
   }
 
-  // Check 3: Minimum confidence threshold
   if (request.confidence < 0.7) {
     warnings.push(`DUAL_CONTROL: Confidence below threshold (${request.confidence} < 0.7)`);
   }
 
-  // Check 4: Zone sandbox verification (HSA only)
   if (request.zone === 'hsa' || request.zone === 'in-zone') {
-    const isHSAZone = String(process.env.INFRA_HSA_ZONE || '').toLowerCase() === '1';
-    if (!isHSAZone) {
-      errors.push('DUAL_CONTROL: HSA instinct promotion must occur in HSA zone');
+    if (String(process.env.INFRA_HSA_ZONE || '').toLowerCase() !== '1') {
+      errors.push('DUAL_CONTROL: HSA instinct promotion must occur in the HSA zone (INFRA_HSA_ZONE=1)');
     }
-  }
-
-  // Check 5: Approver signatures (mock - requires actual signature verification)
-  if (request.approvers) {
-    request.approvers.forEach((approver, idx) => {
-      if (!approver.signature && !approver.signed_at) {
-        warnings.push(`DUAL_CONTROL: Approver ${idx + 1} missing signature/timestamp`);
-      }
-    });
   }
 
   return { errors, warnings };
 }
 
-/**
- * Log promotion attempt to governance events
- */
-function logPromotionAttempt(request, result, reason) {
-  try {
-    const stateStorePath = STATE_STORE_PATH;
-    let state = {};
-
-    if (fs.existsSync(stateStorePath)) {
-      state = JSON.parse(fs.readFileSync(stateStorePath, 'utf8'));
-    }
-
-    state.governanceEvents = state.governanceEvents || [];
-    state.governanceEvents.push({
-      id: `gov-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      rule: 'dual-control-promotion-gate',
-      severity: result === 'denied' ? 'critical' : 'info',
-      message: `Instinct promotion ${result}: ${reason}`,
-      context: {
-        instinct_id: request.instinctId,
-        zone: request.zone,
-        approvers: request.approvers,
-        citation: request.citation
-      }
-    });
-
-    // Prune old events (max 1000)
-    if (state.governanceEvents.length > 1000) {
-      state.governanceEvents = state.governanceEvents.slice(-1000);
-    }
-
-    fs.writeFileSync(stateStorePath, JSON.stringify(state, null, 2));
-  } catch (err) {
-    // Log failure should not block the gate
-    console.error(`[dual-control-gate] Failed to log event: ${err.message}`);
-  }
+function denyDecision(reason) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
+  };
 }
 
-/**
- * Core gate logic
- */
-function run(rawInput) {
+async function processDualControl(request) {
+  if (String(process.env.INFRA_BYPASS_DUAL_CONTROL || '').toLowerCase() === '1') {
+    await ledger.logGovernance({
+      rule: 'dual-control-promotion-gate', severity: 'critical',
+      message: 'EMERGENCY BYPASS ACTIVATED', context: { instinct_id: request.instinctId, zone: request.zone },
+    });
+    process.stderr.write('⚠️  DUAL_CONTROL BYPASS ACTIVE — this is audited\n');
+    return { ok: true, errors: [], warnings: ['bypass'] };
+  }
+
+  const { errors, warnings } = validateDualControl(request);
+  await ledger.logGovernance({
+    rule: 'dual-control-promotion-gate',
+    severity: errors.length ? 'critical' : 'info',
+    message: errors.length ? `Dual control denied: ${errors.join('; ')}` : 'Dual control satisfied',
+    context: { instinct_id: request.instinctId, zone: request.zone, approvers: request.approvers, citation: request.citation },
+  });
+  return { ok: errors.length === 0, errors, warnings };
+}
+
+// ---- CLI ----
+function parseCliArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--check') out._check = true;
+    else if (a.startsWith('--')) out[a.slice(2)] = argv[++i];
+  }
+  return out;
+}
+
+async function runCli(argv) {
+  const args = parseCliArgs(argv);
+  const request = parseRequest({
+    id: args.id, zone: args.zone, confidence: args.confidence,
+    approvers: args.approvers, citation: args.citation,
+  });
+  const result = await processDualControl(request);
+  result.warnings.forEach((w) => process.stderr.write(`⚠️  ${w}\n`));
+  if (!result.ok) {
+    process.stderr.write(`❌ DUAL_CONTROL DENIED:\n${result.errors.join('\n')}\n`);
+    return 1;
+  }
+  process.stdout.write('✅ DUAL_CONTROL satisfied\n');
+  return 0;
+}
+
+// ---- Hook ----
+const PROMOTION_TOOLS = ['instinct_promote', 'instinct_promotion', 'role_promote', 'learning_promotion'];
+
+async function runHook(raw) {
   let input;
   try {
-    input = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
+    input = typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch {
-    return rawInput;
+    return null;
   }
+  if (!PROMOTION_TOOLS.includes(input.tool_name || '')) return null;
 
-  const toolName = input.tool_name || '';
-  const toolInput = input.tool_input || {};
+  const request = parseRequest(input.tool_input || {});
+  // Only gate HSA-zone promotions in the hook path.
+  if (request.zone !== 'hsa' && request.zone !== 'in-zone') return null;
 
-  // Only gate promotion-related tools
-  const promotionTools = [
-    'instinct_promote',
-    'instinct_promotion',
-    'role_promote',
-    'learning_promotion'
-  ];
-
-  if (!promotionTools.includes(toolName)) {
-    return rawInput;
+  const result = await processDualControl(request);
+  if (!result.ok) {
+    return denyDecision(`[infra-ops] HSA dual control not satisfied:\n${result.errors.join('\n')}`);
   }
-
-  const request = parsePromotionRequest(toolInput);
-
-  // Check for emergency bypass (AUDIT LOGGED)
-  if (String(process.env.INFRA_BYPASS_DUAL_CONTROL || '').toLowerCase() === '1') {
-    logPromotionAttempt(request, 'allowed', 'EMERGENCY BYPASS ACTIVATED');
-    console.error('⚠️  DUAL_CONTROL BYBASS ACTIVE - This will be audited');
-    return rawInput;
-  }
-
-  // Validate dual-control requirements
-  const validation = validateDualControl(request);
-
-  if (validation.errors.length > 0) {
-    const errorMessage = validation.errors.join('\n');
-    logPromotionAttempt(request, 'denied', errorMessage);
-
-    return {
-      ...rawInput,
-      stderr: (rawInput.stderr || '') + `\n❌ DUAL_CONTROL_GATE DENIED:\n${errorMessage}\n`
-    };
-  }
-
-  if (validation.warnings.length > 0) {
-    const warningMessage = validation.warnings.join('\n');
-    console.error(`⚠️  DUAL_CONTROL_GATE WARNINGS:\n${warningMessage}`);
-  }
-
-  logPromotionAttempt(request, 'allowed', 'All dual-control requirements met');
-  console.error('✅ DUAL_CONTROL_GATE PASSED');
-
-  return rawInput;
+  return null;
 }
 
-/**
- * CLI entry point for testing
- */
-async function main() {
-  const args = process.argv.slice(2);
-  const testRequest = {
-    tool_name: 'instinct_promote',
-    tool_input: {
-      id: 'instinct-001',
-      zone: 'hsa',
-      confidence: 0.85,
-      approvers: [
-        { name: 'senior-op-1', signature: '...', signed_at: new Date().toISOString() },
-        { name: 'cpsa-assessor', signature: '...', signed_at: new Date().toISOString() }
-      ],
-      citation: 'PCI DSS Req 7.2 - Two-person control for critical systems'
-    }
-  };
-
-  console.error('Testing dual-control gate with sample request...');
-  const result = run(testRequest);
-
-  if (result.stderr && result.stderr.includes('DENIED')) {
-    console.error('Result: DENIED');
-    process.exit(1);
-  } else {
-    console.error('Result: ALLOWED');
-    process.exit(0);
-  }
-}
-
-/**
- * Stdin entry point
- */
 if (require.main === module) {
-  if (process.argv.includes('--test')) {
-    main();
+  const argv = process.argv.slice(2);
+  if (argv.includes('--check')) {
+    runCli(argv).then((code) => process.exit(code));
   } else {
     let raw = '';
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', chunk => { raw += chunk; });
-    process.stdin.on('end', () => {
-      const result = run(raw);
-      process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result));
+    process.stdin.on('data', (c) => { raw += c; });
+    process.stdin.on('end', async () => {
+      const decision = await runHook(raw);
+      if (decision) process.stdout.write(JSON.stringify(decision));
+      process.exit(0);
     });
   }
 }
 
 module.exports = {
-  parsePromotionRequest,
+  parseRequest,
   validateDualControl,
-  logPromotionAttempt,
-  run
+  processDualControl,
+  parseCliArgs,
+  runCli,
+  runHook,
 };
