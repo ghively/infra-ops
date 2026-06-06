@@ -9,12 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase-7 (in-HSA) **tooling authored as proposals** (build-only; inert corporate-side):
+  - `agents/perso-iac-author.md`, `agents/perso-iac-reviewer.md`,
+    `agents/perso-cp-compliance-reviewer.md` — LOCAL-ONLY in-zone agents with the
+    crown-jewels exclusions (no PAN/keys/PINs/HSM) baked in.
+  - `knowledge/cpsa-approval.md` — citable authorization record separating **build**
+    authorization (granted) from **go-live** authorization (CPSA-L sign-off, pending).
+  - `knowledge/hsa-deployment.md` — added box bring-up, perso-* transfer/registration,
+    and dual-control promotion runbooks.
+  - `tests/unit/dual-control.test.js` — 12 checks covering the in-zone gate path.
 - Lint tooling: `eslint.config.js` (ESLint v9 flat config, CommonJS + Node globals)
   and `.markdownlint.json`, so `npm run lint` runs and passes. `lint` script now
   covers the whole tree (`eslint .`) instead of `scripts/` only.
 
 ### Changed
 
+- `dual-control-promotion-gate.js`: the in-zone (`hsa`/`in-zone`) path now also
+  requires a CPSA sign-off reference (`--cpsa-ref`) alongside two distinct approvers
+  and a citation; env flags standardized to `INFRAOPS_HSA_ZONE` /
+  `INFRAOPS_BYPASS_DUAL_CONTROL` (legacy `INFRA_*` still honored).
 - Env-var namespace standardized on `INFRAOPS_*`: `yamllint-hook` and
   `ansible-syntax-hook` (and `hooks.json`) now read the canonical flag while still
   honoring legacy `INFRA_OPS_*` as a fallback, matching the other hooks.

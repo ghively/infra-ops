@@ -11,20 +11,29 @@
  * Governance logging is delegated to the shared instinct-ledger library so events
  * land in the single State Store.
  *
+ * In-zone (hsa / in-zone) promotions additionally require a CPSA sign-off
+ * reference (`--cpsa-ref`) that points at the citable authorization artifact
+ * `knowledge/cpsa-approval.md` — see DESIGN §14 Phase 7 and CLAUDE.md rule #4.
+ *
  * Modes:
  *   CLI:   node dual-control-promotion-gate.js --check --id <id> --zone <zone> \
- *            --approvers a,b --citation "<ref>" [--confidence <n>]
+ *            --approvers a,b --citation "<ref>" --cpsa-ref "<ref>" [--confidence <n>]
  *          Exits 0 if dual-control satisfied, non-zero otherwise.
  *   Hook:  stdin JSON; denies a promotion tool call that fails dual control.
  *
- * Environment:
- *   INFRA_HSA_ZONE=1               required for in-zone/hsa promotions
- *   INFRA_BYPASS_DUAL_CONTROL=1    emergency bypass (AUDIT LOGGED)
+ * Environment (INFRAOPS_* canonical; legacy INFRA_* honored):
+ *   INFRAOPS_HSA_ZONE=1               required for in-zone/hsa promotions
+ *   INFRAOPS_BYPASS_DUAL_CONTROL=1    emergency bypass (AUDIT LOGGED)
  */
 
 'use strict';
 
 const ledger = require('../lib/instinct-ledger.js');
+
+// Read a feature flag with INFRAOPS_* canonical and legacy fallbacks honored.
+function flagOn(...names) {
+  return names.some((n) => String(process.env[n] || '').toLowerCase() === '1');
+}
 
 function parseRequest(input) {
   const p = input.parameters || input;
@@ -36,6 +45,7 @@ function parseRequest(input) {
     confidence: typeof p.confidence === 'number' ? p.confidence : parseFloat(p.confidence || '0') || 0,
     approvers,
     citation: p.citation || null,
+    cpsaRef: p.cpsa_ref || p.cpsaRef || p.cpsa || null,
     timestamp: p.timestamp || new Date().toISOString(),
   };
 }
@@ -60,8 +70,11 @@ function validateDualControl(request) {
   }
 
   if (request.zone === 'hsa' || request.zone === 'in-zone') {
-    if (String(process.env.INFRA_HSA_ZONE || '').toLowerCase() !== '1') {
-      errors.push('DUAL_CONTROL: HSA instinct promotion must occur in the HSA zone (INFRA_HSA_ZONE=1)');
+    if (!flagOn('INFRAOPS_HSA_ZONE', 'INFRA_HSA_ZONE')) {
+      errors.push('DUAL_CONTROL: HSA instinct promotion must occur in the HSA zone (INFRAOPS_HSA_ZONE=1)');
+    }
+    if (!request.cpsaRef) {
+      errors.push('DUAL_CONTROL: HSA/in-zone promotion requires a CPSA sign-off reference (--cpsa-ref; see knowledge/cpsa-approval.md)');
     }
   }
 
@@ -79,7 +92,7 @@ function denyDecision(reason) {
 }
 
 async function processDualControl(request) {
-  if (String(process.env.INFRA_BYPASS_DUAL_CONTROL || '').toLowerCase() === '1') {
+  if (flagOn('INFRAOPS_BYPASS_DUAL_CONTROL', 'INFRA_BYPASS_DUAL_CONTROL')) {
     await ledger.logGovernance({
       rule: 'dual-control-promotion-gate', severity: 'critical',
       message: 'EMERGENCY BYPASS ACTIVATED', context: { instinct_id: request.instinctId, zone: request.zone },
@@ -93,7 +106,7 @@ async function processDualControl(request) {
     rule: 'dual-control-promotion-gate',
     severity: errors.length ? 'critical' : 'info',
     message: errors.length ? `Dual control denied: ${errors.join('; ')}` : 'Dual control satisfied',
-    context: { instinct_id: request.instinctId, zone: request.zone, approvers: request.approvers, citation: request.citation },
+    context: { instinct_id: request.instinctId, zone: request.zone, approvers: request.approvers, citation: request.citation, cpsa_ref: request.cpsaRef },
   });
   return { ok: errors.length === 0, errors, warnings };
 }
@@ -113,7 +126,7 @@ async function runCli(argv) {
   const args = parseCliArgs(argv);
   const request = parseRequest({
     id: args.id, zone: args.zone, confidence: args.confidence,
-    approvers: args.approvers, citation: args.citation,
+    approvers: args.approvers, citation: args.citation, cpsa_ref: args['cpsa-ref'],
   });
   const result = await processDualControl(request);
   result.warnings.forEach((w) => process.stderr.write(`⚠️  ${w}\n`));

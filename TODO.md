@@ -75,11 +75,16 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 ## Phase 7 — In-HSA deployment (heaviest; CPSA-gated)
 
 - [x] `pci-cp-compliance` skill (CP Logical + PIN).
-- [x] HSA deployment documentation: `knowledge/hsa-deployment.md`.
-- [x] Hook: `dual-control-promotion-gate.js` — CPSA-gated dual control for HSA.
+- [x] HSA deployment documentation + runbooks: `knowledge/hsa-deployment.md`
+      (box bring-up, air-gap transfer, perso-* registration, dual-control promotion).
+- [x] Hook: `dual-control-promotion-gate.js` — CPSA-gated dual control; in-zone path now
+      also requires a `--cpsa-ref`; tests in `tests/unit/dual-control.test.js`.
 - [x] Rules: `rules/pci/pci-cp-compliance.md` — CP + PIN requirements.
-- [ ] **Do not proceed with in-zone deployment until a CPSA reviews the design**
-      (docs/infra-agent/DESIGN.md §14 Phase 7).
+- [x] `perso-*` in-zone agents authored as proposals (LOCAL-ONLY): `perso-iac-author`,
+      `perso-iac-reviewer`, `perso-cp-compliance-reviewer`. Build-only; inert until transferred.
+- [x] Citable authorization record: `knowledge/cpsa-approval.md` (build authorized §1).
+- [ ] **Do not proceed with in-zone *deployment / go-live* until the CPSA-L sign-off in
+      `knowledge/cpsa-approval.md §2` is filled** (docs/infra-agent/DESIGN.md §14 Phase 7).
 
 ## Phase 8 — Governed self-improvement
 
@@ -111,8 +116,10 @@ design-vs-as-built status. Summary:
 
 - ✅ Foundation hooks (GateGuard, Governance Capture, State Store, Observation)
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
-- ✅ 19 skills, 10 agents, 6 commands
+- ✅ 19 skills, 10 corporate agents (+3 `perso-*` in-zone agents authored as proposals), 6 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
+- ✅ Phase-7 tooling authored (corporate-side, build-only): `perso-*` agents, HSA runbooks,
+  in-zone dual-control gate (`--cpsa-ref`) + tests; authorization in `knowledge/cpsa-approval.md`
 - ✅ DLP (`pan-egress-filter`) with `INFRAOPS_DLP_FAIL_CLOSED` fail-closed option
 - ✅ Real local inference lane (`scripts/lib/ollama-router.js`) + enforcing
   `sensitivity-router` (advisory default; deny under `INFRAOPS_SENSITIVE_FAIL_CLOSED`)
@@ -122,7 +129,8 @@ design-vs-as-built status. Summary:
 
 ### Remaining before 1.0
 
-- [ ] HSA / in-zone deployment + `perso-*` agents — **CPSA-gated; do not build yet**
+- [x] `perso-*` agents + Phase-7 tooling **built as proposals** (corporate-side, inert)
+- [ ] HSA / in-zone **deployment / go-live** — **gated on CPSA-L sign-off** (`knowledge/cpsa-approval.md §2`); transfer + activate in-zone only after it is filled
 - [ ] Stand up local model (OLLAMA_BASE_URL); register a tool-calling model
 - [ ] Create GitLab service accounts; publish `knowledge/environment.md`
 - [ ] Produce cited draft answers to the open scoping questions (DESIGN §17)
