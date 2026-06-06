@@ -91,21 +91,26 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 
 ## Current Status
 
-**Version:** v1.0.0 (All 8 phases complete)
-**Date:** 2026-06-03
+**Version:** v0.9.0 — corporate-zone foundations built; HSA pending CPSA review
+**Date:** 2026-06-06
 
-### Completed Infrastructure
-- ✅ All foundation hooks (GateGuard, Governance Capture, State Store, Observation)
-- ✅ All context modes (dev, research, review)
-- ✅ All quality hooks (yamllint, ansible-syntax)
-- ✅ All skills (ansible-patterns, testing, gitlab-cicd, octopus, drift, pci-dss, pci-cp, etc.)
-- ✅ All agents (planner, author, reviewers, auditor, scribe, curator)
-- ✅ Instinct ledger with governed promotion/rollback
-- ✅ SIEM forwarding capability
-- ✅ CPSA-gated HSA deployment documentation
+See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for the authoritative
+design-vs-as-built status. Summary:
 
-### Remaining Operational Tasks
-- Stand up local model (OLLAMA_BASE_URL)
-- Create service accounts
-- Decide fail-closed behavior for pan-egress-filter
-- Obtain CPSA review before HSA deployment
+### Built & wired (tested via `npm test`)
+- ✅ Foundation hooks (GateGuard, Governance Capture, State Store, Observation)
+- ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
+- ✅ 13 skills, 8 agents, 6 commands
+- ✅ DLP (`pan-egress-filter`) with `INFRAOPS_DLP_FAIL_CLOSED` fail-closed option
+- ✅ Real local inference lane (`scripts/lib/ollama-router.js`) + enforcing
+  `sensitivity-router` (advisory default; deny under `INFRAOPS_SENSITIVE_FAIL_CLOSED`)
+- ✅ Unified State Store; governed learning loop wired end-to-end
+  (promote → ledger → governance event → rollback) via real CLIs
+- ✅ SIEM forwarding capability; CPSA-gated HSA deployment **documentation**
+
+### Remaining before 1.0
+- [ ] HSA / in-zone deployment + `perso-*` agents — **CPSA-gated; do not build yet**
+- [ ] Stand up local model (OLLAMA_BASE_URL); register a tool-calling model
+- [ ] Create GitLab service accounts; publish `knowledge/environment.md`
+- [ ] Produce cited draft answers to the open scoping questions (DESIGN §17)
+- [ ] Resolve env-var namespace: standardize remaining `INFRA_OPS_*` flags on `INFRAOPS_*`
