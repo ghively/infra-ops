@@ -1,6 +1,6 @@
 {
   "name": "infra-ops",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "PCI-aware DevOps agent for Ansible + self-hosted GitLab CI/CD + Octopus Deploy across a mixed Windows/Linux estate. Lean Claude Code orchestrator + isolated specialist subagents, with a documentation-grounded, governed self-improvement loop. Card-manufacturer (PCI DSS + PCI Card Production + PCI PIN) scope.",
   "author": {
     "name": "infra-ops"

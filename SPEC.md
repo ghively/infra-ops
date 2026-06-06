@@ -61,6 +61,9 @@ These are load-bearing. Everything else is incremental; these are not.
 
 Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ not started (TODO to create).
 
+> For authoritative design-vs-as-built status (including the local-lane enforcement
+> caveat and what remains HSA/CPSA-gated), see **[`docs/architecture-gap.md`](docs/architecture-gap.md)**.
+
 ### Agents (`agents/*.md`, auto-discovered)
 
 | Agent | Model | Status | Role |
@@ -105,8 +108,18 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
 | yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
 | ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
-| dual-control-promotion-gate | — | ✅ | CPSA-gated dual control for HSA instinct promotion |
-| learning-promotion-gate | — | ✅ | Block instinct promotion lacking human approval + doc citation |
+| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion (invoked by `/instinct-promote` via `--check`) |
+| learning-promotion-gate | CLI/hook | ✅ | Block instinct promotion lacking human approval + doc citation (`--promote`/`--validate` CLI) |
+
+### Libraries (`scripts/lib/*.js`)
+
+| Library | Status | Purpose |
+|---|---|---|
+| state-store.js | ✅ | Unified JSON state/governance store (9 collections); single source of truth |
+| instinct-ledger.js | ✅ | Instinct persistence (zone-segmented YAML) + governance logging via state-store |
+| ollama-router.js | ✅ | Local-only inference lane (built-in http; refuses non-local endpoints) |
+| siem-forwarder.js | ✅ | Forward audit/governance events to a SIEM |
+| shell-substitution.js | ✅ | Shell variable substitution helper |
 
 ### Rules (`rules/**`, paths-scoped)
 
