@@ -17,7 +17,7 @@ const path = require('path');
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'infra-ops-loop-'));
 process.env.CLAUDE_PLUGIN_ROOT = tmpRoot;
 process.env.INFRAOPS_STATE_DIR = path.join(tmpRoot, 'state');
-fs.mkdirSync(path.join(tmpRoot, 'knowledge', 'instincts', 'corpor'), { recursive: true });
+fs.mkdirSync(path.join(tmpRoot, 'knowledge', 'instincts', 'corporate'), { recursive: true });
 
 const gate = require(path.resolve(__dirname, '../../scripts/hooks/learning-promotion-gate.js'));
 const ledger = require(path.resolve(__dirname, '../../scripts/lib/instinct-ledger.js'));
@@ -33,7 +33,7 @@ async function check(name, fn) {
 (async () => {
   // 1. Validation rejects a below-threshold, unapproved promotion.
   await check('gate denies low-confidence + missing approver', async () => {
-    const req = gate.parsePromotionRequest({ id: 'i1', zone: 'corpor', content: 'use FQCN', confidence: 0.5 });
+    const req = gate.parsePromotionRequest({ id: 'i1', zone: 'corporate', content: 'use FQCN', confidence: 0.5 });
     const res = await gate.processPromotion(req, { write: false });
     assert.strictEqual(res.ok, false);
     assert.ok(res.errors.some((e) => /Confidence/.test(e)));
@@ -42,7 +42,7 @@ async function check(name, fn) {
 
   // 2. Compliance content without citation is denied.
   await check('gate denies compliance content without citation', async () => {
-    const req = gate.parsePromotionRequest({ id: 'i2', zone: 'corpor', content: 'enforce PCI DSS masking', confidence: 0.9, approver: 'op1' });
+    const req = gate.parsePromotionRequest({ id: 'i2', zone: 'corporate', content: 'enforce PCI DSS masking', confidence: 0.9, approver: 'op1' });
     const res = await gate.processPromotion(req, { write: false });
     assert.strictEqual(res.ok, false);
     assert.ok(res.errors.some((e) => /citation/.test(e)));
@@ -51,7 +51,7 @@ async function check(name, fn) {
   // 3. A valid promotion writes the ledger file and a governance event.
   await check('valid promotion writes ledger + governance event', async () => {
     const req = gate.parsePromotionRequest({
-      id: 'fqcn-1', zone: 'corpor', content: 'Always use FQCN in Ansible modules.',
+      id: 'fqcn-1', zone: 'corporate', content: 'Always use FQCN in Ansible modules.',
       confidence: 0.9, approver: 'senior-op-1', evidence: [{ observation_id: 'obs-1' }],
     });
     const res = await gate.processPromotion(req, { write: true });
@@ -68,7 +68,7 @@ async function check(name, fn) {
 
   // 4. Rollback/deactivation updates the same file and logs an event.
   await check('rollback deactivates and logs', async () => {
-    const p = await ledger.rollback({ instinctId: 'fqcn-1', zone: 'corpor', deactivate: true, reason: 'superseded', approvers: ['op1'] });
+    const p = await ledger.rollback({ instinctId: 'fqcn-1', zone: 'corporate', deactivate: true, reason: 'superseded', approvers: ['op1'] });
     const yaml = fs.readFileSync(p, 'utf8');
     assert.ok(/status: deactivated/.test(yaml));
     assert.ok(/reason: "superseded"/.test(yaml));

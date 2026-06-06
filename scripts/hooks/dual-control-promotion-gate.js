@@ -32,7 +32,7 @@ function parseRequest(input) {
   if (typeof approvers === 'string') approvers = approvers.split(',').map((s) => s.trim()).filter(Boolean);
   return {
     instinctId: p.id || p.instinct_id || null,
-    zone: p.zone || 'corpor',
+    zone: p.zone || 'corporate',
     confidence: typeof p.confidence === 'number' ? p.confidence : parseFloat(p.confidence || '0') || 0,
     approvers,
     citation: p.citation || null,

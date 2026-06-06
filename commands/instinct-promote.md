@@ -14,14 +14,14 @@ Load the **instinct-promotion** skill for the full protocol.
 ## Usage
 
 ```
-/instinct-promote --id <id> --zone <corpor|in-zone> --content <pattern> \
+/instinct-promote --id <id> --zone <corporate|hsa> --content <pattern> \
   --approver <user> [--confidence <0..1>] [--citation <ref>] [--evidence <ids>]
 ```
 
 $ARGUMENTS:
 
 - `--id` — unique instinct identifier (e.g. `instinct-fqcn-001`). **Required.**
-- `--zone` — `corpor` (corporate/DSS) or `in-zone` (HSA). **Required.**
+- `--zone` — `corporate` (PCI DSS) or `hsa` (PCI CP + PIN). **Required.**
 - `--content` — natural-language description of the pattern. **Required.**
 - `--approver` — approver identifier. **Required.**
 - `--confidence` — confidence score 0.0–1.0 (gate floor 0.7, recommended ≥0.85).
@@ -32,11 +32,11 @@ $ARGUMENTS:
 
 1. **Review the candidate** — confirm the pattern is valid, the confidence is
    sufficient, the zone is correct, and compliance items carry a citation.
-2. **For HSA (`in-zone`) items, satisfy dual control first:**
+2. **For HSA (`hsa`) items, satisfy dual control first:**
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/dual-control-promotion-gate.js" --check \
-     --id <id> --zone in-zone --approvers <a>,<b> --citation "<ref>"
+     --id <id> --zone hsa --approvers <a>,<b> --citation "<ref>"
    ```
 
 3. **Submit for promotion** — invoke the gate CLI. It validates approver,
@@ -45,7 +45,7 @@ $ARGUMENTS:
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-gate.js" --promote \
-     --id <id> --zone <corpor|in-zone> --content "<pattern>" --approver <user> \
+     --id <id> --zone <corporate|hsa> --content "<pattern>" --approver <user> \
      [--confidence <0..1>] [--citation "<ref>"] [--evidence <id,id>]
    ```
 
