@@ -17,7 +17,7 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.9.0 — Corporate-zone foundations built; HSA pending CPSA review**
+**v0.10.0 — Hardened agent layer (10 agents, 17 skills), deterministic enforcement; HSA pending CPSA review**
 
 The corporate-zone plugin is built and wired: DLP, the local inference lane, the
 governed learning loop, and the audit/state substrate all run and are covered by
@@ -37,8 +37,8 @@ tests (`npm test`). The in-HSA deployment remains documentation-only and CPSA-ga
 | Local inference lane (`scripts/lib/ollama-router.js`) + `sensitivity-router` | ✅ Implemented (see caveat in architecture-gap.md) |
 | Governed learning loop (promote/rollback over unified State Store) | ✅ Wired |
 | `governance-ledger` + State Store (`scripts/lib/state-store.js`) | ✅ Implemented |
-| 8 specialist agents | ✅ Implemented |
-| 13 domain skills | ✅ Implemented |
+| 10 specialist agents (incl. iac-debugger, secrets-scanner) | ✅ Implemented |
+| 17 domain skills | ✅ Implemented |
 | 6 commands | ✅ Implemented |
 | 11 hook scripts (9 event-wired + 2 CLI gates) | ✅ Implemented |
 | Ansible / GitLab / secrets / PCI rules | ✅ Implemented |
@@ -81,20 +81,23 @@ infra-ops/
 ├── .claude-plugin/          # Plugin manifest (Claude Code marketplace)
 │   ├── plugin.json          # Main plugin configuration
 │   └── marketplace.json     # Marketplace listing metadata
-├── agents/                  # 8 specialist subagents (auto-discovered)
+├── agents/                  # 10 specialist subagents (auto-discovered)
 │   ├── infra-planner.md            # Brief → phased plans with rollback units
 │   ├── infra-auditor.md            # Read-only discovery + drift detection
-│   ├── iac-author.md               # Ansible/GitLab CI authoring
+│   ├── iac-author.md               # Ansible/GitLab CI authoring (+ Molecule)
+│   ├── iac-debugger.md             # Diagnose failures → proposed fix (read-only)
 │   ├── playbook-reviewer.md        # Playbook MR review
 │   ├── pci-compliance-reviewer.md  # PCI control checks
+│   ├── secrets-scanner.md          # Deterministic pre-merge secret/PAN scan
 │   ├── sensitive-local-analyst.md  # Local-lane router for CHD work
 │   ├── change-scribe.md            # Auto-doc generation
 │   └── knowledge-curator.md        # Doc ingestion + cited answers
-├── skills/                  # 13 lazy-loaded domain skills
+├── skills/                  # 17 lazy-loaded domain skills
 │   ├── ansible-patterns/  ansible-testing/  gitlab-cicd-pipeline/
 │   ├── octopus-release/  drift-detection/  multi-env-promotion/
 │   ├── pci-dss-compliance/  pci-cp-compliance/  secrets-vault/
-│   ├── change-documentation/  knowledge-curation/
+│   ├── change-documentation/  knowledge-curation/  iac-sast-scanning/
+│   ├── rollback-and-runbooks/  ci-pipeline-debugging/  incident-response/
 │   └── instinct-promotion/  instinct-rollback/   # governed learning loop
 ├── commands/                # 6 slash commands
 │   ├── infra-discover.md  playbook-review.md  drift-check.md
@@ -121,7 +124,7 @@ infra-ops/
 ├── schemas/                 # JSON schemas (state-store.schema.json)
 ├── knowledge/               # Knowledge base + instinct ledger
 │   ├── README.md  runner-topology.md  hsa-deployment.md
-│   └── instincts/           # corpor/  in-zone/   (zone-segmented)
+│   └── instincts/           # corporate/  hsa/   (zone-segmented)
 ├── docs/
 │   ├── architecture-gap.md         # Design-vs-as-built (source of truth)
 │   ├── foundation-improvement-plan.md
@@ -132,7 +135,7 @@ infra-ops/
 │   ├── ci/                  # Component validators (agents/commands/skills/hooks)
 │   ├── unit/                # Unit suites (local-lane, instinct-loop)
 │   └── run-all.js           # Test runner (npm test)
-├── .gitlab-ci/              # Reusable CI components (ansible-deploy)
+├── .gitlab-ci/              # Reusable CI components (ansible-deploy, iac-sast gate)
 ├── CLAUDE.md                # Orchestration contract (delegation map, skills, Context7)
 ├── SPEC.md  TODO.md  CHANGELOG.md  CONTRIBUTING.md
 ├── package.json  .env.example

@@ -76,6 +76,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | sensitive-local-analyst | haiku (routing shell) | ✅ | Routes CHD-adjacent work to the on-prem local (Ollama) lane; never ingests CHD itself. NOTE: a Claude Code subagent runs on a cloud model, so the actual local inference is enforced by the `sensitivity-router` hook + `OLLAMA_BASE_URL`, not the frontmatter `model:` field. |
 | change-scribe | haiku | ✅ | Generate changelog/ADR/Wiki records from merged diffs |
 | knowledge-curator | sonnet (corp) / local (in-zone) | ✅ | Ingest+classify docs, answer with citations, maintain instinct ledger |
+| iac-debugger | sonnet | ✅ | Diagnose red pipelines / failed runs → cited root cause + proposed fix (read-only) |
+| secrets-scanner | haiku | ✅ | Deterministic pre-merge secret/PAN static scan; emits VERDICT for the merge gate |
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
@@ -94,6 +96,10 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | knowledge-curation | ✅ | Doc ingestion + sensitivity classification + cited-answer protocol |
 | instinct-promotion | ✅ | Promote observed patterns to governed instincts |
 | instinct-rollback | ✅ | Rollback or deactivate instincts with governance |
+| iac-sast-scanning | ✅ | Binding CI security gate (ansible-lint/gitleaks/TruffleHog/Checkov, SARIF) |
+| rollback-and-runbooks | ✅ | Forward-fix vs roll-back, artifact redeploy, runbooks, break-glass |
+| ci-pipeline-debugging | ✅ | Safe job-log diagnosis, EE repro, failure-signature table |
+| incident-response | ✅ | Bounded agent role for PCI 12.10.x / 12.10.7 (contain/preserve/escalate) |
 
 ### Hooks (`hooks/hooks.json` + `scripts/hooks/*.js`, auto-loaded)
 

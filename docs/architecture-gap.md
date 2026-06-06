@@ -23,11 +23,12 @@ Legend: ✅ built & wired · 🟡 partial / advisory · ⬜ documented only (not
 | **Zones / deployments** | Two: corporate (DSS) **and** air-gapped in-HSA | One PoC (corp); HSA "later phase" | One harness + local lane | ✅ corporate zone; ⬜ HSA is docs only (`knowledge/hsa-deployment.md`), no in-zone deployment/agents |
 | **Local model lane** | Classifier → local Ollama, **egress blocked**; enforced by hooks | Hook enforces local inference | "Local Lane (Ollama)" capability | ✅ `scripts/lib/ollama-router.js` (local-only HTTP, no cloud SDK, refuses non-local) + `sensitivity-router` gate (advisory default, deny under fail-closed). ⚠️ caveat below |
 | **PAN/secret DLP** | CHD never enters a model/tool context | `pan-egress-filter` ✅ | DLP ✅ | ✅ Luhn + secret regex; honors `INFRAOPS_DLP_FAIL_CLOSED` |
-| **Agents** | ~10–11 (incl. 3 HSA `perso-*`) | 8 | 8 (🟡 scaffolded) | ✅ 8 corporate agents; ⬜ HSA agents not built |
+| **Agents** | ~10–11 (incl. 3 HSA `perso-*`) | 10 | 10 (✅) | ✅ 10 corporate agents (+iac-debugger, secrets-scanner); ⬜ HSA agents not built |
+| **Standards enforcement** | hooks enforce, not prompts | rules + skills + agent checklists | — | ✅ path-scoped `rules/**` auto-inject (deterministic); skills teach; **binding** = hooks + `iac-sast-scanning` CI gate + deterministic merge gate (reviewers advise) |
 | **Hooks** | per-zone sets incl. `hsa-boundary-guard`, `block-no-verify` | 11 ✅ | 3 ✅ | ✅ 11 scripts; 9 wired in `hooks.json`; 2 promotion gates are CLI-invoked (not event hooks); some DESIGN-named hooks never built |
 | **State Store** | one shared store + append-only ledger | `state-store.js` (7 collections) + SIEM | (omitted) | ✅ unified: `state-store.js` (9 collections) is the one store; gates log through `instinct-ledger.js` → it. `governance-ledger` JSONL audit + `siem-forwarder` are separate **by design** (audit/forwarding, not state) |
 | **Learning loop** | observe→propose→verify→promote→rollback, gated | all ✅ | bullet only | ✅ wired: `observe-runner`→store; `/instinct-promote`→`learning-promotion-gate --promote`→`instinct-ledger`→governance event; `/instinct-rollback`→`instinct-ledger --rollback`; HSA dual-control via `--check` |
-| **Skills** | per-zone lists | 13 ✅ | 11 🟡 | ✅ 13 (instinct-promotion/-rollback now have frontmatter) |
+| **Skills** | per-zone lists | 17 ✅ | 11 🟡 | ✅ 17 (added iac-sast-scanning, rollback-and-runbooks, ci-pipeline-debugging, incident-response; instinct skills rewritten) |
 | **Commands** | — | 6 ✅ | 4 🟡 | ✅ 6 (instinct-promote/-rollback added) |
 | **CI / tests** | test gates per phase | implied green | `npm test` | ✅ `npm test` runs 4 validators + 2 unit suites; previously broken (missing `run-all.js`, broken hook validator) |
 
