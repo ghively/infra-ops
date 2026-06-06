@@ -167,6 +167,17 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | /knowledge-ingest | ✅ | Ingest a document into the knowledge base (classify + index) |
 | /instinct-promote | ✅ | Promote observed pattern to governed instinct |
 | /instinct-rollback | ✅ | Rollback or deactivate an instinct |
+| /scaffold | ✅ | Scaffold an IaC unit from the canonical template + enforce structure |
+
+### Canonical structure & enforcement
+
+| Component | Status | Purpose |
+|---|---|---|
+| `templates/{ansible-role,ansible-repo,terraform-module,terraform-env}/` | ✅ | The fixed, canonical skeletons the agent stamps every unit from |
+| `scripts/lib/structure-spec.js` | ✅ | Machine-readable single source of truth for the uniform layout |
+| `scripts/validate-structure.js` | ✅ | Deterministic gate — rejects (non-zero) any unit that deviates |
+| `.gitlab-ci/components/structure-conformance` | ✅ | Binding CI gate; runs the validator over roles/modules/envs in the target repo |
+| `tests/unit/structure.test.js` | ✅ | Asserts templates ↔ spec never drift, and that deviations are rejected |
 
 ---
 

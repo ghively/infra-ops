@@ -1,0 +1,37 @@
+# Structure-Conformance Gate (binding)
+#
+# GitLab CI component: fails the pipeline if any IaC unit deviates from the canonical
+# layout (scripts/lib/structure-spec.js). This is what enforces UNIFORM structure across
+# the estate — reviewer agents advise; THIS rejects non-conformant code.
+#
+# Usage in your .gitlab-ci.yml:
+#   include:
+#     - local: '/.gitlab-ci/components/structure-conformance/template.yml'
+#
+# Requires the infra-ops validator on the runner. Point VALIDATE_STRUCTURE at it
+# (vendored copy, submodule, or the installed plugin). Detected units:
+#   roles/*        → ansible-role
+#   modules/*      → terraform-module
+#   envs/*         → terraform-env
+#   . (repo root)  → ansible-repo   (when ansible.cfg is present)
+
+variables:
+  NODE_IMAGE: "node:20-alpine"               # pin by digest in the consuming project
+  VALIDATE_STRUCTURE: "scripts/validate-structure.js"
+
+structure-conformance:
+  stage: validate
+  image: ${NODE_IMAGE}
+  script:
+    - status=0
+    - |
+      validate() {
+        node "$VALIDATE_STRUCTURE" --type "$1" --path "$2" || status=1
+      }
+    - if [ -f ansible.cfg ]; then validate ansible-repo .; fi
+    - if [ -d roles ];   then for d in roles/*/;   do [ -d "$d" ] && validate ansible-role     "$d"; done; fi
+    - if [ -d modules ]; then for d in modules/*/; do [ -d "$d" ] && validate terraform-module "$d"; done; fi
+    - if [ -d envs ];    then for d in envs/*/;    do [ -d "$d" ] && validate terraform-env    "$d"; done; fi
+    - exit $status
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'

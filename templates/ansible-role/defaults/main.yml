@@ -1,0 +1,5 @@
+---
+# defaults/main.yml — public, overridable defaults. All vars are role-prefixed.
+
+__role_name___packages: []
+__role_name___service: ""

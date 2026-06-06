@@ -32,6 +32,34 @@ See `rules/ansible/{coding-style,security,testing}.md`,
 
 ---
 
+## 0. Uniform structure — baked in and enforced
+
+Before any of the standards below, the **layout is fixed**. Every new unit is stamped
+from a canonical skeleton, never hand-built, so structure and deployment are uniform
+across the estate:
+
+| Unit | Template | Validate |
+|---|---|---|
+| Ansible role | `templates/ansible-role/` | `validate-structure.js --type ansible-role` |
+| Ansible project | `templates/ansible-repo/` | `--type ansible-repo` |
+| Terraform/OpenTofu module | `templates/terraform-module/` | `--type terraform-module` |
+| Terraform/OpenTofu env | `templates/terraform-env/` | `--type terraform-env` |
+
+- **Single source of truth:** `scripts/lib/structure-spec.js` declares the required
+  files/dirs and content checks per type.
+- **Scaffold, don't hand-build:** the `/scaffold` command copies the template and
+  substitutes the name. The agent must not invent per-unit structures.
+- **Deterministic gate:** `scripts/validate-structure.js` exits non-zero on any missing
+  file/dir or failed content check; the `structure-conformance` CI component runs it over
+  every `roles/*`, `modules/*`, `envs/*` and **fails the pipeline on deviation**.
+- **Self-checked:** `tests/unit/structure.test.js` asserts the bundled templates always
+  conform and that deviations are rejected, so the spec and templates cannot drift.
+
+This is the difference between *advising* a structure and *enforcing* one: a
+non-conformant unit cannot pass CI, regardless of any agent's judgement.
+
+---
+
 ## 1. Ansible authoring standards
 
 ### FQCN always

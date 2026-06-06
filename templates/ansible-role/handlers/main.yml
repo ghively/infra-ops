@@ -1,0 +1,8 @@
+---
+# handlers/main.yml — notified handlers for the __ROLE_NAME__ role.
+
+- name: Restart __ROLE_NAME__
+  ansible.builtin.service:
+    name: "{{ __role_name___service }}"
+    state: restarted
+  become: true
