@@ -17,11 +17,15 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.10.0** — Hardened agent layer (10 agents, 19 skills), deterministic enforcement; HSA pending CPSA review.
+**v0.10.0** — Hardened agent layer (10 corporate agents + 3 in-zone `perso-*` proposals, 19 skills), deterministic enforcement; HSA go-live pending CPSA-L sign-off.
 
 The corporate-zone plugin is built and wired: DLP, the local inference lane, the
 governed learning loop, and the audit/state substrate all run and are covered by
-tests (`npm test`). The in-HSA deployment remains documentation-only and CPSA-gated.
+tests (`npm test`). The in-HSA **tooling** — `perso-*` agents, deployment runbooks,
+and the in-zone dual-control gate — is authored as reviewable proposals
+(`knowledge/cpsa-approval.md §1`). In-HSA **deployment/go-live** remains gated on the
+CPSA-L sign-off (`knowledge/cpsa-approval.md §2`); no PAN/keys/PINs/HSM config is ever
+authored here.
 
 - See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for design-vs-as-built status (the source of truth)
 - See **[`SPEC.md`](SPEC.md)** for the component inventory
