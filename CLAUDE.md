@@ -95,6 +95,7 @@ runaway fan-out and token blow-up.
 | `pre-commit-and-secret-scanning` | iac-author, secrets-scanner |
 | `supply-chain-and-sbom` | iac-author, pci-compliance-reviewer |
 | `pci-dss-compliance`, `pci-cp-compliance` | pci-compliance-reviewer |
+| `pci-pin-awareness`, `perso-change-control` | (in-zone) perso-cp-compliance-reviewer, perso-iac-author |
 | `incident-response` | sensitive-local-analyst, pci-compliance-reviewer |
 | `change-documentation` | change-scribe, iac-author |
 | `knowledge-curation` | knowledge-curator |

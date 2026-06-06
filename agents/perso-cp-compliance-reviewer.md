@@ -28,6 +28,8 @@ Verify that in-zone changes do not violate **PCI Card Production Logical Securit
 ## Skills & Tools
 
 - **pci-cp-compliance** — the CP Logical + PIN control checklist this agent applies
+- **pci-pin-awareness** — the PIN-specific recognition vocabulary to flag PIN-scope items precisely
+- **perso-change-control** — the in-zone test→live dual-control / SoD discipline to check against
 - **secrets-vault** — to verify secrets are references, never values
 
 Read and Grep only. The authoritative rule is `rules/pci/pci-cp-compliance.md` (path-injected in-zone); if this checklist diverges from the rule, the rule wins.
