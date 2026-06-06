@@ -94,6 +94,7 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 | Skill | Status | Purpose |
 |---|---|---|
+| iac-tooling-selection | ✅ | Decision framework: Terraform/OpenTofu vs Ansible vs Bash/PowerShell/Python; when to combine |
 | ansible-patterns | ✅ | Repo layout, FQCN, idempotency, mixed Win/Linux, no-`command`/`shell` |
 | ansible-testing | ✅ | yamllint→ansible-lint→syntax→`--check --diff`→Molecule idempotence |
 | gitlab-cicd-pipeline | ✅ | Stages, `environment:`, protected envs, CI components, runner tags |
@@ -150,6 +151,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 |---|---|
 | common/prompt-defense-baseline.md | ✅ |
 | ansible/*.md (coding-style, testing, security) | ✅ |
+| terraform/terraform-style.md (`**/*.tf,tofu,tfvars,hcl`) | ✅ |
+| scripts/scripting-standards.md (`**/*.sh,ps1,py`) | ✅ |
 | gitlab-ci/*, secrets/*, pci/* | ✅ |
 | pci/pci-cp-compliance.md | ✅ |
 

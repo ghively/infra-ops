@@ -17,7 +17,7 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.10.0** — Hardened agent layer (10 corporate agents + 3 in-zone `perso-*` proposals, 21 skills), deterministic enforcement; HSA go-live pending CPSA-L sign-off.
+**v0.10.0** — Hardened agent layer (10 corporate agents + 3 in-zone `perso-*` proposals, 22 skills), deterministic enforcement; HSA go-live pending CPSA-L sign-off.
 
 The corporate-zone plugin is built and wired: DLP, the local inference lane, the
 governed learning loop, and the audit/state substrate all run and are covered by
@@ -28,7 +28,8 @@ CPSA-L sign-off (`knowledge/cpsa-approval.md §2`); no PAN/keys/PINs/HSM config 
 authored here.
 
 - See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for design-vs-as-built status (the source of truth)
-- See **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)** for the best practices the `iac-author` agent follows
+- See **[`docs/iac-tooling-and-automation-guide.md`](docs/iac-tooling-and-automation-guide.md)** for tech selection (Terraform/OpenTofu vs Ansible vs scripting), repo structuring, CI/CD, and deployment methods
+- See **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)** for the Ansible execution standards the `iac-author` agent follows
 - See **[`SPEC.md`](SPEC.md)** for the component inventory
 - See **[`TODO.md`](TODO.md)** for the ordered build backlog
 - See **[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md)** for full rationale and research
@@ -100,7 +101,8 @@ infra-ops/
 │   ├── knowledge-curator.md        # Doc ingestion + cited answers
 │   └── perso-*.md                  # 3 LOCAL-ONLY in-zone agents (proposals):
 │                                   #   perso-iac-author / -iac-reviewer / -cp-compliance-reviewer
-├── skills/                  # 21 lazy-loaded domain skills
+├── skills/                  # 22 lazy-loaded domain skills
+│   ├── iac-tooling-selection/   # Terraform/OpenTofu vs Ansible vs Bash/PowerShell/Python
 │   ├── ansible-patterns/  ansible-testing/  gitlab-cicd-pipeline/
 │   ├── octopus-release/  drift-detection/  multi-env-promotion/
 │   ├── pci-dss-compliance/  pci-cp-compliance/  secrets-vault/
@@ -130,8 +132,8 @@ infra-ops/
 │       ├── ollama-router.js        # Local-only inference lane
 │       ├── siem-forwarder.js       # Audit forwarding
 │       └── shell-substitution.js
-├── rules/                   # Paths-scoped rules
-│   ├── common/  ansible/  gitlab-ci/  secrets/  pci/
+├── rules/                   # Paths-scoped rules (auto-inject per file type)
+│   ├── common/  ansible/  terraform/  scripts/  gitlab-ci/  secrets/  pci/
 ├── schemas/                 # JSON schemas (state-store.schema.json)
 ├── knowledge/               # Knowledge base + instinct ledger
 │   ├── README.md  runner-topology.md  hsa-deployment.md
@@ -139,7 +141,8 @@ infra-ops/
 │   └── instincts/           # corporate/  hsa/   (zone-segmented)
 ├── docs/
 │   ├── architecture-gap.md         # Design-vs-as-built (source of truth)
-│   ├── iac-authoring-standards.md  # Best practices the iac-author agent follows
+│   ├── iac-authoring-standards.md  # Ansible execution standards the iac-author follows
+│   ├── iac-tooling-and-automation-guide.md  # Tech selection + repo/CI/CD/scripting standards
 │   ├── foundation-improvement-plan.md  mcp-servers.md
 │   ├── changes/  decisions/         # Auto-docs (change records + ADRs)
 │   └── infra-agent/                 # Full design rationale + research
@@ -172,8 +175,18 @@ deterministic merge gate — reviewer agents advise, these gates bind.
 
 ## Authoring Standards
 
-The best practices the **`iac-author`** agent follows when writing Ansible and GitLab
-CI/CD — and that the review gate checks — are consolidated in
+**Choosing the technology** comes first. The
+[`iac-tooling-selection`](skills/iac-tooling-selection/SKILL.md) skill +
+**[`docs/iac-tooling-and-automation-guide.md`](docs/iac-tooling-and-automation-guide.md)**
+define when to use **Terraform/OpenTofu** (provisioning) vs **Ansible** (in-host config)
+vs **Bash/PowerShell/Python** (glue, orchestration, data gathering), how to structure
+repos and CI/CD per tool, the deployment methods (immutable, blue-green, canary, rolling,
+GitOps), and **when to combine** them — grounded in industry standards. The standards for
+each file type auto-inject via path-scoped rules (`rules/terraform/*`, `rules/scripts/*`,
+`rules/ansible/*`).
+
+Once the tooling is chosen, the **Ansible execution** standards the **`iac-author`** agent
+follows — and that the review gate checks — are consolidated in
 **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)**:
 
 - **Ansible**: FQCN everywhere, idempotent modules (no naked `command`/`shell`),
