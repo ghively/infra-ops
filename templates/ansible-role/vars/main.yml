@@ -1,0 +1,5 @@
+---
+# vars/main.yml — private, internal vars (not part of the public interface).
+# Use a __double_underscore prefix to signal "do not override".
+
+__role_name___internal_marker: true

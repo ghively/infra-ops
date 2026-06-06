@@ -47,15 +47,17 @@ Module signatures, FQCNs, and CI syntax are version-specific; verify them.
 
 1. **Read the plan** — Accept the infra plan or brief. Confirm all open questions are resolved before authoring. If stage gates require human sign-off, stop and request it.
 2. **Survey existing code** — Use Read/Grep/Glob to find existing roles, collections, inventory layout, group_vars, and `.gitlab-ci.yml`. Match conventions already present.
-3. **Author roles and playbooks** — Write or edit Ansible content following the mandatory standards below.
-4. **Author CI pipeline** — Write or update `.gitlab-ci.yml` with correct stages, runner tags, environment declarations, and protected-branch constraints.
-5. **Author Molecule scenarios** — for any new role, author a Molecule scenario per the `ansible-testing` skill (converge → idempotence → verify, rootless Podman driver) and report coverage. New roles ship with tests; this absorbs test-authoring rather than spawning a separate agent.
-6. **Validate locally** — Run `ansible-lint`, `yamllint`, and `ansible-playbook --syntax-check` via Bash. Run `ansible-playbook --check --diff` against a dev/test inventory before proposing the MR. Log output; do not suppress errors.
-7. **Open the MR** — Commit to a feature branch and open a GitLab MR. Do not merge. Tag the MR for playbook-reviewer and pci-compliance-reviewer.
-8. **Report** — Summarise what was authored, which checks passed, and any residual risk for human review.
+3. **Scaffold from the canonical template (MANDATORY for any new unit)** — never hand-build a layout. Copy the fixed skeleton from `templates/<type>/` (`ansible-role`, `ansible-repo`, `terraform-module`, `terraform-env`) and substitute the name placeholders, so every unit has the identical structure. Use the `/scaffold` command. This is what makes structure and deployment uniform; deviating is not an option.
+4. **Author into the scaffold** — Write/edit content inside the canonical skeleton following the mandatory standards below. Do not move, rename, or drop the skeleton's required files/dirs.
+5. **Author CI pipeline** — Write or update `.gitlab-ci.yml` with correct stages, runner tags, environment declarations, and protected-branch constraints. Include the `structure-conformance` and `iac-sast` components.
+6. **Author Molecule scenarios** — for any new role, author a Molecule scenario per the `ansible-testing` skill (converge → idempotence → verify, rootless Podman driver) and report coverage. New roles ship with tests; this absorbs test-authoring rather than spawning a separate agent.
+7. **Validate locally** — First enforce the uniform structure: `node scripts/validate-structure.js --type <type> --path <unit>` must exit 0 (the `structure-conformance` CI gate runs the same check and blocks merge on any deviation). Then run `ansible-lint`, `yamllint`, and `ansible-playbook --syntax-check` via Bash, and `ansible-playbook --check --diff` against a dev/test inventory before proposing the MR. Log output; do not suppress errors.
+8. **Open the MR** — Commit to a feature branch and open a GitLab MR. Do not merge. Tag the MR for playbook-reviewer and pci-compliance-reviewer.
+9. **Report** — Summarise what was authored, which checks passed, and any residual risk for human review.
 
 ## Mandatory Authoring Standards
 
+- **Uniform structure (non-negotiable)** — every new unit comes from `templates/<type>/` and must pass `scripts/validate-structure.js`. The canonical layout (defined in `scripts/lib/structure-spec.js`) is fixed: required files/dirs are always present, named identically, across every role/module/repo/env. Do not invent per-unit structures.
 - **FQCN always** — use `ansible.builtin.copy`, `ansible.builtin.service`, `community.hashi_vault.hashi_vault_secret`, etc. Never short-form module names.
 - **Idempotent modules only** — never use `ansible.builtin.command` or `ansible.builtin.shell` where a dedicated module exists. If command/shell is unavoidable, add `creates:` or `changed_when: false` with a comment explaining why no module covers this.
 - **OS targeting by structure** — create separate plays or `group_vars/` hierarchies for Windows vs Linux. Do not use `when: ansible_os_family == "Windows"` as the sole OS gate inside a shared role; structure the inventory so the right hosts get the right plays.

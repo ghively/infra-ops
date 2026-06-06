@@ -1,0 +1,28 @@
+---
+# Canonical Ansible pipeline. Include the binding security + structure gates.
+include:
+  - local: '/.gitlab-ci/components/iac-sast/template.yml'
+  - local: '/.gitlab-ci/components/structure-conformance/template.yml'
+
+stages:
+  - validate
+  - lint
+  - security
+  - test
+  - deploy
+
+ansible_validate:
+  stage: validate
+  script:
+    - yamllint .
+    - ansible-playbook playbooks/*.yml --syntax-check
+    - ansible-lint --profile production
+
+deploy_dev:
+  stage: deploy
+  environment:
+    name: dev
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - ansible-playbook -i inventories/dev playbooks/site.yml --check --diff
