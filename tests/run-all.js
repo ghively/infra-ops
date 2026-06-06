@@ -13,13 +13,23 @@ const fs = require('fs');
 const path = require('path');
 
 const CI_DIR = path.join(__dirname, 'ci');
+const UNIT_DIR = path.join(__dirname, 'unit');
 
 function findValidators() {
-  if (!fs.existsSync(CI_DIR)) return [];
-  return fs.readdirSync(CI_DIR)
-    .filter(f => f.startsWith('validate-') && f.endsWith('.js'))
-    .sort()
-    .map(f => path.join(CI_DIR, f));
+  const files = [];
+  if (fs.existsSync(CI_DIR)) {
+    files.push(...fs.readdirSync(CI_DIR)
+      .filter(f => f.startsWith('validate-') && f.endsWith('.js'))
+      .sort()
+      .map(f => path.join(CI_DIR, f)));
+  }
+  if (fs.existsSync(UNIT_DIR)) {
+    files.push(...fs.readdirSync(UNIT_DIR)
+      .filter(f => f.endsWith('.test.js'))
+      .sort()
+      .map(f => path.join(UNIT_DIR, f)));
+  }
+  return files;
 }
 
 function main() {
