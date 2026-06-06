@@ -18,7 +18,12 @@
     "claude-code",
     "agents"
   ],
-  "mcpServers": {},
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  },
   "commands": [
     "./commands/"
   ],
