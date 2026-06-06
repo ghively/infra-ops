@@ -17,7 +17,7 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.10.0** — Hardened agent layer (10 corporate agents + 3 in-zone `perso-*` proposals, 19 skills), deterministic enforcement; HSA go-live pending CPSA-L sign-off.
+**v0.10.0** — Hardened agent layer (10 corporate agents + 3 in-zone `perso-*` proposals, 21 skills), deterministic enforcement; HSA go-live pending CPSA-L sign-off.
 
 The corporate-zone plugin is built and wired: DLP, the local inference lane, the
 governed learning loop, and the audit/state substrate all run and are covered by

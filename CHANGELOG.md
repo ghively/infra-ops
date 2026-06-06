@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (fail-closed PreToolUse tripwire denying any PAN/key/component/PIN/HSM reference) and
     `scripts/hooks/block-no-verify.js` (denies verification-hook bypass). Registered in the
     HSA's own hooks config, not corporate. Coverage: `tests/unit/hsa-guard.test.js` (14 checks).
+  - In-zone skills (DESIGN §3, previously never built): `skills/pci-pin-awareness`
+    (recognize/refuse/route PIN data + keys) and `skills/perso-change-control` (test→live
+    dual-control, witnessed sign-off, SoD). Wired into the `perso-*` agents and the skill map.
 - Lint tooling: `eslint.config.js` (ESLint v9 flat config, CommonJS + Node globals)
   and `.markdownlint.json`, so `npm run lint` runs and passes. `lint` script now
   covers the whole tree (`eslint .`) instead of `scripts/` only.

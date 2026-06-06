@@ -99,6 +99,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | drift-detection | ✅ | Scheduled `--check --diff`, ARA tagging, drift→alert |
 | pci-dss-compliance | ✅ | Corporate DSS controls (modeled on ECC healthcare-phi-compliance) |
 | pci-cp-compliance | ✅ | Card Production Logical+PIN constraints for in-zone work (docs/infra-agent/DESIGN.md §7) |
+| pci-pin-awareness | ✅ (in-zone) | PIN Security recognition vocabulary — recognize/refuse/route PIN data + keys; never handle |
+| perso-change-control | ✅ (in-zone) | In-zone test→live dual-control, witnessed sign-off, SoD (CP Logical §6.2–6.6) |
 | change-documentation | ✅ | The rework of the `documentation` playbook + auto-doc generation |
 | multi-env-promotion | ✅ | dev→test→staging→prod, build-once-promote-one-artifact |
 | secrets-vault | ✅ | Vault references, runtime lookups, `no_log`, never plaintext |
