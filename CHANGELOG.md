@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Multi-tool IaC + automation competence: the agent now reasons across the whole
+  toolchain, not just Ansible.
+  - `skills/iac-tooling-selection` — decision framework for Terraform vs OpenTofu vs
+    Ansible (provision vs configure) and Bash vs PowerShell vs Python, plus when to
+    combine them. Loaded by `infra-planner` and `iac-author`.
+  - `docs/iac-tooling-and-automation-guide.md` — deep reference: tool taxonomy,
+    Terraform/OpenTofu choice (BSL vs Apache-2.0, state encryption), repo structuring +
+    state isolation per tool, CI/CD (plan-on-MR/apply-on-approval), deployment methods
+    (immutable/blue-green/canary/rolling/GitOps), scripting standards, data gathering.
+  - `rules/terraform/terraform-style.md` (`**/*.tf,tofu,tfvars,hcl`) and
+    `rules/scripts/scripting-standards.md` (`**/*.sh,ps1,py`) — path-scoped rules that
+    auto-inject the standards when those file types are in context.
+  - `infra-planner` now selects tooling per unit; `iac-author` can author
+    Terraform/OpenTofu and Bash/PowerShell/Python to the same propose-only standard.
 - `docs/iac-authoring-standards.md` — consolidated, citable guide to the best practices
   the `iac-author` agent follows (FQCN, idempotency, vars/inventory, secrets/Vault,
   the five-stage testing ladder, CI/CD, the review gate, the trust boundary). Linked
