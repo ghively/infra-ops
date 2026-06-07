@@ -63,3 +63,40 @@ Governance ledger ref: <id>
 - The agent **contains and escalates**; humans run the PCI incident-response plan.
 - No autonomous remediation, no prod action, no cloud egress of sensitive data.
 - HSA incidents are handled entirely in-zone under dual control — route, do not act.
+
+## Deep Reference — PCI 12.10.x Incident Response
+
+### Agent Role Boundary (critical)
+The agent's role in an incident is: **Contain → Preserve → Escalate**. The agent:
+- MAY: Read logs, identify affected systems from metadata, propose containment steps
+- MAY NOT: Execute containment actions without human approval
+- MAY NOT: Handle any evidence that contains PAN, SAD, or key material
+- MUST: Escalate to the security team immediately on confirmation of CHD exposure
+
+### PCI 12.10.7 — Unauthorized SAD Storage Response
+1. Immediately isolate the system from the network (human action, agent proposes)
+2. Preserve all logs (do not rotate or delete)
+3. Notify the security team and legal counsel
+4. Do not access or copy the SAD — it is evidence
+5. Engage QSA/CPSA for forensic investigation
+6. File SAR if required by card brand rules
+
+### Incident Record Format
+When documenting an incident, write to `docs/incidents/<ISO-date>-<slug>.md`:
+```yaml
+incident_id: INC-<YYYYMMDD>-<seq>
+detected_at: <ISO datetime>
+detected_by: <agent/human>
+scope: <systems affected>
+classification: <SAD-exposure | unauthorized-access | malware | other>
+chd_involved: true | false   # if true: CPSA involvement required
+containment_proposed:
+  - <step 1>
+  - <step 2>
+evidence_preserved:
+  - path: <log file path>
+    hash: <sha256>
+escalated_to: <security team contact>
+qsa_engaged: false | true
+status: open | contained | resolved
+```
