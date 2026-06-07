@@ -12,6 +12,18 @@ separately under `knowledge/` and is loaded only when needed.
 
 ---
 
+## Architecture reference (read when onboarding or extending)
+
+- **[`docs/superpowers/specs/2026-06-06-deep-init-reference.md`](docs/superpowers/specs/2026-06-06-deep-init-reference.md)** —
+  living architectural reference: enforcement hierarchy, full hook pipeline, agent
+  roster + delegation flows, skills map, learning loop, State Store, zone model,
+  plugin wiring. Read this before extending any component.
+- **[`docs/superpowers/specs/2026-06-06-gap-analysis.md`](docs/superpowers/specs/2026-06-06-gap-analysis.md)** —
+  prioritized gap backlog: what's built, what's missing, what's blocked (CPSA-gated),
+  and per-component next actions. Work from this when filling gaps.
+
+---
+
 ## Hard rules (never violate — apply in every zone)
 
 1. **Propose, never dispose.** Edit code and open GitLab MRs; trigger CI and a gated
@@ -39,6 +51,7 @@ separately under `knowledge/` and is loaded only when needed.
 | CHD-adjacent / sensitive work | **sensitive-local-analyst** → local lane | (local) |
 | Ingesting docs / answering scoping questions with citations | **knowledge-curator** | sonnet |
 | Generating changelog / ADR / change records from a merged diff | **change-scribe** | haiku |
+| HSA infrastructure planning, review, or audit | **perso-planner** → **perso-reviewer** + **pci-compliance-reviewer** → **perso-scribe** | haiku (local) |
 
 ### The review gate (deterministic — runs three agents in parallel)
 Every authored change goes concurrently to **playbook-reviewer** (correctness/
@@ -93,6 +106,7 @@ runaway fan-out and token blow-up.
 | `change-documentation` | change-scribe, iac-author |
 | `knowledge-curation` | knowledge-curator |
 | `instinct-promotion`, `instinct-rollback` | knowledge-curator (governed learning loop) |
+| `hsa-infrastructure`, `perso-compliance` | perso-planner, perso-reviewer, perso-auditor, perso-scribe |
 
 Zone tokens used repo-wide: **`corporate`** (PCI DSS) and **`hsa`** (PCI Card
 Production + PIN, air-gapped). Legacy `corpor`/`in-zone` are accepted as aliases.
