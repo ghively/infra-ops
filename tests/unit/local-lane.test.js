@@ -68,7 +68,7 @@ const benign = JSON.stringify({ tool_input: { command: 'ls -la' } });
 const chd = JSON.stringify({ tool_input: { command: 'grep pan personalization.db' } });
 
 check('decide allows benign input', () => {
-  withEnv({ INFRAOPS_SENSITIVITY_ROUTE: '', INFRAOPS_SENSITIVE_FAIL_CLOSED: '' }, () => {
+  withEnv({ INFRAOPS_SENSITIVITY_ROUTE: '', INFRAOPS_SENSITIVE_FAIL_CLOSED: '0' }, () => {
     assert.strictEqual(sensitivity.decide(benign).action, 'allow');
   });
 });
@@ -103,15 +103,15 @@ check('pan-egress failClosed is true when env var is unset', () => {
 });
 
 check('pan-egress failClosed is false when env var is 0', () => {
-  process.env.INFRAOPS_DLP_FAIL_CLOSED = '0';
-  assert.strictEqual(pan.failClosedEnabled(), false);
-  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+  withEnv({ INFRAOPS_DLP_FAIL_CLOSED: '0' }, () => {
+    assert.strictEqual(pan.failClosedEnabled(), false);
+  });
 });
 
 check('pan-egress failClosed is true when env var is 1', () => {
-  process.env.INFRAOPS_DLP_FAIL_CLOSED = '1';
-  assert.strictEqual(pan.failClosedEnabled(), true);
-  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+  withEnv({ INFRAOPS_DLP_FAIL_CLOSED: '1' }, () => {
+    assert.strictEqual(pan.failClosedEnabled(), true);
+  });
 });
 
 // --- sensitivity-router fail-closed default ---
