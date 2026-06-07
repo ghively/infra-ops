@@ -1,0 +1,58 @@
+# Personalization Operational Patterns — pre-promoted seed instincts
+# HSA zone only. Deployment requires CPSA sign-off.
+---
+instincts:
+  - id: perso-job-params-validated
+    zone: hsa
+    category: perso
+    status: active
+    confidence: 0.90
+    content: >
+      Every personalization job parameter set must be validated against the approved
+      job specification before the job is submitted to the personalization system.
+      Validation checks: card range matches the authorized batch, personalization
+      data format matches the scheme's encoding requirements, job volume is within
+      the authorized run limits. Validation failures are BLOCKED and escalated
+      to the perso-planner for human review.
+    citation: "PCI CP Logical §6 (change management); CP PIN §8 (PIN security)"
+    evidence:
+      - type: standard
+        source: "PCI Card Production Logical Security Requirements §6"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: perso-audit-trail-mandatory
+    zone: hsa
+    category: perso
+    status: active
+    confidence: 1.0
+    content: >
+      Every personalization job must produce an immutable audit trail recording:
+      job ID, authorized operator IDs (both for dual control), card range processed,
+      start/end timestamps, and outcome. Audit trails must be forwarded to the SIEM
+      in real time and retained per PCI CP requirements. Any gap in the audit trail
+      is a CRITICAL finding requiring immediate escalation.
+    citation: "PCI CP Logical §4 (audit logging); PCI DSS v4.0.1 Req 10.2"
+    evidence:
+      - type: standard
+        source: "PCI Card Production Logical Security Requirements §4 — audit logging"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: perso-no-chd-in-agent-context
+    zone: hsa
+    category: perso
+    status: active
+    confidence: 1.0
+    content: >
+      Cardholder data (PAN, expiry, service code, track data) must never appear in
+      the agent's context window, tool calls, or registered variables. The agent
+      may reason about card ranges (e.g., BIN ranges) for job planning purposes
+      but must not process, display, or transmit individual card records.
+      The sensitivity-router's fail-closed default enforces this at the tool boundary.
+    citation: "PCI DSS v4.0.1 Req 3.3.1 and 3.4.1; infra-ops CLAUDE.md Hard rule #2"
+    evidence:
+      - type: design
+        source: "infra-ops CLAUDE.md — Hard rule #2: never touch the crown jewels"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06

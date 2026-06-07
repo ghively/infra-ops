@@ -1,0 +1,98 @@
+# HSA Zone Controls — pre-promoted seed instincts
+# These instincts are for the air-gapped card production zone (PCI CP + PIN scope).
+# Deployment of agents using these instincts is CPSA-gated.
+---
+instincts:
+  - id: hsa-no-cloud-path
+    zone: hsa
+    category: hsa-controls
+    status: active
+    confidence: 1.0
+    content: >
+      No HSA-zone agent or tool call may use a cloud-path model, cloud API, or
+      external network connection. All inference in the HSA zone is local-only via
+      Ollama. Context7, Anthropic API, and any other cloud endpoint are explicitly
+      prohibited. Any prompt or tool that would invoke a cloud endpoint from the
+      HSA zone must be rejected with a BLOCK verdict.
+    citation: "PCI CP Logical §4 (logical security); PCI PIN §8 (PIN system isolation)"
+    evidence:
+      - type: standard
+        source: "PCI Card Production Logical Security Requirements §4"
+      - type: standard
+        source: "PCI PIN Security Requirements §8"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: hsa-dual-control-required
+    zone: hsa
+    category: hsa-controls
+    status: active
+    confidence: 1.0
+    content: >
+      Any operation that modifies HSA infrastructure, key management systems, or
+      personalization job parameters requires dual control (two authorized operators
+      independently approving). The dual-control-promotion-gate enforces this for
+      instinct promotions. For infrastructure changes, two CPSA-designated operators
+      must approve before the change is applied. The agent may propose; it never
+      executes without dual approval.
+    citation: "PCI CP Logical §4.x (dual control); PCI PIN §8.x (dual control for key ops)"
+    evidence:
+      - type: standard
+        source: "PCI Card Production Logical Security Requirements — dual control"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: hsa-no-key-material-in-agent
+    zone: hsa
+    category: hsa-controls
+    status: active
+    confidence: 1.0
+    content: >
+      Cryptographic keys, key components, key-check values, PINs, PIN blocks, and
+      HSM configuration must never pass through the agent context. The agent must
+      refuse to author, display, log, or transmit any key material. If key material
+      appears in a tool result or user message, the agent must immediately refuse
+      and escalate to the security team. This is an absolute constraint with no
+      exceptions.
+    citation: "infra-ops CLAUDE.md Hard rule #2 — never touch the crown jewels"
+    evidence:
+      - type: design
+        source: "infra-ops CLAUDE.md — Hard rules (never violate)"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: hsa-cpsa-deployment-gate
+    zone: hsa
+    category: hsa-controls
+    status: active
+    confidence: 1.0
+    content: >
+      Any HSA-zone component (agent, skill, instinct, playbook) may be designed and
+      tested in a development environment without CPSA involvement. However, deployment
+      of any component to the production HSA environment requires CPSA sign-off on the
+      design before deployment. CPSA gates deployment, not development. The HSA
+      deployment documentation must include the CPSA sign-off reference.
+    citation: "PCI CP Logical §6 (change management); CPSA certification requirements"
+    evidence:
+      - type: design
+        source: "infra-ops gap-analysis.md — P3 HSA CPSA deployment gate"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: hsa-air-gapped-runner
+    zone: hsa
+    category: hsa-controls
+    status: active
+    confidence: 0.95
+    content: >
+      The HSA GitLab runner must be registered on an air-gapped GitLab instance
+      with no external network access. It must not share infrastructure with the
+      corporate zone runners. Runner registration and any changes to runner
+      configuration require dual-control approval. The runner must use a dedicated
+      service account with the minimum required permissions.
+    citation: "PCI CP Logical §3 (physical security); §4 (logical security)"
+    evidence:
+      - type: standard
+        source: "PCI Card Production Logical Security Requirements §3 and §4"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
