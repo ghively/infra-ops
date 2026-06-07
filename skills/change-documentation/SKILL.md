@@ -153,3 +153,26 @@ Octopus deployment log. Together these satisfy PCI DSS Req 6 change control evid
 > TODO: Add the change-scribe post-merge hook wiring once the hook is built
 > (SPEC.md §3 hooks table — change-scribe-hook not yet implemented).
 > TODO: Confirm GitLab Wiki push credentials scope (scoped token vs deploy key).
+
+## Deep Reference
+
+### PCI Change Control Evidence Requirements (Req 6.5)
+Every MR must include or reference all of the following before merge:
+- [ ] Description of the change and its purpose
+- [ ] Risk assessment (blast radius, affected systems)
+- [ ] Test results (`--check --diff` output as minimum; Molecule results for new roles)
+- [ ] Back-out / rollback plan
+- [ ] Authorized approvers (minimum 2; author cannot self-approve)
+
+The per-change YAML record produced by change-scribe captures all of these. Attach
+the YAML record to the MR description as a code block.
+
+### ADR When to Write One
+Write an ADR when a decision:
+- Changes a pattern used by multiple playbooks or roles
+- Adds or removes a compliance control
+- Changes the trust model (e.g., adding a new runner, changing auth method)
+- Would surprise a future contributor reading the code
+
+Do NOT write an ADR for: adding a task to an existing role, updating a package version,
+renaming a variable.

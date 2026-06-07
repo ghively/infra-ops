@@ -181,3 +181,35 @@ Proposal: ingesting the perso-network architecture doc would resolve this."
 > TODO: Define sensitivity-classification model (rule-based PAN/Luhn + NER for PII,
 > or a local classifier) once the hardware is available.
 > TODO: Expand instinct ledger schema once the first real docs are ingested.
+
+## Deep Reference
+
+### Sensitivity Classification Decision Tree
+```
+Does the document contain or reference:
+  ├── PAN, full card numbers, or SAD? → CHD-ADJACENT
+  ├── Key components, TMK/ZMK/PEK, or HSM config? → CHD-ADJACENT (reject on ingest)
+  ├── Personnel names + access levels + audit findings? → SENSITIVE
+  ├── Internal system names, IPs, or architecture? → INTERNAL
+  └── None of the above → PUBLIC
+```
+
+### Confidence Score Guidelines
+- 90–100: Single authoritative primary source; question is directly answered; source < 3 months old
+- 70–89: Source covers the topic but indirectly; or 3–6 months old; or single source
+- 50–69: Multiple sources with minor conflicts; source > 6 months old; or question is partially answered
+- < 50: No direct source; answer is inferred; or source is clearly outdated — DO NOT use as the basis for a compliance decision
+
+### Index Format (knowledge/index.yaml entry)
+```yaml
+- slug: pci-dss-v4-overview
+  file: knowledge/docs/pci-dss-v4-overview.md
+  classification: INTERNAL
+  source: "PCI DSS v4.0.1 — official standard"
+  ingested: 2026-06-06
+  topics: [pci, dss, compliance, requirements]
+  key_sections:
+    - "Req 3: protect stored account data"
+    - "Req 6: develop and maintain secure systems"
+    - "Req 10: log and monitor"
+```
