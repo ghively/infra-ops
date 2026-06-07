@@ -165,3 +165,37 @@ glab pipeline run --ref main --variables CI_PIPELINE_SOURCE=schedule
 > TODO: Define drift-remediation SLA (time-to-remediate thresholds) once the change-
 > management policy doc is ingested.
 > TODO: Add ARA Postgres connection string from environment discovery.
+
+## Deep Reference
+
+### Scheduled Drift Check Pipeline
+```yaml
+# .gitlab-ci.yml — drift detection (scheduled only)
+drift-check:
+  stage: drift
+  tags: [linux, deploy, ansible]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - ansible-playbook --check --diff site.yml -i inventory/prod/ 2>&1 | tee drift-report.txt
+    - if grep -q "changed:" drift-report.txt; then echo "DRIFT DETECTED"; exit 1; fi
+  artifacts:
+    paths: [drift-report.txt]
+    expire_in: 30 days
+  allow_failure: false  # drift is an alert condition
+```
+
+### ARA Record Tagging
+Tag every run with commit SHA and pipeline ID for traceability:
+```bash
+ansible-playbook --check --diff site.yml \
+  -e ara_playbook_labels='{"commit":"$CI_COMMIT_SHA","pipeline":"$CI_PIPELINE_ID"}'
+```
+
+### Drift Alert Routing
+When drift is detected:
+1. CI job fails with non-zero exit
+2. GitLab sends a pipeline failure notification
+3. On-call rotation is responsible for investigating
+4. The infra-auditor agent can be invoked to produce a detailed drift report
+5. Remediation goes through the standard iac-author → review gate → merge flow

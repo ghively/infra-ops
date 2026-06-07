@@ -181,3 +181,29 @@ octopus release deploy --project MyApp --version $APP_VERSION --environment Test
 > (separate instance preferred for PCI audit defensibility). (octopus-multitentacle.md §4.5)
 > TODO: Verify Tentacle topology (listening vs polling) per environment once network
 > diagram is ingested. (DESIGN.md §17 Q2)
+
+## Deep Reference
+
+### GitLab → Octopus Integration Pattern
+```yaml
+# .gitlab-ci.yml — create Octopus release after build
+create-release:
+  stage: release
+  tags: [linux]
+  image: octopusdeploy/octo:latest
+  script:
+    - octo create-release
+        --project "$OCTOPUS_PROJECT"
+        --version "$CI_COMMIT_TAG"
+        --server "$OCTOPUS_SERVER"
+        --apiKey "$OCTOPUS_API_KEY"
+        --package "MyApp:$CI_COMMIT_TAG"
+  rules:
+    - if: $CI_COMMIT_TAG
+```
+
+### Lifecycle Enforcement (Progression gates)
+Environments progress in order: Dev → Test → Staging → Prod. Each progression:
+- Requires the previous environment to be green
+- Requires manual sign-off in the Octopus lifecycle
+- The agent may create a release and trigger Dev; it never triggers Test+ without human approval
