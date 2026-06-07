@@ -1,0 +1,111 @@
+# PCI DSS v4.0.1 Controls — pre-promoted seed instincts
+---
+instincts:
+  - id: pci-no-sad-storage
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 1.0
+    content: >
+      Sensitive Authentication Data (SAD — CVV, full track data, PIN blocks) must
+      never be stored after authorization, regardless of encryption. Any task or
+      template that writes SAD to a file, database, log, or variable is a CRITICAL
+      violation that must immediately be escalated to the security team. The agent
+      must block and refuse to author any such code.
+    citation: "PCI DSS v4.0.1 Req 3.3.1 — do not retain SAD after authorization"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 3.3.1"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: pci-pan-unreadable-at-rest
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 1.0
+    content: >
+      PAN (Primary Account Number) must be unreadable wherever stored. Acceptable
+      methods: one-way hashing (SHA-256+ of entire PAN), truncation, index tokens
+      with secured pads, or strong cryptography. Storing full PAN in plaintext is
+      a CRITICAL violation. Any Ansible task writing to a data store that might
+      contain PAN must ensure the destination is encrypted.
+    citation: "PCI DSS v4.0.1 Req 3.4.1 — render PAN unreadable"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 3.4.1"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: pci-tls-minimum-version
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 1.0
+    content: >
+      All network connections transmitting PAN or SAD must use TLS 1.2 or higher.
+      TLS 1.0 and 1.1 are prohibited. Weak ciphers (RC4, DES, 3DES, export ciphers)
+      are prohibited. Any configuration enabling these is a CRITICAL finding.
+      In Ansible, `validate_certs: false` is always a CRITICAL finding for PCI-scope
+      connections.
+    citation: "PCI DSS v4.0.1 Req 4.2.1 — strong cryptography in transit"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 4.2.1"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: pci-audit-log-protection
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 0.97
+    content: >
+      Audit logs must be protected from unauthorized modification and destruction.
+      Any Ansible task that disables, truncates, or modifies syslog, auditd, log
+      rotation, or SIEM forwarding on a PCI-scope system is a CRITICAL finding.
+      The governance ledger must be append-only; the siem-forwarder ships events
+      to the external SIEM where they cannot be modified by the agent.
+    citation: "PCI DSS v4.0.1 Req 10.3 — protect audit logs"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 10.3"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: pci-least-privilege-default-deny
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 0.97
+    content: >
+      Access to system components and cardholder data must be denied by default;
+      access is granted only based on business need (need-to-know). In Ansible:
+      `become: true` without `become_user:` grants root — always HIGH. File
+      permissions must follow the principle of least privilege (no world-writable
+      files on PCI-scope systems). IAM/Vault policies must not use wildcard `*`
+      for sensitive paths.
+    citation: "PCI DSS v4.0.1 Req 7.2 — least privilege, default deny"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirements 7.2 and 7.3"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: pci-change-control-required
+    zone: corporate
+    category: pci
+    status: active
+    confidence: 0.95
+    content: >
+      All changes to system components in the CDE must go through change control:
+      documented impact analysis, authorized approval before implementation, back-out
+      plan, and post-change verification. The agent enforces this via the gateguard-
+      fact-force hook (blast radius + rollback required before edits) and the
+      change-scribe agent (generates the change record). No emergency bypass.
+    citation: "PCI DSS v4.0.1 Req 6.5 — change management"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirements 6.5.1 through 6.5.6"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
