@@ -175,3 +175,48 @@ Key items affecting this pipeline:
 > management policy is ingested.
 > TODO: Confirm whether this organization qualifies as a "service provider" or
 > "merchant" (affects 11.4.5 segmentation-test cadence).
+
+## Deep Reference — PCI DSS v4.0.1
+
+### Requirement 3 — Protect Stored Account Data
+- **3.3.1:** Do not store SAD after authorization (CVV, full track, PIN block)
+- **3.4.1:** PAN must be unreadable anywhere it is stored (hashing, truncation, or strong encryption)
+- In Ansible context: any task writing to a database or file that could contain PAN must use an encrypted destination; never log PAN in registered vars
+
+### Requirement 4 — Protect Cardholder Data in Transit
+- **4.2.1:** Use strong cryptography (TLS 1.2+) for transmitting PAN over open networks
+- `validate_certs: false` in Ansible tasks targeting PCI-scope systems is always a HIGH finding
+- Weak cipher patterns to flag: RC4, DES, 3DES, MD5, SHA-1 (for signing)
+
+### Requirement 6 — Develop and Maintain Secure Systems
+- **6.3.2:** Maintain an inventory of all bespoke and custom software — this is what `supply-chain-and-sbom` covers
+- **6.4.1:** All public-facing web applications must be protected against OWASP Top 10
+- **6.5.x:** Change control must include: documented impact analysis, sign-off by authorized parties, back-out plan
+
+### Requirement 7 — Restrict Access to System Components
+- **7.2.x:** Access is granted on a need-to-know basis; all access is denied by default
+- In Ansible: `become: true` without explicit `become_user` grants root — always HIGH finding
+- Service accounts: one service account per service; no shared accounts
+
+### Requirement 8 — Identify Users and Authenticate
+- **8.3.x:** MFA required for all access to the CDE
+- **8.6.x:** System/application accounts and credentials managed via policy — no hardcoded creds
+
+### Requirement 10 — Log and Monitor All Access
+- **10.2.x:** Audit logs must capture: individual user access to CHD, all actions by root/admin, use of identification mechanisms, invalid access attempts, use of/changes to audit logging, system-level object creation/deletion/modification
+- **10.3.x:** Protect audit logs from destruction and unauthorized modification (append-only, SIEM forwarding)
+- In Ansible: any task that disables syslog, auditd, or modifies log rotation config is a CRITICAL finding
+
+### Requirement 12 — Support Information Security Policies
+- **12.10.x:** Incident response plan must be maintained and tested annually
+- **12.10.7:** Incident response procedures for detection of unauthorized storage of SAD
+
+### NIST 800-53 Mapping (for DSS control crosswalk)
+| PCI DSS Req | NIST 800-53 Control |
+|-------------|---------------------|
+| 3.3 (no SAD) | SI-12 (Information Management) |
+| 4.2 (TLS) | SC-8 (Transmission Confidentiality) |
+| 7.2 (least priv) | AC-6 (Least Privilege) |
+| 8.3 (MFA) | IA-2 (Identification and Authentication) |
+| 10.2 (audit logging) | AU-2, AU-3, AU-12 |
+| 6.5 (change control) | CM-3, CM-4 |
