@@ -1,6 +1,6 @@
 {
   "name": "infra-ops",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "PCI-aware DevOps agent for Ansible + self-hosted GitLab CI/CD + Octopus Deploy. Lean Claude Code orchestrator + isolated specialist subagents with documentation-grounded, governed self-improvement loop.",
   "author": {
     "name": "ghively",
