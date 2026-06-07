@@ -59,3 +59,51 @@ sbom:
 - Read-only generation/verification in the corporate-zone CI; never reaches prod or the HSA.
 - SBOMs and signatures contain no secrets; never embed credentials or PAN.
 - A failed signature/provenance verification **blocks** the promotion (binding gate).
+
+## Deep Reference — SLSA + SBOM + PCI 6.3.2
+
+### SLSA Supply Chain Levels
+- **SLSA Level 1:** Build process is scripted (GitLab CI); SBOM generated
+- **SLSA Level 2:** Hosted build service with version-controlled build scripts; artifact signed
+- **SLSA Level 3:** Hardened build with provenance — no human operator access during build
+
+For PCI DSS 6.3.2 compliance, SLSA Level 2 is the practical minimum.
+
+### SBOM Generation (syft)
+```yaml
+# .gitlab-ci.yml — SBOM generation stage
+generate-sbom:
+  stage: sbom
+  tags: [linux, docker]
+  image: anchore/syft:latest
+  script:
+    - syft dir:. -o spdx-json > sbom.spdx.json
+    - syft dir:. -o cyclonedx-json > sbom.cyclonedx.json
+  artifacts:
+    paths: [sbom.spdx.json, sbom.cyclonedx.json]
+    expire_in: 90 days
+```
+
+### Artifact Signing (cosign + Sigstore)
+```yaml
+sign-artifact:
+  stage: sign
+  script:
+    - cosign sign-blob --key $COSIGN_KEY sbom.spdx.json > sbom.spdx.json.sig
+  environment:
+    name: signing
+```
+
+### Dependency Pinning
+All dependencies must be pinned to exact versions with hash verification:
+```
+# requirements.txt — CORRECT
+ansible==9.5.1 --hash=sha256:abc123...
+
+# Pipfile.lock / package-lock.json — use lockfiles, commit them
+```
+
+### PCI 6.3.2 Inventory Requirements
+The SBOM must cover: all bespoke software components, all third-party and open-source
+software, all frameworks and libraries, and their versions. Review the SBOM on every
+merge to catch unexpected new dependencies.
