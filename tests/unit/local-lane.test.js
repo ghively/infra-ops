@@ -97,8 +97,9 @@ check('decide is a no-op when globally disabled', () => {
 const pan = require(path.resolve(__dirname, '../../scripts/hooks/pan-egress-filter.js'));
 
 check('pan-egress failClosed is true when env var is unset', () => {
-  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
-  assert.strictEqual(pan.failClosedEnabled(), true);
+  withEnv({ INFRAOPS_DLP_FAIL_CLOSED: undefined }, () => {
+    assert.strictEqual(pan.failClosedEnabled(), true);
+  });
 });
 
 check('pan-egress failClosed is false when env var is 0', () => {
