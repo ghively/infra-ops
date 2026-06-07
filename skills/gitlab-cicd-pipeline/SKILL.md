@@ -219,3 +219,75 @@ deploy_prod:
 > TODO: Add org-specific component registry path once the self-hosted GitLab URL is known.
 > TODO: Confirm Premium vs CE tier to finalise approval-gate implementation (DESIGN.md §17 Q4).
 > TODO: Add freeze-window configuration for maintenance windows once the change-calendar is ingested.
+
+## Deep Reference
+
+### Protected Branch Rules (PCI SoD requirement)
+Every environment branch (test, staging, prod) must be protected with:
+- Minimum 2 approvals (author cannot approve own MR)
+- No force-push allowed
+- No deletion allowed
+- Only maintainers can push directly (for break-glass scenarios only)
+
+```yaml
+# .gitlab-ci.yml — enforce approvals at the CI level too
+deploy-prod:
+  stage: deploy
+  environment:
+    name: production
+    url: https://prod.example.com
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"
+  needs:
+    - job: deploy-staging
+      artifacts: false
+```
+
+### CI Variables Security (PCI Req 8.3)
+- Never store secrets in unprotected CI/CD variables
+- Use protected + masked variables for all credentials
+- Prefer Vault lookups over CI variables for secrets; CI variables as fallback only
+- Rotate CI variables on any team member departure
+
+### Reusable CI Components
+For recurring job patterns, extract to `.gitlab/ci/components/`:
+```yaml
+# .gitlab/ci/components/ansible-check.yml
+spec:
+  inputs:
+    playbook:
+      type: string
+    inventory:
+      type: string
+      default: inventory/dev/
+---
+.ansible-check-job:
+  script:
+    - ansible-playbook --check --diff $[[ inputs.playbook ]] -i $[[ inputs.inventory ]]
+  tags: [linux, ansible]
+```
+
+### Runner Tag Discipline
+Jobs must specify tags to control which runner executes them. Generic jobs without
+tags run on any shared runner — a PCI least-privilege violation for deployment jobs.
+```yaml
+# CORRECT
+deploy:
+  tags: [deploy, linux, ansible]   # explicit runner selection
+
+# WRONG — no tags
+deploy:
+  script: ansible-playbook site.yml  # could run on any runner
+```
+
+### GitLab Security Scanning Integration (SAST/Secret Detection)
+```yaml
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+variables:
+  SAST_EXCLUDED_PATHS: "node_modules, vendor"
+  SECRET_DETECTION_EXCLUDED_PATHS: "tests/fixtures"
+```

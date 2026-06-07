@@ -68,3 +68,27 @@ glab ci trace <job-id>            # read-only; do NOT set CI_DEBUG_TRACE on prot
 - Never print masked variables or secret values from logs; redact and cite location.
 - A PAN/key/secret surfaced in a log → route to `incident-response` + flag; stop.
 - HSA failures → in-zone local lane.
+
+## Deep Reference
+
+### Failure Signature Table
+| Error | Likely cause | First check |
+|-------|-------------|-------------|
+| `ERROR! the role 'X' was not found` | Missing collection or wrong path | `ansible-galaxy collection list` |
+| `fatal: [host]: FAILED! => changed: false` with no message | Handler not notified | Check `notify:` chain |
+| `UNREACHABLE! => SSH Error: Permission denied` | Wrong SSH key or user | Check `ansible_user` and key in group_vars |
+| `WinRM connection failed` | WinRM not enabled or firewall | `Test-WSMan` from target, check port 5985/5986 |
+| `No module named 'X'` in CI | Missing Python dependency | Add to `requirements.txt` or CI image |
+| `yaml.scanner.ScannerError` | Indentation or tab in YAML | `yamllint -d default <file>` |
+| Pipeline timeout | Job exceeded `timeout:` value | Increase timeout or split job |
+
+### Reading a Failed ansible-lint Report
+Focus on `[rule-name]` tags. Suppressable: `[yaml[line-length]]`. Never suppress: `[fqcn]`, `[no-changed-when]`, `[risky-file-permissions]`.
+
+### Safe Job Log Access
+```bash
+# Via GitLab API (read-only)
+curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "https://gitlab.example.com/api/v4/projects/<id>/jobs/<job_id>/trace"
+```
+Never extract secrets from job logs. If a job log contains a masked variable value, report it to the security team immediately.
