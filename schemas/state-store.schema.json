@@ -46,6 +46,18 @@
       "items": {
         "$ref": "#/$defs/workItem"
       }
+    },
+    "knowledgeBase": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/knowledgeBaseEntry"
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
     }
   },
   "$defs": {
@@ -316,6 +328,33 @@
         "createdAt": {
           "$ref": "#/$defs/nonEmptyString"
         }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "timestamp"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "sessionId": { "$ref": "#/$defs/nullableString" },
+        "timestamp": { "$ref": "#/$defs/nonEmptyString" },
+        "tool": { "$ref": "#/$defs/nullableString" },
+        "filePath": { "$ref": "#/$defs/nullableString" },
+        "fingerprint": { "$ref": "#/$defs/nullableString" },
+        "commandName": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "knowledgeBaseEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "createdAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "slug": { "$ref": "#/$defs/nullableString" },
+        "classification": { "$ref": "#/$defs/nullableString" },
+        "source": { "$ref": "#/$defs/nullableString" },
+        "topics": { "type": "array" },
+        "createdAt": { "$ref": "#/$defs/nonEmptyString" }
       }
     },
     "workItem": {
