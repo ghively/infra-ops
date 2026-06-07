@@ -104,8 +104,7 @@ These items must land before the plugin can reason about a real estate.
       - Wire `dual-control-promotion-gate` for HSA instinct promotion
       - Validate `knowledge/hsa-deployment.md` against actual HSA topology
 
-- [🔒] **`perso-*` agent suite** — three personalization-zone agents described in
-      DESIGN but not built: no code, no frontmatter. CPSA-gated alongside HSA deployment.
+- [x] **`perso-*` agent suite** — perso-planner, perso-reviewer, perso-auditor, perso-scribe built as full design artifacts; CPSA gates deployment only, not development.
 
 ---
 
@@ -125,7 +124,7 @@ These items must land before the plugin can reason about a real estate.
 | knowledge-curator | ✅ | ✅ | Ingest docs once environment.md exists (P1) |
 | change-scribe | ✅ | ✅ | — |
 | iac-debugger | ✅ | ✅ | — |
-| perso-* (HSA) | ⬜ | ⬜ | 🔒 CPSA-gated |
+| perso-planner / perso-reviewer / perso-auditor / perso-scribe | ✅ | ⬜ | CPSA gates deployment; development complete |
 
 ### Skills
 
