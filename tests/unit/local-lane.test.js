@@ -93,4 +93,24 @@ check('decide is a no-op when globally disabled', () => {
   });
 });
 
+// --- pan-egress-filter default behaviour ---
+const pan = require(path.resolve(__dirname, '../../scripts/hooks/pan-egress-filter.js'));
+
+check('pan-egress failClosed is true when env var is unset', () => {
+  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+  assert.strictEqual(pan.failClosedEnabled(), true);
+});
+
+check('pan-egress failClosed is false when env var is 0', () => {
+  process.env.INFRAOPS_DLP_FAIL_CLOSED = '0';
+  assert.strictEqual(pan.failClosedEnabled(), false);
+  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+});
+
+check('pan-egress failClosed is true when env var is 1', () => {
+  process.env.INFRAOPS_DLP_FAIL_CLOSED = '1';
+  assert.strictEqual(pan.failClosedEnabled(), true);
+  delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+});
+
 console.log(`\n✅ local-lane: ${passed} assertions passed`);
