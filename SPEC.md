@@ -78,6 +78,10 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | knowledge-curator | sonnet (corp) / local (in-zone) | ✅ | Ingest+classify docs, answer with citations, maintain instinct ledger |
 | iac-debugger | sonnet | ✅ | Diagnose red pipelines / failed runs → cited root cause + proposed fix (read-only) |
 | secrets-scanner | haiku | ✅ | Deterministic pre-merge secret/PAN static scan; emits VERDICT for the merge gate |
+| perso-planner | haiku (local) | ✅ | HSA infra brief → phased plan with dual-control gates (CPSA-gated deployment) |
+| perso-reviewer | haiku (local) | ✅ | HSA infrastructure MR review — CP+PIN controls (CPSA-gated deployment) |
+| perso-auditor | haiku (local) | ✅ | HSA read-only discovery + drift detection (CPSA-gated deployment) |
+| perso-scribe | haiku (local) | ✅ | HSA change records with dual-control evidence (CPSA-gated deployment) |
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
@@ -102,6 +106,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | rollback-and-runbooks | ✅ | Forward-fix vs roll-back, artifact redeploy, runbooks, break-glass |
 | ci-pipeline-debugging | ✅ | Safe job-log diagnosis, EE repro, failure-signature table |
 | incident-response | ✅ | Bounded agent role for PCI 12.10.x / 12.10.7 (contain/preserve/escalate) |
+| hsa-infrastructure | ✅ | Air-gap, dual-control, local-only Ansible/CI conventions for HSA zone |
+| perso-compliance | ✅ | CP Logical + PIN infrastructure controls checklist |
 
 ### Hooks (`hooks/hooks.json` + `scripts/hooks/*.js`, auto-loaded)
 
