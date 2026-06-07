@@ -176,3 +176,58 @@ ansible-playbook --check --diff -i inventories/staging site.yml
 > TODO: Add idempotence-gate exception process (e.g., first-run bootstrap tasks that
 > are inherently non-idempotent — use `changed_when: false` pattern) once real roles
 > are authored.
+
+## Deep Reference
+
+### Full Pipeline Execution Order
+```
+yamllint → ansible-lint → ansible-playbook --syntax-check →
+ansible-playbook --check --diff (dev inventory) →
+molecule test (idempotence) → CI gate (iac-sast-scanning)
+```
+Never skip a step. Never propose an MR with a failing lint or syntax check.
+
+### yamllint Configuration
+Project-wide rule: max line length 120, comments-indentation at warning level.
+Run with: `yamllint -d '{extends: default, rules: {line-length: {max: 120}, comments-indentation: {level: warning}}}' <file>`
+
+### ansible-lint Rules to Never Suppress
+- `fqcn` — FQCN is mandatory. No suppression.
+- `no-changed-when` — if you suppress this, `creates:` or `removes:` must be present.
+- `risky-shell-pipe` — if a pipe is needed, add `pipefail` or use a dedicated module.
+
+### Molecule Driver Choice
+Use `podman` (rootless) not `docker` for new scenarios:
+```yaml
+# molecule/default/molecule.yml
+driver:
+  name: podman
+platforms:
+  - name: instance
+    image: "quay.io/centos/centos:stream9"
+    pre_build_image: true
+```
+
+### Molecule Verify Pattern
+```yaml
+# molecule/default/verify.yml
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check service is running
+      ansible.builtin.service_facts:
+    - name: Assert service active
+      ansible.builtin.assert:
+        that: ansible_facts.services['myservice.service'].state == 'running'
+        fail_msg: "myservice is not running"
+```
+
+### Check-mode Evidence in MR Description
+Every MR must include the `--check --diff` output summary. Format:
+```
+## Check-mode evidence
+Ran: `ansible-playbook --check --diff site.yml -i inventory/dev/`
+Result: N tasks changed, 0 errors
+<paste abbreviated diff output>
+```
