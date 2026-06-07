@@ -1,0 +1,125 @@
+# Ansible Best Practices — pre-promoted seed instincts
+# These instincts ship with the plugin as active institutional knowledge.
+---
+instincts:
+  - id: ansible-fqcn-required
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 1.0
+    content: >
+      All Ansible module calls must use Fully Qualified Collection Names (FQCN).
+      Short-form names (e.g., `copy:` instead of `ansible.builtin.copy:`) cause
+      ambiguity when multiple collections are installed and are rejected by
+      ansible-lint. No exceptions, including in handlers and import_tasks.
+    citation: "ansible-lint rule [fqcn]; Ansible Galaxy collection docs"
+    evidence:
+      - type: standard
+        source: "ansible-lint fqcn rule — https://ansible.readthedocs.io/projects/lint/rules/fqcn/"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-no-log-on-secrets
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 1.0
+    content: >
+      Any Ansible task that touches a secret value (retrieves from Vault, sets a
+      password, registers a variable containing a token or key) must have
+      `no_log: true`. Any task that passes a secret via template variables must also
+      have `no_log: true`. This is a CRITICAL finding if missing on a PCI-scope system.
+    citation: "PCI DSS v4.0.1 Req 3.4.1 (protect stored data); ansible-lint [no-log-password]"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 3.4.1"
+      - type: standard
+        source: "ansible-lint rule [no-log-password]"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-idempotency-required
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 0.97
+    content: >
+      Every Ansible task must be idempotent — running the play twice on the same
+      host must produce no changes on the second run. Tasks using `command` or
+      `shell` modules must include `creates:`, `removes:`, or `changed_when: false`
+      to achieve idempotency. The Molecule idempotence test validates this in CI.
+    citation: "Ansible best practices — idempotency; ansible-lint rule [no-changed-when]"
+    evidence:
+      - type: standard
+        source: "Ansible documentation: Developing idempotent playbooks"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-become-explicit
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 0.95
+    content: >
+      `become: true` without `become_user:` defaults to root. For PCI-scope systems,
+      `become_user:` must always be explicit. Using `become: true` on tasks that do
+      not require root is a HIGH finding. Prefer module-level privilege over broad
+      play-level become where possible.
+    citation: "PCI DSS v4.0.1 Req 7.2 (restrict access); CIS Benchmark least-privilege"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 7.2.x"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-validate-certs-never-false
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 1.0
+    content: >
+      `validate_certs: false` is never acceptable for Ansible tasks targeting
+      PCI-scope systems. This is a CRITICAL finding — it exposes the connection to
+      MITM attacks and violates PCI DSS Req 4.2.1 (strong cryptography in transit).
+      If a cert is untrusted, fix the trust chain — don't disable validation.
+    citation: "PCI DSS v4.0.1 Req 4.2.1; ansible-lint rule [no-free-form]"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 4.2.1"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-winrm-no-basic-auth
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 1.0
+    content: >
+      WinRM connections to Windows targets must use `kerberos` or `ntlm` transport.
+      `ansible_winrm_transport: basic` sends credentials in base64 (not encrypted)
+      and is never acceptable in production. `ansible_winrm_server_cert_validation`
+      must be `validate`, not `ignore`.
+    citation: "PCI DSS v4.0.1 Req 4.2.1; CIS Windows Benchmark"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 4.2.1"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: ansible-molecule-ships-with-role
+    zone: corporate
+    category: ansible
+    status: active
+    confidence: 0.90
+    content: >
+      Every new Ansible role must ship with a Molecule scenario under
+      `molecule/default/` that includes converge.yml, verify.yml, and an
+      idempotence test. The idempotence test runs converge.yml twice and asserts
+      no changes on the second run. Roles without Molecule scenarios are not
+      accepted by the iac-author review gate.
+    citation: "ansible-testing skill; SPEC §4 — test coverage requirements"
+    evidence:
+      - type: design
+        source: "infra-ops SPEC.md §4 — testing standards"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
