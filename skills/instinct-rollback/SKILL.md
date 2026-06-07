@@ -61,3 +61,19 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/instinct-ledger.js" --rollback \
   never rolled back or reactivated on a single approval.
 - Reasons must be specific; for compliance items state the compliance impact.
 - Every rollback/deactivation is recorded in the governance ledger.
+
+## Deep Reference
+
+### When to Rollback vs. Supersede
+- **Rollback (deactivate):** the instinct was wrong or is no longer valid
+- **Supersede (create new version):** the instinct was right but has been refined
+
+For a supersede: create a new instinct with updated content; in the new instinct's
+`evidence` field, reference the original instinct ID and explain the refinement.
+Then rollback the original.
+
+### Rollback Governance Requirements
+Rollbacks are governance events and require:
+1. A human approver (the rollback initiator does not self-approve)
+2. A reason string explaining why the instinct is being deactivated
+3. Logging to the governance ledger (automatic via `instinct-ledger.js --rollback`)

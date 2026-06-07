@@ -90,3 +90,27 @@ INFRA_HSA_ZONE=1 node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-ga
 - The agent **proposes**; a human **approves**. No silent self-promotion.
 - Never promote an instinct that encodes access to PAN, keys, PINs, or HSM config.
 - Rollback/deactivation is governed too — see the `instinct-rollback` skill.
+
+## Deep Reference
+
+### Instinct Quality Checklist
+Before proposing an instinct for promotion, verify all of the following:
+- [ ] Confidence ≥ 0.85 (0.7 is the gate floor; 0.85 is recommended)
+- [ ] At least two independent observations support the pattern
+- [ ] A documentation citation exists (required for compliance items; strongly recommended for all)
+- [ ] The pattern is zone-correct (corporate instincts must not encode HSA assumptions)
+- [ ] A human approver has been identified who was not involved in originating the observation
+
+### Instinct Content Guidelines
+Write instinct content as a rule a future agent can apply without needing the original context:
+```yaml
+# GOOD — actionable, self-contained, zone-correct
+content: >
+  Always use FQCN for Ansible module calls in this codebase. Short-form names
+  (e.g., `copy:` instead of `ansible.builtin.copy:`) are rejected by ansible-lint
+  and cause ambiguity when multiple collections are installed.
+
+# BAD — vague, not actionable
+content: >
+  Use FQCN.
+```
