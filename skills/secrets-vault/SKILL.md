@@ -199,3 +199,62 @@ files. Ansible-vault is acceptable for low-sensitivity or bootstrap secrets only
 > it needs, no access to prod paths) once the Vault policy structure is ingested.
 > TODO: Confirm whether ansible-vault is in use for any existing playbooks and
 > migrate to Vault runtime lookups per the `documentation` playbook rework task.
+
+## Deep Reference
+
+### Vault Reference Patterns (HashiCorp Vault)
+```yaml
+# CORRECT — runtime lookup, value never in source control
+- name: Retrieve DB password
+  community.hashi_vault.hashi_vault_secret:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ vault_role_id }}"
+    secret_id: "{{ vault_secret_id }}"
+    path: "secret/data/db/app"
+  register: vault_secret
+  no_log: true
+
+- name: Configure app
+  ansible.builtin.template:
+    src: app.conf.j2
+    dest: /etc/app/app.conf
+  vars:
+    db_password: "{{ vault_secret.secret.data.password }}"
+  no_log: true
+
+# WRONG — never acceptable
+- name: Configure app
+  ansible.builtin.template:
+    src: app.conf.j2
+    dest: /etc/app/app.conf
+  vars:
+    db_password: "SuperSecret123"   # CRITICAL — hardcoded
+```
+
+### AppRole Authentication (Ansible → Vault)
+The recommended auth method for Ansible is AppRole:
+- `role_id`: stored as a protected CI variable (non-secret)
+- `secret_id`: fetched from Vault at runtime or stored as a protected/masked CI variable
+- Rotate `secret_id` on any team member departure or suspected compromise
+
+### Vault Policy Principle (least privilege)
+Each Ansible service account gets a Vault policy granting read-only access to exactly
+the paths it needs. Wildcard `*` policies are never acceptable.
+
+```hcl
+# CORRECT — scoped policy for ansible-deploy
+path "secret/data/db/app" {
+  capabilities = ["read"]
+}
+
+# WRONG
+path "secret/*" {
+  capabilities = ["read", "write", "delete"]
+}
+```
+
+### Breaking Glass (emergency credential access)
+Document the break-glass procedure in `knowledge/runbooks/vault-break-glass.md`.
+Break-glass use must be logged to the governance ledger and reported in the next
+change control window.
