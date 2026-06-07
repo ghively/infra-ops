@@ -133,4 +133,56 @@ check('sensitivity-router isFailClosed is true when env var is 1', () => {
   });
 });
 
+// --- env-var namespace ---
+const yamllint = require(path.resolve(__dirname, '../../scripts/hooks/yamllint-hook.js'));
+const ansibleSyntax = require(path.resolve(__dirname, '../../scripts/hooks/ansible-syntax-hook.js'));
+
+check('yamllint hook activates on INFRAOPS_YAMLLINT=1 (canonical)', () => {
+  withEnv({ INFRAOPS_YAMLLINT: '1', INFRA_OPS_YAMLLINT: undefined }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
+    const result = yamllint.run(input);
+    assert.ok(result !== undefined);
+  });
+});
+
+check('yamllint hook activates on INFRA_OPS_YAMLLINT=1 (back-compat)', () => {
+  withEnv({ INFRAOPS_YAMLLINT: undefined, INFRA_OPS_YAMLLINT: '1' }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
+    const result = yamllint.run(input);
+    assert.ok(result !== undefined);
+  });
+});
+
+check('yamllint hook is a passthrough when both vars are unset', () => {
+  withEnv({ INFRAOPS_YAMLLINT: undefined, INFRA_OPS_YAMLLINT: undefined }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'test.yaml' } });
+    const result = yamllint.run(input);
+    assert.strictEqual(result, input);
+  });
+});
+
+check('ansible-syntax hook activates on INFRAOPS_ANSIBLE_SYNTAX=1 (canonical)', () => {
+  withEnv({ INFRAOPS_ANSIBLE_SYNTAX: '1', INFRA_OPS_ANSIBLE_SYNTAX: undefined }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
+    const result = ansibleSyntax.run(input);
+    assert.ok(result !== undefined);
+  });
+});
+
+check('ansible-syntax hook activates on INFRA_OPS_ANSIBLE_SYNTAX=1 (back-compat)', () => {
+  withEnv({ INFRAOPS_ANSIBLE_SYNTAX: undefined, INFRA_OPS_ANSIBLE_SYNTAX: '1' }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
+    const result = ansibleSyntax.run(input);
+    assert.ok(result !== undefined);
+  });
+});
+
+check('ansible-syntax hook is a passthrough when both vars are unset', () => {
+  withEnv({ INFRAOPS_ANSIBLE_SYNTAX: undefined, INFRA_OPS_ANSIBLE_SYNTAX: undefined }, () => {
+    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'site.yaml' } });
+    const result = ansibleSyntax.run(input);
+    assert.strictEqual(result, input);
+  });
+});
+
 console.log(`\n✅ local-lane: ${passed} assertions passed`);
