@@ -73,8 +73,8 @@ check('decide allows benign input', () => {
   });
 });
 
-check('decide advises (non-blocking) on CHD by default', () => {
-  withEnv({ INFRAOPS_SENSITIVITY_ROUTE: '', INFRAOPS_SENSITIVE_FAIL_CLOSED: '' }, () => {
+check('decide advises (non-blocking) on CHD when fail-closed is off', () => {
+  withEnv({ INFRAOPS_SENSITIVITY_ROUTE: '', INFRAOPS_SENSITIVE_FAIL_CLOSED: '0' }, () => {
     assert.strictEqual(sensitivity.decide(chd).action, 'advise');
   });
 });
@@ -112,6 +112,25 @@ check('pan-egress failClosed is true when env var is 1', () => {
   process.env.INFRAOPS_DLP_FAIL_CLOSED = '1';
   assert.strictEqual(pan.failClosedEnabled(), true);
   delete process.env.INFRAOPS_DLP_FAIL_CLOSED;
+});
+
+// --- sensitivity-router fail-closed default ---
+check('sensitivity-router isFailClosed is true when env var is unset', () => {
+  withEnv({ INFRAOPS_SENSITIVE_FAIL_CLOSED: undefined }, () => {
+    assert.strictEqual(sensitivity.isFailClosed(), true);
+  });
+});
+
+check('sensitivity-router isFailClosed is false when env var is 0', () => {
+  withEnv({ INFRAOPS_SENSITIVE_FAIL_CLOSED: '0' }, () => {
+    assert.strictEqual(sensitivity.isFailClosed(), false);
+  });
+});
+
+check('sensitivity-router isFailClosed is true when env var is 1', () => {
+  withEnv({ INFRAOPS_SENSITIVE_FAIL_CLOSED: '1' }, () => {
+    assert.strictEqual(sensitivity.isFailClosed(), true);
+  });
 });
 
 console.log(`\n✅ local-lane: ${passed} assertions passed`);
