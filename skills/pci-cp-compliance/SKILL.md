@@ -184,3 +184,28 @@ artifact for human review is the correct action. No autonomous deploy."
 >   vendor documentation and internal runbooks.
 > - Section numbers are verified against the current PCI CP Logical v3.0 PDF.
 > (DESIGN.md §15 Phase 7; pci-card-production.md §0)
+
+## Deep Reference — PCI Card Production Logical v3.x
+
+### CP Logical §3 — Physical Security Controls (Infrastructure implications)
+- Personalization systems must be in a physically secured area with access logging
+- Infrastructure changes to systems that process card data require approved change windows
+- Any remote access to HSA systems must use MFA and be logged
+
+### CP Logical §4 — Logical Security Controls
+- **Key management:** Key loading is a dual-control human operation outside agent scope
+- **Access control:** Each operator has a unique ID; no shared accounts; all access logged
+- **Session management:** Inactive sessions must time out; re-authentication required
+
+### CP Logical §5 — Personnel Controls (for change records)
+- Every change to personalization infrastructure must reference the authorized operator
+- Contractors/vendors accessing the HSA must be documented and escorted
+
+### CP Logical §6 — Change Management
+- All changes must be approved before implementation (no emergency changes without retroactive approval within 24h)
+- Change records must include: description, risk assessment, rollback plan, test results, dual-control approver names
+- Post-change verification is mandatory
+
+### CP PIN §8 — PIN Security
+- PIN processing systems must be isolated from non-PIN systems at the network level
+- No agent may interact with PIN processing — flag and route to human CPSA immediately
