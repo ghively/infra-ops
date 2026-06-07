@@ -84,3 +84,54 @@ Approval: <human gate — who approves the apply>
 - The agent **proposes** rollbacks/runbooks; humans/pipelines **execute** them.
 - No autonomous prod apply, no auto-promote, no break-glass execution by the agent.
 - Rollbacks touching the HSA are out of scope here — route to the in-zone lane.
+
+## Deep Reference
+
+### Rollback Decision Matrix
+| Scenario | Preferred action | Rationale |
+|----------|-----------------|-----------|
+| Single task failed, state is known | Fix-forward: patch the task, re-run | Faster than full rollback |
+| Multiple tasks failed, state is uncertain | Full rollback | Predictable outcome |
+| Schema/data migration changed | Forward-only with compensating migration | Rollback may corrupt data |
+| Dependency version changed | Rollback to previous artifact | Pin and redeploy known-good |
+| Security vulnerability in released version | Forward-only emergency patch | Documented emergency change process |
+
+### Standard Rollback Playbook Pattern
+```yaml
+# rollback.yml — always ship alongside site.yml
+- hosts: "{{ target_hosts | default('all') }}"
+  vars:
+    rollback_version: "{{ previous_version }}"
+  tasks:
+    - name: Stop service
+      ansible.builtin.systemd:
+        name: "{{ service_name }}"
+        state: stopped
+
+    - name: Restore previous package
+      ansible.builtin.copy:
+        src: "{{ artifact_store }}/{{ service_name }}-{{ rollback_version }}.pkg"
+        dest: /opt/{{ service_name }}/current.pkg
+        mode: '0644'
+      tags: [rollback]
+
+    - name: Start service
+      ansible.builtin.systemd:
+        name: "{{ service_name }}"
+        state: started
+
+    - name: Verify rollback succeeded
+      ansible.builtin.uri:
+        url: "http://localhost:{{ service_port }}/healthz"
+        status_code: 200
+      retries: 5
+      delay: 3
+```
+
+### Break-Glass Procedure
+Document in `knowledge/runbooks/break-glass.md`:
+1. Who can authorize break-glass (named roles, not individuals)
+2. What actions are permitted without the standard change process
+3. Maximum window duration
+4. Mandatory post-action change record within 24h
+5. Governance ledger entry required

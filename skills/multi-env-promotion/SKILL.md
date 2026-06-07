@@ -179,3 +179,27 @@ deploy_prod:
 > TODO: Add deploy freeze window config once the change-freeze calendar is ingested.
 > TODO: Confirm GitLab tier (Premium vs CE) to finalise approval-gate mechanism
 > (DESIGN.md §17 Q4).
+
+## Deep Reference
+
+### Build-Once-Promote-One-Artifact
+The artifact built in the pipeline must be the same artifact deployed to all environments.
+Never rebuild for higher environments — it introduces environmental variation.
+
+```
+CI Build → artifact (tagged with git SHA) → pushed to artifact store
+                ↓
+         Octopus: Dev deploy (auto, from CI)
+                ↓ manual gate
+         Octopus: Test deploy (same artifact, new config)
+                ↓ manual gate + 2 approvals
+         Octopus: Staging deploy
+                ↓ manual gate + change window
+         Octopus: Prod deploy
+```
+
+### Environment-Specific Configuration Injection
+Configuration differences between environments are injected at deploy time, not baked into the artifact:
+- Octopus variables (environment-scoped) for endpoints, feature flags, resource sizes
+- Vault secrets fetched at runtime per environment
+- Never store prod configuration in the artifact or source control
