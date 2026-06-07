@@ -55,11 +55,14 @@ check('parseArgs reads flags', () => {
 // --- sensitivity-router.decide ---
 function withEnv(env, fn) {
   const saved = {};
-  for (const k of Object.keys(env)) { saved[k] = process.env[k]; process.env[k] = env[k]; }
+  for (const k of Object.keys(env)) {
+    saved[k] = process.env[k];
+    if (env[k] === undefined) { delete process.env[k]; } else { process.env[k] = env[k]; }
+  }
   try { return fn(); }
   finally {
     for (const k of Object.keys(env)) {
-      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+      if (saved[k] === undefined) { delete process.env[k]; } else { process.env[k] = saved[k]; }
     }
   }
 }
@@ -137,19 +140,21 @@ check('sensitivity-router isFailClosed is true when env var is 1', () => {
 const yamllint = require(path.resolve(__dirname, '../../scripts/hooks/yamllint-hook.js'));
 const ansibleSyntax = require(path.resolve(__dirname, '../../scripts/hooks/ansible-syntax-hook.js'));
 
-check('yamllint hook activates on INFRAOPS_YAMLLINT=1 (canonical)', () => {
+check('yamllint isEnabled is true on INFRAOPS_YAMLLINT=1 (canonical)', () => {
   withEnv({ INFRAOPS_YAMLLINT: '1', INFRA_OPS_YAMLLINT: undefined }, () => {
-    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
-    const result = yamllint.run(input);
-    assert.ok(result !== undefined);
+    assert.strictEqual(yamllint.isEnabled(), true);
   });
 });
 
-check('yamllint hook activates on INFRA_OPS_YAMLLINT=1 (back-compat)', () => {
+check('yamllint isEnabled is true on INFRA_OPS_YAMLLINT=1 (back-compat)', () => {
   withEnv({ INFRAOPS_YAMLLINT: undefined, INFRA_OPS_YAMLLINT: '1' }, () => {
-    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
-    const result = yamllint.run(input);
-    assert.ok(result !== undefined);
+    assert.strictEqual(yamllint.isEnabled(), true);
+  });
+});
+
+check('yamllint isEnabled is false when INFRAOPS_YAMLLINT="" overrides back-compat INFRA_OPS_YAMLLINT=1', () => {
+  withEnv({ INFRAOPS_YAMLLINT: '', INFRA_OPS_YAMLLINT: '1' }, () => {
+    assert.strictEqual(yamllint.isEnabled(), false);
   });
 });
 
@@ -161,19 +166,21 @@ check('yamllint hook is a passthrough when both vars are unset', () => {
   });
 });
 
-check('ansible-syntax hook activates on INFRAOPS_ANSIBLE_SYNTAX=1 (canonical)', () => {
+check('ansible-syntax isEnabled is true on INFRAOPS_ANSIBLE_SYNTAX=1 (canonical)', () => {
   withEnv({ INFRAOPS_ANSIBLE_SYNTAX: '1', INFRA_OPS_ANSIBLE_SYNTAX: undefined }, () => {
-    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
-    const result = ansibleSyntax.run(input);
-    assert.ok(result !== undefined);
+    assert.strictEqual(ansibleSyntax.isEnabled(), true);
   });
 });
 
-check('ansible-syntax hook activates on INFRA_OPS_ANSIBLE_SYNTAX=1 (back-compat)', () => {
+check('ansible-syntax isEnabled is true on INFRA_OPS_ANSIBLE_SYNTAX=1 (back-compat)', () => {
   withEnv({ INFRAOPS_ANSIBLE_SYNTAX: undefined, INFRA_OPS_ANSIBLE_SYNTAX: '1' }, () => {
-    const input = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'foo.txt' } });
-    const result = ansibleSyntax.run(input);
-    assert.ok(result !== undefined);
+    assert.strictEqual(ansibleSyntax.isEnabled(), true);
+  });
+});
+
+check('ansible-syntax isEnabled is false when INFRAOPS_ANSIBLE_SYNTAX="" overrides back-compat', () => {
+  withEnv({ INFRAOPS_ANSIBLE_SYNTAX: '', INFRA_OPS_ANSIBLE_SYNTAX: '1' }, () => {
+    assert.strictEqual(ansibleSyntax.isEnabled(), false);
   });
 });
 

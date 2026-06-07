@@ -85,11 +85,24 @@ function runYamllint(filePath) {
 }
 
 /**
+ * Returns true when the yamllint hook should be active.
+ * Canonical var (INFRAOPS_YAMLLINT) takes full precedence — even an empty
+ * string disables the hook so that an explicit `INFRAOPS_YAMLLINT=''` cannot
+ * be overridden by a still-present back-compat var.
+ */
+function isEnabled() {
+  const v = process.env.INFRAOPS_YAMLLINT !== undefined
+    ? process.env.INFRAOPS_YAMLLINT
+    : process.env.INFRA_OPS_YAMLLINT;
+  return String(v || '').toLowerCase() === '1';
+}
+
+/**
  * Core hook logic.
  */
 function run(rawInput) {
   // Gate on feature flag
-  if (String(process.env.INFRAOPS_YAMLLINT || process.env.INFRA_OPS_YAMLLINT || '').toLowerCase() !== '1') {
+  if (!isEnabled()) {
     return rawInput;
   }
 
@@ -136,6 +149,7 @@ if (require.main === module) {
 
 module.exports = {
   findYamllint,
+  isEnabled,
   isYamlFile,
   run,
   runYamllint
