@@ -12,17 +12,17 @@
  *   - to BLOCK: print a PreToolUse JSON decision with permissionDecision="deny"
  *   - to ALLOW: exit 0 with no decision (passthrough)
  *
- * Failure policy: by default, on parse/internal error this exits 0 (fail-open) so
- * it never unexpectedly breaks the session. For a hardened CDE, set
- * INFRAOPS_DLP_FAIL_CLOSED=1 to make the filter DENY whenever it cannot inspect
- * the input (parse error, unstringifiable input, internal error). See TODO.md / README.
+ * Failure policy: by default, on parse/internal error this DENYs the tool call
+ * (fail-closed). Set INFRAOPS_DLP_FAIL_CLOSED=0 to loosen (fail-open) if needed.
+ * Fail-closed means any inability to inspect the input results in a DENY rather
+ * than a silent allow. See TODO.md / README.
  */
 'use strict';
 
-// Fail-closed when the operator opts in. When true, any inability to inspect the
-// tool input results in a DENY rather than a silent allow.
+// Fail-closed by default. Set INFRAOPS_DLP_FAIL_CLOSED=0 to loosen (fail-open).
+// Any inability to inspect tool input results in DENY unless the operator opts out.
 function failClosedEnabled() {
-  return /^(1|true|yes)$/i.test(String(process.env.INFRAOPS_DLP_FAIL_CLOSED || ''));
+  return !/^(0|false|no)$/i.test(String(process.env.INFRAOPS_DLP_FAIL_CLOSED ?? '1'));
 }
 
 function readStdin() {
@@ -132,12 +132,16 @@ function main() {
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
-  if (failClosedEnabled()) {
-    deny('[infra-ops] BLOCKED (fail-closed): DLP filter internal error. ' + err.message);
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    if (failClosedEnabled()) {
+      deny('[infra-ops] BLOCKED (fail-closed): DLP filter internal error. ' + err.message);
+    }
+    process.stderr.write('[pan-egress-filter] internal error; allowing (fail-open): ' + err.message + '\n');
+    process.exit(0);
   }
-  process.stderr.write('[pan-egress-filter] internal error; allowing (fail-open): ' + err.message + '\n');
-  process.exit(0);
 }
+
+module.exports = { failClosedEnabled, containsPan, containsSecret };
