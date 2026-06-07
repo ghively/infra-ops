@@ -9,7 +9,7 @@
  * - Corporate zone: Cloud model allowed
  * - CHD-adjacent work: Must use local-only model
  *
- * Enable: Set INFRA_OPS_SENSITIVITY_ROUTE=1
+ * CHD routing: active by default. Set INFRAOPS_SENSITIVE_FAIL_CLOSED=0 for advisory mode.
  * Configure: Set OLLAMA_BASE_URL to local model endpoint
  */
 
@@ -93,11 +93,11 @@ function isDisabled() {
 
 /**
  * Fail-closed mode: DENY CHD-adjacent tool calls (for hardened / in-zone operation)
- * instead of merely advising. Off by default to avoid false-positive breakage from
- * the broad keyword set in ordinary corporate work.
+ * instead of merely advising. On by default for PCI-scope CDE use. Set
+ * INFRAOPS_SENSITIVE_FAIL_CLOSED=0 to switch to advisory mode.
  */
 function isFailClosed() {
-  return /^(1|true|yes)$/i.test(String(process.env.INFRAOPS_SENSITIVE_FAIL_CLOSED || ''));
+  return !/^(0|false|no)$/i.test(String(process.env.INFRAOPS_SENSITIVE_FAIL_CLOSED ?? '1'));
 }
 
 /**
