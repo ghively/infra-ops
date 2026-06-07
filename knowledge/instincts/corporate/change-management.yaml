@@ -1,0 +1,56 @@
+# Change Management — pre-promoted seed instincts
+---
+instincts:
+  - id: change-blast-radius-required
+    zone: corporate
+    category: change-management
+    status: active
+    confidence: 0.97
+    content: >
+      Before authoring or proposing any change to PCI-scope systems, the blast radius
+      must be documented: which systems are affected, what is the expected behavior
+      change, what is the rollback plan, and what is the test evidence. The
+      gateguard-fact-force hook enforces this at the tool boundary. Changes without
+      documented blast radius will be blocked.
+    citation: "PCI DSS v4.0.1 Req 6.5; infra-ops CLAUDE.md hard rule #1"
+    evidence:
+      - type: design
+        source: "infra-ops SPEC.md — gateguard-fact-force hook specification"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: change-rollback-plan-required
+    zone: corporate
+    category: change-management
+    status: active
+    confidence: 0.95
+    content: >
+      Every proposed change to production infrastructure must include a rollback plan.
+      For Ansible: a rollback playbook or documented manual steps. For package changes:
+      the previous artifact version to redeploy. For config changes: the previous
+      config value and the command to restore it. Rollback plans are reviewed by the
+      playbook-reviewer agent and must be included in the MR description.
+    citation: "PCI DSS v4.0.1 Req 6.5.4 — back-out procedures"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 6.5.4"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: change-check-mode-evidence
+    zone: corporate
+    category: change-management
+    status: active
+    confidence: 0.90
+    content: >
+      Every MR that modifies an Ansible playbook or role must include
+      `ansible-playbook --check --diff` output as evidence. This is the minimum
+      test evidence required by the review gate. For new roles, Molecule test output
+      must also be included. MRs without test evidence are rejected by the
+      playbook-reviewer agent (BLOCK verdict).
+    citation: "PCI DSS v4.0.1 Req 6.5.5 — testing after change; infra-ops review gate"
+    evidence:
+      - type: design
+        source: "infra-ops SPEC.md — review gate and MR evidence requirements"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
