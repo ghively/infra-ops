@@ -1,0 +1,90 @@
+# GitLab CI Security — pre-promoted seed instincts
+---
+instincts:
+  - id: gitlab-runner-tags-required
+    zone: corporate
+    category: gitlab-ci
+    status: active
+    confidence: 0.95
+    content: >
+      All CI/CD jobs must specify explicit runner `tags:`. Jobs without tags can
+      run on any shared runner, which violates PCI least-privilege (Req 7.2) for
+      deployment jobs. Deployment jobs must run on tagged deploy runners; build
+      jobs on tagged build runners. Never use untagged runners for secrets access.
+    citation: "PCI DSS v4.0.1 Req 7.2; GitLab CI runner documentation"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 7.2.x"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: gitlab-protected-variables-for-secrets
+    zone: corporate
+    category: gitlab-ci
+    status: active
+    confidence: 1.0
+    content: >
+      CI/CD variables containing credentials, tokens, or keys must be marked both
+      `Protected` (only available on protected branches/tags) and `Masked` (hidden
+      from job logs). Unprotected secrets variables are visible to any branch
+      pipeline, which violates PCI Req 8.3. Prefer Vault lookups over CI variables
+      for secrets; use CI variables only as a fallback.
+    citation: "PCI DSS v4.0.1 Req 8.3.x; GitLab CI variable protection docs"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 8.3"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: gitlab-protected-branch-two-approvals
+    zone: corporate
+    category: gitlab-ci
+    status: active
+    confidence: 0.95
+    content: >
+      All environment branches (test, staging, prod) must be protected with a
+      minimum of 2 MR approvals and author-cannot-approve enabled. No force-push
+      or deletion allowed. This enforces separation of duties (PCI Req 6.5) at the
+      source control level. Maintainer direct-push is for break-glass only and
+      must be governance-ledger-logged.
+    citation: "PCI DSS v4.0.1 Req 6.5 (change control); Req 8.3 (SoD)"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirements 6.5 and 8.3"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: gitlab-no-deploy-on-push
+    zone: corporate
+    category: gitlab-ci
+    status: active
+    confidence: 0.95
+    content: >
+      Deployment to test, staging, or production must never be triggered
+      automatically on push. Deployment jobs must use `when: manual` or an
+      Octopus Deploy lifecycle gate. Automated promotion past Dev without human
+      approval violates the orchestrator's hard rule (propose, never dispose) and
+      PCI Req 6.5 change control.
+    citation: "PCI DSS v4.0.1 Req 6.5; infra-ops CLAUDE.md hard rule #1"
+    evidence:
+      - type: design
+        source: "infra-ops CLAUDE.md — Hard rule #1: Propose, never dispose"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: gitlab-sast-secret-detection-included
+    zone: corporate
+    category: gitlab-ci
+    status: active
+    confidence: 0.90
+    content: >
+      The GitLab Security/SAST and Security/Secret-Detection pipeline templates must
+      be included in `.gitlab-ci.yml`. This is the CI-layer backstop that catches
+      secrets before they reach a merge. The pre-commit gitleaks hook is developer-
+      side; the CI gate is authoritative. Both must be active.
+    citation: "PCI DSS v4.0.1 Req 6.3.2; GitLab Security Scanning docs"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 6.3.2"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
