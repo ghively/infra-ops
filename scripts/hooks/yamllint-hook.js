@@ -6,7 +6,7 @@
  * after Edit/Write operations. Provides immediate feedback on YAML
  * syntax issues.
  *
- * Enable: Set INFRA_OPS_YAMLLINT=1
+ * Enable: Set INFRAOPS_YAMLLINT=1  (INFRA_OPS_YAMLLINT still accepted for back-compat)
  * Requires: yamllint (npm install -g yamllint or apt install yamllint)
  */
 
@@ -89,7 +89,7 @@ function runYamllint(filePath) {
  */
 function run(rawInput) {
   // Gate on feature flag
-  if (String(process.env.INFRA_OPS_YAMLLINT || '').toLowerCase() !== '1') {
+  if (String(process.env.INFRAOPS_YAMLLINT || process.env.INFRA_OPS_YAMLLINT || '').toLowerCase() !== '1') {
     return rawInput;
   }
 
