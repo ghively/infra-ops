@@ -148,3 +148,109 @@ change-controlled artifact.
 > TODO: Add org-specific role-prefix convention once naming standards are confirmed
 > from ingested runbooks.
 > TODO: Add dynamic-inventory plugin examples once CMDB integration is known.
+
+## Deep Reference
+
+### FQCN Enforcement (Ansible Galaxy + Collections)
+Every module call must use a Fully Qualified Collection Name. Short names
+(`copy:`, `service:`) break when collections are installed and the resolver
+picks the wrong one. There are no exceptions.
+
+```yaml
+# CORRECT
+- ansible.builtin.copy:
+- ansible.builtin.service:
+- community.general.ufw:
+- community.hashi_vault.hashi_vault_secret:
+- ansible.windows.win_service:
+
+# WRONG — never acceptable
+- copy:
+- service:
+- win_service:
+```
+
+### Idempotency Checklist
+Before marking a task idempotent, verify:
+1. The module itself is idempotent (most ansible.builtin.* are; `command`/`shell` are not)
+2. If using `command`/`shell`: `creates:` or `removes:` or `changed_when: false` is present
+3. Running the play twice produces no changes on the second run (`--check --diff` shows nothing)
+4. Any `notify:` handlers are also idempotent when run multiple times
+
+### OS-Targeting by Structure (not `when:`)
+```
+# CORRECT structure — separate plays per OS in site.yml:
+- hosts: linux_servers
+  roles: [base-linux]
+
+- hosts: windows_servers
+  roles: [base-windows]
+
+# WRONG — mixing OS logic in a shared role:
+- name: Install service
+  ansible.builtin.service:
+    name: myservice
+    state: started
+  when: ansible_os_family != 'Windows'   # fragile; breaks on new OS families
+```
+
+### Variable Precedence (know it, don't fight it)
+Order from weakest to strongest (last wins):
+role defaults → inventory group_vars → inventory host_vars → playbook vars →
+extra-vars (-e). Use role defaults for safe defaults; never duplicate a var
+at multiple precedence levels with different intent.
+
+### Windows Targets
+Use `ansible.windows.*` and `community.windows.*` FQCNs. WinRM connection requires:
+- `ansible_connection: winrm`
+- `ansible_winrm_transport: kerberos` or `ntlm` (never `basic` in production)
+- `ansible_winrm_server_cert_validation: validate` (never `ignore` in production)
+
+### `no_log` Mandatory Patterns
+```yaml
+# Any task that touches secret values must suppress output:
+- name: Retrieve DB password
+  community.hashi_vault.hashi_vault_secret:
+    url: "{{ vault_addr }}"
+    path: "secret/db/password"
+  register: db_secret
+  no_log: true   # MANDATORY — vault response contains the secret value
+
+- name: Create DB user
+  community.mysql.mysql_user:
+    name: app
+    password: "{{ db_secret.secret.value }}"
+  no_log: true   # MANDATORY — password is in task args
+```
+
+### CIS Benchmark Hardening Patterns (Linux)
+When writing OS hardening roles, reference CIS Benchmark Level 1/2. Key patterns:
+```yaml
+# Disable unused filesystems (CIS 1.1.x)
+- name: Disable cramfs
+  ansible.builtin.lineinfile:
+    path: /etc/modprobe.d/cramfs.conf
+    line: "install cramfs /bin/false"
+    create: true
+    mode: '0644'
+
+# Ensure rsyslog is running (CIS 4.2.x)
+- name: Ensure rsyslog is enabled
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: started
+    enabled: true
+```
+
+### Molecule Scenario Structure
+Every new role ships with a Molecule scenario under `molecule/default/`:
+```
+roles/<name>/
+  molecule/
+    default/
+      molecule.yml        # driver: podman; platforms: [{name: instance, image: ...}]
+      converge.yml        # apply the role
+      verify.yml          # assert expected state
+      prepare.yml         # pre-role setup (optional)
+```
+The idempotence test runs `converge.yml` twice and asserts no changes on the second run.
