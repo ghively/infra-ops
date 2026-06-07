@@ -115,11 +115,25 @@ function runSyntaxCheck(filePath) {
 }
 
 /**
+ * Returns true when the ansible-syntax hook should be active.
+ * Canonical var (INFRAOPS_ANSIBLE_SYNTAX) takes full precedence — even an
+ * empty string disables the hook so that an explicit
+ * `INFRAOPS_ANSIBLE_SYNTAX=''` cannot be overridden by a still-present
+ * back-compat var.
+ */
+function isEnabled() {
+  const v = process.env.INFRAOPS_ANSIBLE_SYNTAX !== undefined
+    ? process.env.INFRAOPS_ANSIBLE_SYNTAX
+    : process.env.INFRA_OPS_ANSIBLE_SYNTAX;
+  return String(v || '').toLowerCase() === '1';
+}
+
+/**
  * Core hook logic.
  */
 function run(rawInput) {
   // Gate on feature flag
-  if (String(process.env.INFRAOPS_ANSIBLE_SYNTAX || process.env.INFRA_OPS_ANSIBLE_SYNTAX || '').toLowerCase() !== '1') {
+  if (!isEnabled()) {
     return rawInput;
   }
 
@@ -171,6 +185,7 @@ if (require.main === module) {
 module.exports = {
   findAnsiblePlaybook,
   isAnsiblePlaybook,
+  isEnabled,
   isRoleFile,
   run,
   runSyntaxCheck
