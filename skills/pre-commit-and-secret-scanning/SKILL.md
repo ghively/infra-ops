@@ -60,3 +60,51 @@ pre-commit run --all-files
 - Never prints a matched secret/PAN value — redact and cite location; a confirmed hit →
   the `incident-response` skill.
 - Advisory only — a green pre-commit does not imply a green CI gate.
+
+## Deep Reference
+
+### Pre-commit Hook Configuration (.pre-commit-config.yaml)
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-d, '{extends: default, rules: {line-length: {max: 120}}}']
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v24.5.0
+    hooks:
+      - id: ansible-lint
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+```
+
+### Gitleaks Custom Rules (PAN patterns)
+```toml
+# .gitleaks.toml
+[[rules]]
+id = "pan-luhn"
+description = "Possible Payment Card Number (PAN)"
+regex = '''(?:\d[ -]?){13,19}'''
+keywords = ["pan", "card", "credit", "debit"]
+[rules.allowlist]
+regexes = ["^[0-9]{4}$"]  # allow 4-digit years, codes
+```
+
+### CI vs Pre-commit Relationship
+Pre-commit is the fast developer-side check; CI is the authoritative gate. The CI
+must not rely on pre-commit running locally. Pre-commit failures do not block CI;
+they are advisory at the developer workstation level and binding at the CI gate.

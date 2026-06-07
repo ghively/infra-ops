@@ -116,3 +116,43 @@ checkov:
 - Scanners are **read-only** over the repo; they never apply changes or reach prod.
 - Secret/PAN findings are **redacted** in reports (`--redact`) — never echo the value
   into logs. A confirmed PAN/key finding → route to `incident-response`.
+
+## Deep Reference
+
+### Full Tool Stack
+| Tool | What it catches | Config file |
+|------|----------------|-------------|
+| `ansible-lint` | Ansible anti-patterns, FQCN, idempotency | `.ansible-lint` |
+| `yamllint` | YAML syntax, formatting | `.yamllint` |
+| `gitleaks` | Secrets, high-entropy strings | `.gitleaks.toml` |
+| `TruffleHog v3` | Historical secret leaks in git history | CLI flags |
+| `Checkov` | IaC misconfigurations (Terraform, Ansible, Dockerfile) | `.checkov.yaml` |
+
+### SARIF Output for GitLab Security Dashboard
+```yaml
+# .gitlab-ci.yml
+ansible-lint-sast:
+  stage: sast
+  tags: [linux, docker]
+  image: pipelinecomponents/ansible-lint:latest
+  script:
+    - ansible-lint -f sarif -o gl-sast-report.json || true
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+```
+
+### Checkov Ansible Checks to Enable
+```yaml
+# .checkov.yaml
+check:
+  - CKV2_ANSIBLE_1  # Ensure no_log is set for tasks with sensitive data
+  - CKV2_ANSIBLE_2  # Ensure validate_certs is not false
+  - CKV_ANSIBLE_1   # Ensure no plaintext passwords
+```
+
+### Blocking vs. Advisory
+The `iac-sast-scanning` CI gate is **blocking** — it must pass before a merge is allowed.
+Agent reviewer VERDICTs are advisory. If the CI gate passes but an agent returns BLOCK,
+treat the agent BLOCK as the authoritative signal (the agent may catch logic issues the
+static scanner cannot).
