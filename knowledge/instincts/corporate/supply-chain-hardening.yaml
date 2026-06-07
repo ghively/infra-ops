@@ -1,0 +1,73 @@
+# Supply Chain Hardening — pre-promoted seed instincts
+---
+instincts:
+  - id: supply-chain-pin-dependencies
+    zone: corporate
+    category: supply-chain
+    status: active
+    confidence: 0.95
+    content: >
+      All dependencies must be pinned to exact versions. In Python: `requirements.txt`
+      with hash verification. In Node.js: committed `package-lock.json` with exact
+      versions. In Ansible: `requirements.yml` with exact collection and role versions.
+      Wildcard versions (`>=`, `~`, `^`) in production are a HIGH finding — they allow
+      undeclared dependency updates that break reproducibility and auditability.
+    citation: "PCI DSS v4.0.1 Req 6.3.2; SLSA Level 2 reproducible builds"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 6.3.2; SLSA supply chain security levels"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: supply-chain-sbom-required
+    zone: corporate
+    category: supply-chain
+    status: active
+    confidence: 0.90
+    content: >
+      Every build artifact must be accompanied by an SBOM (Software Bill of Materials)
+      in SPDX or CycloneDX format. Generate with `syft`. The SBOM is stored as a
+      GitLab CI artifact and reviewed on every merge for unexpected new dependencies.
+      This satisfies PCI DSS Req 6.3.2 (maintain inventory of all software components).
+    citation: "PCI DSS v4.0.1 Req 6.3.2; SLSA provenance requirements"
+    evidence:
+      - type: standard
+        source: "PCI DSS v4.0.1 Requirement 6.3.2"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: supply-chain-build-once-promote
+    zone: corporate
+    category: supply-chain
+    status: active
+    confidence: 0.95
+    content: >
+      Build the artifact once in CI and promote the same artifact through all
+      environments. Never rebuild for a higher environment — rebuilding introduces
+      environmental variation and breaks the chain of custody. The artifact must be
+      tagged with the git commit SHA and stored in the artifact registry. Deploy
+      by referencing the artifact by SHA-tagged name, not `latest`.
+    citation: "SLSA Build L2; PCI DSS change control Req 6.5"
+    evidence:
+      - type: standard
+        source: "SLSA Supply chain Levels for Software Artifacts — Build L2"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
+
+  - id: supply-chain-verify-collection-checksums
+    zone: corporate
+    category: supply-chain
+    status: active
+    confidence: 0.90
+    content: >
+      Ansible collections installed from Ansible Galaxy must be pinned to exact
+      versions in `requirements.yml`. For production environments, additionally
+      verify collection checksums using `ansible-galaxy collection verify` after
+      installation. Collections from untrusted or unknown namespaces must be reviewed
+      before use and approved via the change control process.
+    citation: "SLSA supply chain; Ansible Galaxy security practices"
+    evidence:
+      - type: standard
+        source: "Ansible documentation — verifying collection integrity"
+    promoted_by: infra-ops-development-team
+    promoted_at: 2026-06-06
