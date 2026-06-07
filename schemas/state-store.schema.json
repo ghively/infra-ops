@@ -353,7 +353,7 @@
         "slug": { "$ref": "#/$defs/nullableString" },
         "classification": { "$ref": "#/$defs/nullableString" },
         "source": { "$ref": "#/$defs/nullableString" },
-        "topics": { "type": "array" },
+        "topics": { "type": "array", "items": {} },
         "createdAt": { "$ref": "#/$defs/nonEmptyString" }
       }
     },
