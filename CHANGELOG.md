@@ -11,8 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Merge of the v0.11–v0.13 main line (fail-closed defaults, expanded skills/rules,
 seed instinct library, HSA design artifacts) with the templates/gates/in-zone-tooling
-line. Post-merge state: 17 agents · 24 skills · 8 commands · 13 hook scripts ·
+line. Post-merge state: 16 agents · 24 skills · 8 commands · 13 hook scripts ·
 37 seed instincts · 18 validators.
+
+### Removed
+
+- `agents/perso-reviewer.md` — consolidated into the split in-zone reviewers the
+  merge brought together: `perso-iac-reviewer` (correctness/idempotency) +
+  `perso-cp-compliance-reviewer` (CP Logical + PIN), mirroring the corporate
+  review gate. Its unique checks were ported: the FIM-baseline-integrity check
+  moved to `perso-cp-compliance-reviewer`, and the `hsa-infrastructure` /
+  `perso-compliance` skill wiring moved to the split reviewers. The HSA roster
+  is now six agents: planner, iac-author, iac-reviewer, cp-compliance-reviewer,
+  auditor, scribe.
 
 ### Added
 
@@ -99,7 +110,12 @@ line. Post-merge state: 17 agents · 24 skills · 8 commands · 13 hook scripts 
 - Env-var namespace standardized on `INFRAOPS_*`: `yamllint-hook` and
   `ansible-syntax-hook` (and `hooks.json`) now read the canonical flag while still
   honoring legacy `INFRA_OPS_*` as a fallback, matching the other hooks.
-- Docs: README/SPEC reconciled to the post-merge component counts (17 agents,
+- The HSA delegation flow (CLAUDE.md, workflows.md, perso-planner handoffs) now
+  routes reviews through the in-zone reviewers (`perso-iac-reviewer` +
+  `perso-cp-compliance-reviewer`) instead of the corporate, cloud-model
+  `pci-compliance-reviewer` — a cloud agent can never run inside the air gap.
+- `marketplace.json` version now tracks the plugin version (0.14.0).
+- Docs: README/SPEC reconciled to the post-merge component counts (16 agents,
   24 skills, 8 commands, 13 hooks, 18 validators), the merged project-structure tree
   (perso-* design artifacts + in-zone proposals, templates, new skills/hooks/tests,
   `cpsa-approval.md`, new docs), an Authoring Standards section, and a corrected

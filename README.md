@@ -17,11 +17,11 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.14.0** — 17 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 18 validators passing.
+**v0.14.0** — 16 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 18 validators passing.
 
 The corporate-zone plugin is built and wired: DLP (fail-closed), the local inference lane,
 the governed learning loop, and the audit/state substrate all run and are covered by
-tests (`npm test`). The in-HSA **tooling** — the seven `perso-*` agents, deployment
+tests (`npm test`). The in-HSA **tooling** — the six `perso-*` agents, deployment
 runbooks, in-zone guard hooks, and the dual-control gate — is authored as reviewable
 proposals (`knowledge/cpsa-approval.md §1`). In-HSA **deployment/go-live** remains gated
 on the CPSA-L sign-off (`knowledge/cpsa-approval.md §2`); no PAN/keys/PINs/HSM config is
@@ -46,7 +46,7 @@ ever authored here.
 | Governed learning loop (promote/rollback over unified State Store) | ✅ Wired |
 | `governance-ledger` + State Store (9 collections) | ✅ Implemented |
 | 10 corporate specialist agents | ✅ Implemented |
-| 7 HSA `perso-*` agents (planner/reviewer/auditor/scribe + iac-author/iac-reviewer/cp-compliance-reviewer) | 🟡 Authored as proposals — CPSA gates deployment |
+| 6 HSA `perso-*` agents (planner/auditor/scribe + iac-author/iac-reviewer/cp-compliance-reviewer) | 🟡 Authored as proposals — CPSA gates deployment |
 | 24 domain skills (expanded with deep reference sections) | ✅ Implemented |
 | 37 pre-seeded instincts (corporate + HSA zones) | ✅ Committed under `knowledge/instincts/` |
 | 8 commands (incl. `/scaffold`, `/preflight`) | ✅ Implemented |
@@ -93,7 +93,7 @@ infra-ops/
 ├── .claude-plugin/          # Plugin manifest (Claude Code marketplace)
 │   ├── plugin.json          # Main plugin configuration
 │   └── marketplace.json     # Marketplace listing metadata
-├── agents/                  # 17 specialist subagents (auto-discovered)
+├── agents/                  # 16 specialist subagents (auto-discovered)
 │   ├── infra-planner.md            # Brief → phased plans with rollback units
 │   ├── infra-auditor.md            # Read-only discovery + drift detection
 │   ├── iac-author.md               # Ansible/GitLab CI authoring (+ Molecule)
@@ -105,7 +105,6 @@ infra-ops/
 │   ├── change-scribe.md            # Auto-doc generation
 │   ├── knowledge-curator.md        # Doc ingestion + cited answers
 │   ├── perso-planner.md            # HSA infra brief → phased plan (CPSA-gated deploy)
-│   ├── perso-reviewer.md           # HSA MR review — CP+PIN controls
 │   ├── perso-auditor.md            # HSA read-only discovery + drift detection
 │   ├── perso-scribe.md             # HSA change records with dual-control evidence
 │   └── perso-iac-*.md / perso-cp-* # 3 LOCAL-ONLY in-zone agents (proposals):
@@ -196,7 +195,7 @@ infra-ops/
 ### Orchestration & MCP
 
 `CLAUDE.md` is the portable behavioral contract: Claude acts as a **lean orchestrator**
-that delegates specialist work to the seventeen subagents (each in its own context window)
+that delegates specialist work to the sixteen subagents (each in its own context window)
 per a task→agent routing map, with a Delegation Envelope, an evaluator→remediation
 loop, and a deterministic merge gate. **Context7** and **sequential-thinking** MCP
 servers are bundled (`plugin.json` `mcpServers`); read-only GitLab/Octopus servers are
@@ -289,14 +288,14 @@ for the full list.
 Full architecture documentation with Mermaid diagrams lives in **[`docs/architecture.md`](docs/architecture.md)**. Covers:
 
 - **System overview** — enforcement layers, hook pipeline, zone model
-- **Agent roster** — all 17 agents with model, zone, and skills
+- **Agent roster** — all 16 agents with model, zone, and skills
 - **Review gate** — 3-way parallel review with 2-cycle remediation loop
 - **State Store** — 9 collections (sessions, skillRuns, skillVersions, decisions, installState, governanceEvents, workItems, knowledgeBase, observations)
 - **Instinct lifecycle** — candidate → active → deprecated with governance gates
 
 Operational workflows (standard change, HSA change, drift detection, secret detection, learning loop, incident response, knowledge ingestion) are in **[`docs/workflows.md`](docs/workflows.md)**.
 
-The seven HSA `perso-*` agents run on a **separate, air-gapped, local-only plane**
+The six HSA `perso-*` agents run on a **separate, air-gapped, local-only plane**
 inside the HSA — they are not part of the corporate orchestration above and never run
 on a cloud model. See [`knowledge/hsa-deployment.md`](knowledge/hsa-deployment.md).
 

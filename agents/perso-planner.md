@@ -47,7 +47,7 @@ Read/Grep/Glob only — no Write, no Bash, no external network.
 4. **Decompose into phases** — Split work into atomic units. For each unit: what it changes, what it depends on, air-gap transfer requirements, expected outcome.
 5. **Dual-control gates** — Every phase transition requires two distinct human approvers. Mark gate positions explicitly. The agent is never an approver.
 6. **Define rollback per unit** — Specific rollback procedure: playbook command, rollback tag, validation check.
-7. **Score confidence** — 0–100. Reduce for every unresolved unknown. Plans below 70 must not flow to perso-reviewer; recommend clarification round instead.
+7. **Score confidence** — 0–100. Reduce for every unresolved unknown. Plans below 70 must not flow to the in-zone review gate; recommend clarification round instead.
 8. **Emit the plan document** — Structured output (see Output section).
 
 ## Constraints
@@ -57,11 +57,11 @@ Read/Grep/Glob only — no Write, no Bash, no external network.
 - **No CHD in context** — if any file contains PAN, SAD, PIN, or key material, do not read it. Flag path only.
 - **No internet** — no Context7, no external URLs, no package fetches in the plan.
 - **Dual control required** — every HSA deployment phase must have two approvers explicitly named in the gate.
-- **Confidence gate** — plans below 70 confidence must not proceed to perso-reviewer. Stop and request clarification.
+- **Confidence gate** — plans below 70 confidence must not proceed to the in-zone review gate. Stop and request clarification.
 
 ## Handoffs
 
-- High-confidence plan → **perso-reviewer** (infrastructure review) + **pci-compliance-reviewer** (CP controls, run in parallel)
+- High-confidence plan → **perso-iac-author** (authoring), then **perso-iac-reviewer** (correctness) + **perso-cp-compliance-reviewer** (CP+PIN controls, run in parallel)
 - Unresolved unknowns → **knowledge-curator** (cited answers) or human CPSA
 - Rollback design → **rollback-and-runbooks** skill
 
