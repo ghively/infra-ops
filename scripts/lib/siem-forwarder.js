@@ -20,6 +20,14 @@
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
+const { retry } = require('./retry.js');
+
+// Transient network/timeout failures worth retrying.
+function isTransient(err) {
+  const code = err && err.code;
+  if (['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EPIPE'].includes(code)) return true;
+  return /timeout|socket hang up|network/i.test((err && err.message) || '');
+}
 
 // Read from the unified State Store library (single source of truth).
 let StateStore;
@@ -55,7 +63,8 @@ function getConfig() {
  */
 function forwardRecord(record, config = getConfig()) {
   if (!config.enabled || !config.endpoint) return Promise.resolve({ skipped: true });
-  return sendEvent(formatEvent(record, 'audit_record', config), config);
+  const event = formatEvent(record, 'audit_record', config);
+  return retry(() => sendEvent(event, config), { retries: 3, baseMs: 500, shouldRetry: isTransient });
 }
 
 /**

@@ -168,6 +168,17 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | /instinct-promote | ✅ | Promote observed pattern to governed instinct |
 | /instinct-rollback | ✅ | Rollback or deactivate an instinct |
 | /scaffold | ✅ | Scaffold an IaC unit from the canonical template + enforce structure |
+| /preflight | ✅ | Fail-fast environment/state checklist before authoring |
+
+### Reliable-execution functions (scripted, not prose)
+
+| Function | Status | Purpose |
+|---|---|---|
+| `scripts/merge-gate.js` (+ `lib/merge-gate.js`) | ✅ | Deterministic review-gate decision from the 3 verdict tokens (any BLOCK blocks; missing reviewer → BLOCK; 2-cycle cap → escalate). Exit 0/1/3 |
+| `scripts/scaffold.js` | ✅ | Deterministic scaffolder: copy template + substitute + validate-structure + fail on leftover placeholders |
+| `scripts/preflight.js` | ✅ | Env/state checklist: node/git/tooling, branch, clean tree, staged-secret tripwire, leftover placeholders |
+| `scripts/conformance.js` (`npm run conformance`) | ✅ | One local command running structure + deployment validators over a repo (mirrors CI) |
+| `scripts/lib/retry.js` | ✅ | Bounded exponential-backoff retry; wraps `ollama-router` + `siem-forwarder` network calls |
 
 ### Canonical structure & enforcement
 

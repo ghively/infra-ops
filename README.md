@@ -45,8 +45,9 @@ authored here.
 | `governance-ledger` + State Store (`scripts/lib/state-store.js`) | ✅ Implemented |
 | 13 specialist agents (10 corporate + 3 in-zone `perso-*`) | ✅ Implemented |
 | 21 domain skills | ✅ Implemented |
-| 7 commands (incl. `/scaffold`) | ✅ Implemented |
-| Canonical templates + structure-conformance gate | ✅ Enforced (`validate-structure.js`) |
+| 8 commands (incl. `/scaffold`, `/preflight`) | ✅ Implemented |
+| Canonical templates + structure/deployment gates | ✅ Enforced (`validate-structure.js`, `validate-deployment.js`) |
+| Reliable-execution functions (merge-gate, scaffold, preflight, conformance, retry) | ✅ Scripted + tested |
 | 13 hook scripts (9 event-wired + 4 CLI/in-zone gates) | ✅ Implemented |
 | Ansible / GitLab / secrets / PCI rules + authoring-standards guide | ✅ Implemented |
 | In-HSA tooling (`perso-*` agents, runbooks, guards, dual-control gate) | 🟡 Built as proposals (`knowledge/cpsa-approval.md §1`) |
@@ -112,9 +113,9 @@ infra-ops/
 │   ├── pre-commit-and-secret-scanning/  supply-chain-and-sbom/
 │   ├── pci-pin-awareness/  perso-change-control/   # in-zone (DESIGN §3)
 │   └── instinct-promotion/  instinct-rollback/   # governed learning loop
-├── commands/                # 7 slash commands
+├── commands/                # 8 slash commands
 │   ├── infra-discover.md  playbook-review.md  drift-check.md
-│   ├── knowledge-ingest.md  scaffold.md
+│   ├── knowledge-ingest.md  scaffold.md  preflight.md
 │   └── instinct-promote.md  instinct-rollback.md
 ├── templates/               # Canonical IaC skeletons (8 types; the agent stamps every unit from these)
 │   ├── ansible-role/  ansible-repo/  terraform-module/  terraform-env/
@@ -133,9 +134,11 @@ infra-ops/
 │   │   └── hsa-boundary-guard.js  block-no-verify.js   # in-zone guards
 │   ├── validate-structure.js   # Deterministic structure-conformance gate (uniform layout)
 │   ├── validate-deployment.js  # Deterministic deployment-uniformity gate (pipeline shape)
+│   ├── merge-gate.js  scaffold.js  preflight.js  conformance.js   # reliable-execution functions
 │   └── lib/                 # Shared libraries
 │       ├── structure-spec.js       # Canonical IaC layout spec (single source of truth)
 │       ├── deployment-policy.js    # Canonical pipeline policy (stages/gates/prod-safety)
+│       ├── merge-gate.js  retry.js # Deterministic merge decision; backoff retry
 │       ├── state-store.js          # Unified state/governance store
 │       ├── instinct-ledger.js      # Instinct persistence + governance logging
 │       ├── ollama-router.js        # Local-only inference lane
@@ -308,10 +311,24 @@ See [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) for the complete 
 ### Running Tests
 
 ```bash
-npm test                      # Run all tests
+npm test                      # Run all tests (16 validators)
 npm run coverage             # Run with coverage
 npm run validate             # Validate all components
+npm run conformance          # Structure + deployment conformance over a target repo
 ```
+
+### Reliable-execution functions
+
+Workflows that were prose are now deterministic, tested code:
+
+- `scripts/merge-gate.js` — computes the review-gate decision from the three reviewer
+  verdicts (any `BLOCK` blocks; a missing verdict is incomplete → BLOCK; 2-cycle cap →
+  escalate). Exit `0` cleared / `1` revise / `3` escalate.
+- `scripts/scaffold.js` (`/scaffold`) — copy template + substitute + validate + fail on
+  leftover `__…__` placeholders.
+- `scripts/preflight.js` (`/preflight`) — fail-fast env/state checklist before authoring.
+- `scripts/conformance.js` (`npm run conformance`) — one local gate mirroring CI.
+- `scripts/lib/retry.js` — bounded backoff wrapping the network callers.
 
 ### Component Validation
 

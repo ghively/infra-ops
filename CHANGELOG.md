@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Reliable-execution functions** — workflows that were prose the model executed by hand
+  are now deterministic, tested code:
+  - `scripts/merge-gate.js` (+ `lib/merge-gate.js`) — computes the review-gate decision
+    from the three verdict tokens (any BLOCK blocks; a missing reviewer is incomplete →
+    BLOCK; 2-cycle cap → escalate, exit 3). CLAUDE.md now points the merge gate at it.
+  - `scripts/scaffold.js` (`/scaffold`) — deterministic copy + placeholder substitution +
+    validate-structure + fail on any leftover `__…__` placeholder.
+  - `scripts/preflight.js` (`/preflight`) — env/state checklist: node/git/tooling, branch,
+    clean tree, staged-secret tripwire, leftover placeholders.
+  - `scripts/conformance.js` (`npm run conformance`) — one local command running the
+    structure + deployment validators over a repo, mirroring CI.
+  - `scripts/lib/retry.js` — bounded exponential backoff; wraps the `ollama-router` and
+    `siem-forwarder` network calls so a transient blip doesn't fail the run.
+  - 5 new unit suites (merge-gate, scaffold, retry, conformance, preflight); `npm test`
+    now runs 16 validators.
 - **More canonical unit types + a deployment-uniformity gate** (extends the enforced
   structure):
   - 4 new scaffolds/types: `templates/{packer-template,python-tool,bash-tool,powershell-tool}/`

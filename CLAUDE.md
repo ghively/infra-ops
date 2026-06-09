@@ -47,6 +47,9 @@ idempotency), **pci-compliance-reviewer** (PCI controls), and **secrets-scanner*
 (static secret/PAN scan). Each returns a machine-readable verdict token on its first
 output line (`VERDICT: PASS|WARN|BLOCK`). **Merge gate (no discretion): if *any* of the
 three returns BLOCK, the change is blocked.** WARN is advisory; PASS×3 clears the gate.
+Compute this deterministically, don't judge it by hand:
+`node scripts/merge-gate.js --verdicts <v1>,<v2>,<v3> --cycle <n>` (exit 0 = cleared,
+1 = BLOCK/revise, 3 = escalate). A missing reviewer verdict is incomplete → BLOCK.
 
 ### Evaluator → remediation loop (drives repeatable quality)
 

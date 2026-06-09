@@ -122,6 +122,8 @@ design-vs-as-built status. Summary:
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
 - ✅ 22 skills (incl. `iac-tooling-selection`, in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+3 `perso-*` in-zone agents authored as proposals), 6 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
+- ✅ Reliable-execution functions (scripted + tested): `merge-gate`, `scaffold`, `preflight`,
+  `conformance`, `retry` — prose workflows turned into deterministic code (16 validators)
 - ✅ Enforced uniform IaC structure: 8 `templates/` canonical skeletons (ansible/terraform/
   packer/python/bash/powershell), `validate-structure.js` + `validate-deployment.js`, and the
   `structure-conformance` CI gate (structure + deployment; deviation fails the pipeline); `/scaffold`
