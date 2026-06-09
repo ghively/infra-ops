@@ -50,6 +50,7 @@
     "postinstall": "echo '\\n  infra-ops plugin installed!\\n  Add to Claude Code: claude plugin marketplace add .\\n  Docs: https://github.com/ghively/infra-ops\\n'",
     "lint": "eslint . && markdownlint '**/*.md' --ignore node_modules --ignore docs/infra-agent/research",
     "test": "node tests/run-all.js",
+    "conformance": "node scripts/conformance.js",
     "coverage": "c8 --all --include=\"scripts/**/*.js\" --reporter=text --reporter=lcov node tests/run-all.js",
     "validate": "npm run validate:agents && npm run validate:commands && npm run validate:skills && npm run validate:hooks",
     "validate:agents": "node tests/ci/validate-agents.js",
