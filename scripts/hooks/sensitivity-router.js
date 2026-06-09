@@ -15,8 +15,6 @@
 
 'use strict';
 
-const fs = require('fs');
-
 // Keywords that indicate CHD-adjacent work
 const CHD_KEYWORDS = [
   'cardholder',

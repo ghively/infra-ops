@@ -64,6 +64,7 @@ pre-commit run --all-files
 ## Deep Reference
 
 ### Pre-commit Hook Configuration (.pre-commit-config.yaml)
+
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -93,6 +94,7 @@ repos:
 ```
 
 ### Gitleaks Custom Rules (PAN patterns)
+
 ```toml
 # .gitleaks.toml
 [[rules]]
@@ -105,6 +107,7 @@ regexes = ["^[0-9]{4}$"]  # allow 4-digit years, codes
 ```
 
 ### CI vs Pre-commit Relationship
+
 Pre-commit is the fast developer-side check; CI is the authoritative gate. The CI
 must not rely on pre-commit running locally. Pre-commit failures do not block CI;
 they are advisory at the developer workstation level and binding at the CI gate.

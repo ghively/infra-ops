@@ -168,6 +168,7 @@ You need **two (likely three) inference boxes** because the HSA cannot share inf
 corporate. All grounded in research/local-llm-hardware.md.
 
 ### 5.1 Model choice
+
 - **Workhorse: `Qwen2.5-Coder-32B-Instruct`** (dense) — the benchmark-leading open coder (tops
   EvalPlus/LiveCodeBench/BigCodeBench, ~GPT-4o on Aider), strong native tool calling
   (research/local-llm-hardware.md §1; research/hybrid §3).
@@ -177,6 +178,7 @@ corporate. All grounded in research/local-llm-hardware.md.
 - Both expose **native tool calling** (Hermes parser) — essential for an *agent*, not just chat.
 
 ### 5.2 Serving stack
+
 - **PoC → Ollama** (single binary + GGUF, trivial air-gap transfer, fine for one operator).
 - **Production → vLLM** — ~20× higher throughput under concurrency (793 vs 41 tok/s on A100), native
   tool-call parsing, OpenAI-compatible API, offline install (`HF_HUB_OFFLINE=1`). Avoid **TGI**
@@ -250,6 +252,7 @@ eval gates from `healthcare-eval-harness` (`:25`); gated execution via gateguard
 fingerprinted audit ledger via `governance-capture.js:105-108,143-244` (extend its PAN/Luhn patterns).
 
 **Production (CP/PIN)** adds net-new, stricter controls (research/pci-card-production.md §3-5):
+
 - **`hsa-boundary-guard` hook** — blocks any tool input/output referencing keys, key components, PINs,
   HSM operations, or cleartext PAN (hard exclusion, §8 §8.14 §4.3).
 - **`dual-control-promotion-gate`** — the agent can *prepare* a test→live change but the gate requires
@@ -382,6 +385,7 @@ because PCI CP change control requires documented CISO approval + dual-control w
 model, not an autonomous "rewrite itself" loop.
 
 ### 14.1 Documentation grounding (answer-from-docs, cited)
+
 - **On-prem knowledge base.** Ingest network/topology diagrams, security policies, runbooks, CMDB
   exports, prior CPSA/QSA reports, HSM & vendor docs, Ansible inventories, Octopus config into a
   **local, queryable** store (local embeddings/retrieval; **no cloud egress**).
@@ -397,6 +401,7 @@ model, not an autonomous "rewrite itself" loop.
   authoritative only once you approve.
 
 ### 14.2 The governed learning loop (observe → propose → verify → promote → rollback)
+
 ECC precedent: `homunculus/instincts` (confidence-scored, evidence-backed, self-curating "few accurate
 over many duplicated" — `docs/deep-dive/10-infra-mcp-integrations.md`), `/learn`+`/evolve`+`/promote`,
 `continuous-learning-v2` (hooks-for-observation + background analysis), `rules-distill` (deterministic
@@ -415,6 +420,7 @@ collection + LLM judgment), `/hookify` (corrections → guardrails).
 5. **Rollback**: every promotion is reversible.
 
 ### 14.3 Compliance guardrails on learning (non-negotiable)
+
 - **No unsupervised self-modification.** The loop *proposes*; humans *promote*. The agent never
   rewrites its own behavior — especially in/around the HSA — without change-controlled approval (CP §6.2).
 - **Zone-sandboxed.** Corporate-learned knowledge never auto-crosses into the HSA deployment; in-zone
@@ -427,6 +433,7 @@ collection + LLM judgment), `/hookify` (corrections → guardrails).
   learning runs only on the local / in-zone lane.
 
 ### 14.4 New components for this
+
 - **`knowledge-curator`** subagent (sonnet in corporate / LOCAL in-zone): ingests + classifies docs,
   answers from them with citations, maintains the instinct ledger.
 - Skills (reuse/adapt): `knowledge-ops`, `iterative-retrieval`, `continuous-learning-v2`,

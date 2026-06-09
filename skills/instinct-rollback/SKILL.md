@@ -25,6 +25,7 @@ Rollback is governed and audited; the agent never hand-edits ledger files. The
 `deactivated:` block) and logs an `instinct-rollback` event to the unified State Store.
 
 Approval rules:
+
 - **Routine instinct** — at least one `--approver`.
 - **Compliance-related or HSA (`hsa`/`in-zone`) instinct** — **two distinct
   approvers** (dual control). The CLI rejects a single-approver rollback for these.
@@ -65,6 +66,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/instinct-ledger.js" --rollback \
 ## Deep Reference
 
 ### When to Rollback vs. Supersede
+
 - **Rollback (deactivate):** the instinct was wrong or is no longer valid
 - **Supersede (create new version):** the instinct was right but has been refined
 
@@ -73,7 +75,9 @@ For a supersede: create a new instinct with updated content; in the new instinct
 Then rollback the original.
 
 ### Rollback Governance Requirements
+
 Rollbacks are governance events and require:
+
 1. A human approver (the rollback initiator does not self-approve)
 2. A reason string explaining why the instinct is being deactivated
 3. Logging to the governance ledger (automatic via `instinct-ledger.js --rollback`)

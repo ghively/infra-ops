@@ -80,6 +80,7 @@ Source: ansible-iac-gitops.md §4; DESIGN.md §13.
 ### Non-Empty Diff = Alert + Artifact
 
 A correct drift-detection pipeline:
+
 1. Runs `--check --diff` against prod.
 2. Captures output as a pipeline artifact (retained 90 days minimum for audit).
 3. **Fails the job if any task reports `changed`** — GitLab job failure triggers
@@ -129,6 +130,7 @@ undid it. Non-empty post-deploy diff = immediate alert + potential rollback trig
 
 Scheduled drift artifacts, ARA records, and GitLab pipeline logs together constitute
 continuous compliance evidence:
+
 - **ARA record**: what task, what host, what changed (or didn't), when.
 - **Artifact**: the `--diff` output showing the specific file/package/service diff.
 - **Pipeline log**: commit SHA, pipeline ID, triggered by whom.
@@ -169,6 +171,7 @@ glab pipeline run --ref main --variables CI_PIPELINE_SOURCE=schedule
 ## Deep Reference
 
 ### Scheduled Drift Check Pipeline
+
 ```yaml
 # .gitlab-ci.yml — drift detection (scheduled only)
 drift-check:
@@ -186,14 +189,18 @@ drift-check:
 ```
 
 ### ARA Record Tagging
+
 Tag every run with commit SHA and pipeline ID for traceability:
+
 ```bash
 ansible-playbook --check --diff site.yml \
   -e ara_playbook_labels='{"commit":"$CI_COMMIT_SHA","pipeline":"$CI_PIPELINE_ID"}'
 ```
 
 ### Drift Alert Routing
+
 When drift is detected:
+
 1. CI job fails with non-zero exit
 2. GitLab sends a pipeline failure notification
 3. On-call rotation is responsible for investigating

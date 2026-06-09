@@ -81,6 +81,7 @@ Source: Red Hat CoP "Good Practices for Ansible"; ansible-iac-gitops.md §1; mod
     args:
       creates: /var/lib/widget/.initialized   # makes it idempotent
   ```
+
   (ansible-iac-gitops.md §§1,6; ansible-testing skill)
 
 - **Validate role inputs with `meta/argument_specs.yml`** — declare each role variable's
@@ -152,6 +153,7 @@ change-controlled artifact.
 ## Deep Reference
 
 ### FQCN Enforcement (Ansible Galaxy + Collections)
+
 Every module call must use a Fully Qualified Collection Name. Short names
 (`copy:`, `service:`) break when collections are installed and the resolver
 picks the wrong one. There are no exceptions.
@@ -171,13 +173,16 @@ picks the wrong one. There are no exceptions.
 ```
 
 ### Idempotency Checklist
+
 Before marking a task idempotent, verify:
+
 1. The module itself is idempotent (most ansible.builtin.* are; `command`/`shell` are not)
 2. If using `command`/`shell`: `creates:` or `removes:` or `changed_when: false` is present
 3. Running the play twice produces no changes on the second run (`--check --diff` shows nothing)
 4. Any `notify:` handlers are also idempotent when run multiple times
 
 ### OS-Targeting by Structure (not `when:`)
+
 ```
 # CORRECT structure — separate plays per OS in site.yml:
 - hosts: linux_servers
@@ -195,18 +200,22 @@ Before marking a task idempotent, verify:
 ```
 
 ### Variable Precedence (know it, don't fight it)
+
 Order from weakest to strongest (last wins):
 role defaults → inventory group_vars → inventory host_vars → playbook vars →
 extra-vars (-e). Use role defaults for safe defaults; never duplicate a var
 at multiple precedence levels with different intent.
 
 ### Windows Targets
+
 Use `ansible.windows.*` and `community.windows.*` FQCNs. WinRM connection requires:
+
 - `ansible_connection: winrm`
 - `ansible_winrm_transport: kerberos` or `ntlm` (never `basic` in production)
 - `ansible_winrm_server_cert_validation: validate` (never `ignore` in production)
 
 ### `no_log` Mandatory Patterns
+
 ```yaml
 # Any task that touches secret values must suppress output:
 - name: Retrieve DB password
@@ -224,7 +233,9 @@ Use `ansible.windows.*` and `community.windows.*` FQCNs. WinRM connection requir
 ```
 
 ### CIS Benchmark Hardening Patterns (Linux)
+
 When writing OS hardening roles, reference CIS Benchmark Level 1/2. Key patterns:
+
 ```yaml
 # Disable unused filesystems (CIS 1.1.x)
 - name: Disable cramfs
@@ -243,7 +254,9 @@ When writing OS hardening roles, reference CIS Benchmark Level 1/2. Key patterns
 ```
 
 ### Molecule Scenario Structure
+
 Every new role ships with a Molecule scenario under `molecule/default/`:
+
 ```
 roles/<name>/
   molecule/
@@ -253,4 +266,5 @@ roles/<name>/
       verify.yml          # assert expected state
       prepare.yml         # pre-role setup (optional)
 ```
+
 The idempotence test runs `converge.yml` twice and asserts no changes on the second run.

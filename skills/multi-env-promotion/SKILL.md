@@ -123,6 +123,7 @@ authenticates only jobs on `protected tags matching v*.*.*`.
 ### Rollback
 
 Two mechanisms:
+
 1. **Re-run previous pipeline:** navigate to last known-good deployment in GitLab
    Environments UI and re-run. The previous artifact (still stored) is re-deployed.
 2. **Git revert + new pipeline:** `git revert <sha>` → normal promotion flow.
@@ -183,6 +184,7 @@ deploy_prod:
 ## Deep Reference
 
 ### Build-Once-Promote-One-Artifact
+
 The artifact built in the pipeline must be the same artifact deployed to all environments.
 Never rebuild for higher environments — it introduces environmental variation.
 
@@ -199,7 +201,9 @@ CI Build → artifact (tagged with git SHA) → pushed to artifact store
 ```
 
 ### Environment-Specific Configuration Injection
+
 Configuration differences between environments are injected at deploy time, not baked into the artifact:
+
 - Octopus variables (environment-scoped) for endpoints, feature flags, resource sizes
 - Vault secrets fetched at runtime per environment
 - Never store prod configuration in the artifact or source control

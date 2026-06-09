@@ -67,13 +67,16 @@ Governance ledger ref: <id>
 ## Deep Reference — PCI 12.10.x Incident Response
 
 ### Agent Role Boundary (critical)
+
 The agent's role in an incident is: **Contain → Preserve → Escalate**. The agent:
+
 - MAY: Read logs, identify affected systems from metadata, propose containment steps
 - MAY NOT: Execute containment actions without human approval
 - MAY NOT: Handle any evidence that contains PAN, SAD, or key material
 - MUST: Escalate to the security team immediately on confirmation of CHD exposure
 
 ### PCI 12.10.7 — Unauthorized SAD Storage Response
+
 1. Immediately isolate the system from the network (human action, agent proposes)
 2. Preserve all logs (do not rotate or delete)
 3. Notify the security team and legal counsel
@@ -82,7 +85,9 @@ The agent's role in an incident is: **Contain → Preserve → Escalate**. The a
 6. File SAR if required by card brand rules
 
 ### Incident Record Format
+
 When documenting an incident, write to `docs/incidents/<ISO-date>-<slug>.md`:
+
 ```yaml
 incident_id: INC-<YYYYMMDD>-<seq>
 detected_at: <ISO datetime>

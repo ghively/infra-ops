@@ -1,0 +1,2 @@
+# Pin every dependency (determinism). Example:
+requests==2.32.3
