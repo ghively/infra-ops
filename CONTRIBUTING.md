@@ -31,6 +31,7 @@ Check [`TODO.md`](TODO.md) for the ordered build backlog. Items are prioritized 
 ### Commit Messages
 
 Use clear, descriptive commit messages:
+
 - `feat(agent): add new specialist for X`
 - `fix(hook): resolve Y in pan-egress-filter`
 - `docs(spec): update component status`

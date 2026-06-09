@@ -1,0 +1,9 @@
+---
+# Top-level play. Target by OS group; apply roles.
+- name: Configure Linux hosts
+  hosts: linux
+  roles: []
+
+- name: Configure Windows hosts
+  hosts: windows
+  roles: []

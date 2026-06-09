@@ -30,6 +30,7 @@ Produce a structured, severity-tiered review of every HSA infrastructure change.
 ## Skills & Tools
 
 Load before reviewing:
+
 - **hsa-infrastructure** — HSA-specific Ansible/CI patterns and air-gap constraints
 - **perso-compliance** — CP Logical + PIN control checklist
 - **ansible-patterns** — base idempotency / FQCN rules

@@ -80,6 +80,7 @@ perso/DP zone. (pci-card-production.md §3.1; DESIGN.md §1)
 ### Change Control in the HSA (CP Logical §6.2)
 
 Even for the in-zone advisory agent (Phase 7):
+
 - All changes require documented CISO approval before deployment.
 - Test→live: "both development and production staff must sign off … **witnessed under
   dual control**." This is a human gate that automation cannot replace.
@@ -90,6 +91,7 @@ Even for the in-zone advisory agent (Phase 7):
 ### Key Management Exclusion (CP Logical §8, §8.14)
 
 All key lifecycle activities (generation, loading, distribution, backup, destruction):
+
 - Split knowledge + dual control — **no single person** (human or agent) can have
   access to all key components (§8.1 b/c).
 - Component PCs: air-gapped, powered down when not in use, managed under dual control
@@ -106,6 +108,7 @@ out-of-band, human-only, dual-control, split-knowledge operations.
 ### Remote Access into the HSA (CP Logical §5.6)
 
 In Phase 7, even the in-zone agent operates under strict §5.6 constraints:
+
 - Only from pre-authorized source systems using vendor-approved hardware.
 - **No personally owned hardware** (§5.6 d).
 - **MFA** required (§5.6.2 g), 5-minute idle timeout, lockout after 3 failures.
@@ -127,6 +130,7 @@ cannot hold remote-admin into perso. (pci-card-production.md §3.2)
 ### Phase 7 — What In-Zone Work Looks Like
 
 The in-zone agent is **authoring/advisory only**:
+
 - Runs on an air-gapped, local-only LLM (no internet egress — mandatory).
 - Uses an in-zone GitLab instance with restricted access (perso source repo ACL).
 - Opens MRs; never merges or deploys autonomously.
@@ -135,6 +139,7 @@ The in-zone agent is **authoring/advisory only**:
   an internal SIEM (never to a cloud log store from the HSA).
 
 **This phase does not begin until:**
+
 1. Phases 0–6 are stable.
 2. Hardware (in-HSA air-gapped inference box) is procured and hardened.
 3. A **CPSA-L assessor has reviewed the design** and confirmed acceptability.
@@ -177,6 +182,7 @@ artifact for human review is the correct action. No autonomous deploy."
 ```
 
 > TODO: This entire skill is a STUB. Flesh out once:
+>
 > - The CPSA-L assessor has reviewed the in-zone design (Phase 7 gate).
 > - The in-HSA hardware (air-gapped inference box) is procured.
 > - The in-zone GitLab and runner topology are confirmed.
@@ -188,24 +194,29 @@ artifact for human review is the correct action. No autonomous deploy."
 ## Deep Reference — PCI Card Production Logical v3.x
 
 ### CP Logical §3 — Physical Security Controls (Infrastructure implications)
+
 - Personalization systems must be in a physically secured area with access logging
 - Infrastructure changes to systems that process card data require approved change windows
 - Any remote access to HSA systems must use MFA and be logged
 
 ### CP Logical §4 — Logical Security Controls
+
 - **Key management:** Key loading is a dual-control human operation outside agent scope
 - **Access control:** Each operator has a unique ID; no shared accounts; all access logged
 - **Session management:** Inactive sessions must time out; re-authentication required
 
 ### CP Logical §5 — Personnel Controls (for change records)
+
 - Every change to personalization infrastructure must reference the authorized operator
 - Contractors/vendors accessing the HSA must be documented and escorted
 
 ### CP Logical §6 — Change Management
+
 - All changes must be approved before implementation (no emergency changes without retroactive approval within 24h)
 - Change records must include: description, risk assessment, rollback plan, test results, dual-control approver names
 - Post-change verification is mandatory
 
 ### CP PIN §8 — PIN Security
+
 - PIN processing systems must be isolated from non-PIN systems at the network level
 - No agent may interact with PIN processing — flag and route to human CPSA immediately

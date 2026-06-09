@@ -88,6 +88,7 @@ Approval: <human gate — who approves the apply>
 ## Deep Reference
 
 ### Rollback Decision Matrix
+
 | Scenario | Preferred action | Rationale |
 |----------|-----------------|-----------|
 | Single task failed, state is known | Fix-forward: patch the task, re-run | Faster than full rollback |
@@ -97,6 +98,7 @@ Approval: <human gate — who approves the apply>
 | Security vulnerability in released version | Forward-only emergency patch | Documented emergency change process |
 
 ### Standard Rollback Playbook Pattern
+
 ```yaml
 # rollback.yml — always ship alongside site.yml
 - hosts: "{{ target_hosts | default('all') }}"
@@ -129,7 +131,9 @@ Approval: <human gate — who approves the apply>
 ```
 
 ### Break-Glass Procedure
+
 Document in `knowledge/runbooks/break-glass.md`:
+
 1. Who can authorize break-glass (named roles, not individuals)
 2. What actions are permitted without the standard change process
 3. Maximum window duration

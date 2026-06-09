@@ -24,6 +24,7 @@ Discover the actual state of the infrastructure — GitLab projects, Ansible pla
 ## Skills & Tools
 
 Load for discovery and drift:
+
 - **drift-detection** — scheduled `--check --diff`, ARA tagging, drift→alert protocol
 - **ansible-testing** — safe, read-only check-mode invocation
 
@@ -36,6 +37,7 @@ semantics, confirm meaning via Context7 rather than guessing
 instead of re-discovering. Keep it accurate and flag any section you could not verify.
 
 ## Handoffs
+
 - Drift requiring a code change → **infra-planner** (plan) → **iac-author** (author). Never remediate here.
 - A failing run encountered during discovery → **iac-debugger**. Compliance gaps → **pci-compliance-reviewer**.
 
@@ -66,6 +68,7 @@ instead of re-discovering. Keep it accurate and flag any section you could not v
 ## Output
 
 **Environment map** (written to `knowledge/environment.md`):
+
 ```yaml
 last_updated: <ISO date>
 gitlab:
@@ -86,6 +89,7 @@ gaps:
 ```
 
 **Drift report** (emitted to conversation):
+
 ```
 ## Drift Report: <date>
 

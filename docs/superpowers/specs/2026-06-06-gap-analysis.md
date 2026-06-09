@@ -6,11 +6,12 @@ _Authoritative status: [docs/architecture-gap.md](../../architecture-gap.md)_
 
 ---
 
-## Current version: v0.10.0
+## Current version: v0.14.0
 
 **What's fully built and wired (tested via `npm test`):**
-- All 10 corporate agents, 19 skills, 6 commands
-- Full hook set (9 event-wired + 2 CLI gates)
+
+- 10 corporate agents (+7 `perso-*` HSA artifacts/proposals), 24 skills, 8 commands
+- Full hook set (9 event-wired + 4 CLI/in-zone gates)
 - DLP (`pan-egress-filter`) with fail-closed option
 - Local inference lane (`ollama-router.js`) + enforcing `sensitivity-router`
 - Unified State Store (9 collections); governed learning loop end-to-end
@@ -128,7 +129,7 @@ These items must land before the plugin can reason about a real estate.
 
 ### Skills
 
-All 19 skills: ✅ built. No gaps.
+All 24 skills: ✅ built. No gaps.
 
 ### Hooks
 
@@ -148,7 +149,7 @@ All 19 skills: ✅ built. No gaps.
 
 ### Commands
 
-All 6 commands: ✅ built. `/infra-discover` needs running against real estate (P0).
+All 8 commands: ✅ built. `/infra-discover` needs running against real estate (P0).
 
 ### Libraries
 
@@ -165,21 +166,25 @@ All 6 commands: ✅ built. `/infra-discover` needs running against real estate (
 ## Known design constraints and caveats
 
 ### Local lane is shell-out, not in-context inference
+
 Claude Code hooks cannot redirect the orchestrator's own inference to Ollama. The local
 lane boundary is `sensitivity-router` denial + `ollama-router.js` shell-out. The `model:`
 frontmatter on `sensitive-local-analyst` is a label. This is a permanent architectural
 constraint of the Claude Code harness, not a fixable gap.
 
 ### CPSA gate is a hard prerequisite for HSA
+
 The in-zone deployment, perso-* agents, and HSA runner registration must not proceed
 without CPSA sign-off. This is a compliance requirement, not a technical gap.
 Do not route around it.
 
 ### Single-box topology is a known PCI gap
+
 Co-locating the agent host and GitLab runner at the same trust level violates the
 principle of least privilege for a CDE. The runner topology split (P2) resolves this.
 Until resolved, treat the PoC as corporate-zone development only.
 
 ### Env-var namespace drift — resolved in v0.11.0
+
 Both hooks now use `INFRAOPS_YAMLLINT` and `INFRAOPS_ANSIBLE_SYNTAX` as canonical names.
 `INFRA_OPS_*` back-compat aliases are retained for existing deployments.

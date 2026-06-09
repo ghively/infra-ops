@@ -1,0 +1,3 @@
+---
+# Dev group_vars/all. Secrets live in a separate, ansible-vault-encrypted vault.yml.
+env_name: dev

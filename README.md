@@ -17,16 +17,21 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.13.0 — 14 agents · 21 skills · 37 seed instincts · full HSA design artifacts · 9 CI validators passing**
+**v0.14.0** — 17 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 18 validators passing.
 
 The corporate-zone plugin is built and wired: DLP (fail-closed), the local inference lane,
 the governed learning loop, and the audit/state substrate all run and are covered by
-tests (`npm test`). The four HSA perso-* agents are fully designed and ship as artifacts;
-in-zone deployment remains CPSA-gated.
+tests (`npm test`). The in-HSA **tooling** — the seven `perso-*` agents, deployment
+runbooks, in-zone guard hooks, and the dual-control gate — is authored as reviewable
+proposals (`knowledge/cpsa-approval.md §1`). In-HSA **deployment/go-live** remains gated
+on the CPSA-L sign-off (`knowledge/cpsa-approval.md §2`); no PAN/keys/PINs/HSM config is
+ever authored here.
 
 - See **[`docs/architecture.md`](docs/architecture.md)** for component overview, zone model, hook pipeline, review gate, state store, and instinct lifecycle (8 Mermaid diagrams)
 - See **[`docs/workflows.md`](docs/workflows.md)** for end-to-end operational workflows (7 Mermaid diagrams)
 - See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for design-vs-as-built status
+- See **[`docs/iac-tooling-and-automation-guide.md`](docs/iac-tooling-and-automation-guide.md)** for tech selection (Terraform/OpenTofu vs Ansible vs scripting), repo structuring, CI/CD, and deployment methods
+- See **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)** for the Ansible execution standards the `iac-author` agent follows
 - See **[`SPEC.md`](SPEC.md)** for the full component inventory
 - See **[`docs/superpowers/specs/2026-06-06-gap-analysis.md`](docs/superpowers/specs/2026-06-06-gap-analysis.md)** for the prioritized gap backlog
 - See **[`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md)** for full rationale and research
@@ -41,13 +46,15 @@ in-zone deployment remains CPSA-gated.
 | Governed learning loop (promote/rollback over unified State Store) | ✅ Wired |
 | `governance-ledger` + State Store (9 collections) | ✅ Implemented |
 | 10 corporate specialist agents | ✅ Implemented |
-| 4 HSA perso-* agents (perso-planner/reviewer/auditor/scribe) | ✅ Design artifacts complete — CPSA gates deployment |
-| 21 domain skills (expanded with deep reference sections) | ✅ Implemented |
+| 7 HSA `perso-*` agents (planner/reviewer/auditor/scribe + iac-author/iac-reviewer/cp-compliance-reviewer) | 🟡 Authored as proposals — CPSA gates deployment |
+| 24 domain skills (expanded with deep reference sections) | ✅ Implemented |
 | 37 pre-seeded instincts (corporate + HSA zones) | ✅ Committed under `knowledge/instincts/` |
-| 6 commands | ✅ Implemented |
-| 11 hook scripts (9 event-wired + 2 CLI gates) | ✅ Implemented |
-| Ansible / GitLab / secrets / PCI / Dockerfile / Terraform / Python rules | ✅ Implemented |
-| In-HSA operational deployment | ⬜ CPSA-gated (design complete, deployment blocked) |
+| 8 commands (incl. `/scaffold`, `/preflight`) | ✅ Implemented |
+| Canonical templates + structure/deployment gates | ✅ Enforced (`validate-structure.js`, `validate-deployment.js`) |
+| Reliable-execution functions (merge-gate, scaffold, preflight, conformance, retry) | ✅ Scripted + tested |
+| 13 hook scripts (9 event-wired + 4 CLI/in-zone gates) | ✅ Implemented |
+| Ansible / GitLab / secrets / PCI / Dockerfile / Terraform / Python / scripts rules | ✅ Implemented |
+| In-HSA deployment / go-live | ⬜ CPSA-L sign-off pending (`knowledge/cpsa-approval.md §2`) |
 
 ## Installation
 
@@ -86,7 +93,7 @@ infra-ops/
 ├── .claude-plugin/          # Plugin manifest (Claude Code marketplace)
 │   ├── plugin.json          # Main plugin configuration
 │   └── marketplace.json     # Marketplace listing metadata
-├── agents/                  # 14 specialist subagents (auto-discovered)
+├── agents/                  # 17 specialist subagents (auto-discovered)
 │   ├── infra-planner.md            # Brief → phased plans with rollback units
 │   ├── infra-auditor.md            # Read-only discovery + drift detection
 │   ├── iac-author.md               # Ansible/GitLab CI authoring (+ Molecule)
@@ -100,8 +107,11 @@ infra-ops/
 │   ├── perso-planner.md            # HSA infra brief → phased plan (CPSA-gated deploy)
 │   ├── perso-reviewer.md           # HSA MR review — CP+PIN controls
 │   ├── perso-auditor.md            # HSA read-only discovery + drift detection
-│   └── perso-scribe.md             # HSA change records with dual-control evidence
-├── skills/                  # 21 lazy-loaded domain skills
+│   ├── perso-scribe.md             # HSA change records with dual-control evidence
+│   └── perso-iac-*.md / perso-cp-* # 3 LOCAL-ONLY in-zone agents (proposals):
+│                                   #   perso-iac-author / -iac-reviewer / -cp-compliance-reviewer
+├── skills/                  # 24 lazy-loaded domain skills
+│   ├── iac-tooling-selection/   # Terraform/OpenTofu vs Ansible vs Bash/PowerShell/Python
 │   ├── ansible-patterns/  ansible-testing/  gitlab-cicd-pipeline/
 │   ├── octopus-release/  drift-detection/  multi-env-promotion/
 │   ├── pci-dss-compliance/  pci-cp-compliance/  secrets-vault/
@@ -109,22 +119,34 @@ infra-ops/
 │   ├── rollback-and-runbooks/  ci-pipeline-debugging/  incident-response/
 │   ├── pre-commit-and-secret-scanning/  supply-chain-and-sbom/
 │   ├── hsa-infrastructure/  perso-compliance/  # HSA-zone skills
+│   ├── pci-pin-awareness/  perso-change-control/   # in-zone (DESIGN §3)
 │   └── instinct-promotion/  instinct-rollback/   # governed learning loop
-├── commands/                # 6 slash commands
+├── commands/                # 8 slash commands
 │   ├── infra-discover.md  playbook-review.md  drift-check.md
-│   ├── knowledge-ingest.md
+│   ├── knowledge-ingest.md  scaffold.md  preflight.md
 │   └── instinct-promote.md  instinct-rollback.md
+├── templates/               # Canonical IaC skeletons (8 types; the agent stamps every unit from these)
+│   ├── ansible-role/  ansible-repo/  terraform-module/  terraform-env/
+│   ├── packer-template/
+│   └── python-tool/  bash-tool/  powershell-tool/
 ├── contexts/                # Context modes (dev / research / review)
 ├── hooks/
 │   └── hooks.json           # Hook event bindings (9 event-wired hooks)
 ├── scripts/
-│   ├── hooks/               # 11 hook implementations (incl. 2 CLI gates)
+│   ├── hooks/               # 13 hook implementations (9 event-wired + 4 CLI/in-zone gates)
 │   │   ├── infra-session-bootstrap.js  pan-egress-filter.js
 │   │   ├── governance-ledger.js  governance-capture.js  observe-runner.js
 │   │   ├── gateguard-fact-force.js  sensitivity-router.js
 │   │   ├── yamllint-hook.js  ansible-syntax-hook.js
-│   │   └── learning-promotion-gate.js  dual-control-promotion-gate.js
+│   │   ├── learning-promotion-gate.js  dual-control-promotion-gate.js
+│   │   └── hsa-boundary-guard.js  block-no-verify.js   # in-zone guards
+│   ├── validate-structure.js   # Deterministic structure-conformance gate (uniform layout)
+│   ├── validate-deployment.js  # Deterministic deployment-uniformity gate (pipeline shape)
+│   ├── merge-gate.js  scaffold.js  preflight.js  conformance.js   # reliable-execution functions
 │   └── lib/                 # Shared libraries
+│       ├── structure-spec.js       # Canonical IaC layout spec (single source of truth)
+│       ├── deployment-policy.js    # Canonical pipeline policy (stages/gates/prod-safety)
+│       ├── merge-gate.js  retry.js # Deterministic merge decision; backoff retry
 │       ├── state-store.js          # Unified state/governance store (9 collections)
 │       ├── instinct-ledger.js      # Instinct persistence + governance logging
 │       ├── ollama-router.js        # Local-only inference lane
@@ -134,10 +156,12 @@ infra-ops/
 │   ├── common/  ansible/  gitlab-ci/  secrets/  pci/
 │   ├── dockerfile/          # Container security rules
 │   ├── terraform/           # IaC security + style rules
-│   └── python/              # Python security rules
+│   ├── python/              # Python security rules
+│   └── scripts/             # Bash/PowerShell glue-script rules
 ├── schemas/                 # JSON schemas (state-store.schema.json — 9 collections)
 ├── knowledge/               # Knowledge base + instinct ledger
 │   ├── README.md  runner-topology.md  hsa-deployment.md
+│   ├── cpsa-approval.md     # Citable Phase-7 authorization record (build vs go-live)
 │   └── instincts/           # Zone-segmented pre-seeded instincts
 │       ├── corporate/       # ansible-best-practices, gitlab-ci-security,
 │       │                    # pci-dss-controls, secrets-vault-patterns,
@@ -147,6 +171,9 @@ infra-ops/
 │   ├── architecture.md             # Component overview + 8 Mermaid diagrams
 │   ├── workflows.md                # Operational workflows + 7 Mermaid diagrams
 │   ├── architecture-gap.md         # Design-vs-as-built (source of truth)
+│   ├── iac-authoring-standards.md  # Ansible execution standards the iac-author follows
+│   ├── iac-tooling-and-automation-guide.md  # Tech selection + repo/CI/CD/scripting standards
+│   ├── foundation-improvement-plan.md  mcp-servers.md
 │   ├── superpowers/specs/          # Living architectural specs + gap backlog
 │   │   ├── 2026-06-06-deep-init-reference.md
 │   │   └── 2026-06-06-gap-analysis.md
@@ -154,10 +181,12 @@ infra-ops/
 │   └── infra-agent/                # Full design rationale + research
 │       ├── DESIGN.md  research/    # (11 research reports)
 ├── tests/
-│   ├── ci/                  # Component validators (agents/commands/skills/hooks/instincts)
-│   ├── unit/                # Unit suites (local-lane, instinct-loop)
+│   ├── ci/                  # Component validators (agents/commands/skills/hooks/instincts/schema)
+│   ├── unit/                # Unit suites (local-lane, instinct-loop, data-plane,
+│   │                        #             dual-control, hsa-guard, merge-gate, scaffold,
+│   │                        #             preflight, conformance, retry, structure, deployment)
 │   └── run-all.js           # Test runner (npm test)
-├── .gitlab-ci/              # Reusable CI components (ansible-deploy, iac-sast gate)
+├── .gitlab-ci/              # Reusable CI components (ansible-deploy, iac-sast, structure-conformance)
 ├── CLAUDE.md                # Orchestration contract (delegation map, skills, Context7)
 ├── SPEC.md  TODO.md  CHANGELOG.md  CONTRIBUTING.md
 ├── package.json  .env.example
@@ -167,7 +196,7 @@ infra-ops/
 ### Orchestration & MCP
 
 `CLAUDE.md` is the portable behavioral contract: Claude acts as a **lean orchestrator**
-that delegates specialist work to the fourteen subagents (each in its own context window)
+that delegates specialist work to the seventeen subagents (each in its own context window)
 per a task→agent routing map, with a Delegation Envelope, an evaluator→remediation
 loop, and a deterministic merge gate. **Context7** and **sequential-thinking** MCP
 servers are bundled (`plugin.json` `mcpServers`); read-only GitLab/Octopus servers are
@@ -176,8 +205,56 @@ operator-enabled — see **[`docs/mcp-servers.md`](docs/mcp-servers.md)**.
 Standards are *known and enforced* at three layers: path-scoped **rules** (`rules/**`)
 auto-inject when matching files are in context (deterministic), **skills** teach
 application, and the **binding** enforcement is hooks + the `iac-sast-scanning` CI gate
-+ the deterministic 3-way merge gate (playbook-reviewer + pci-compliance-reviewer +
+
+- the deterministic 3-way merge gate (playbook-reviewer + pci-compliance-reviewer +
 secrets-scanner; any BLOCK blocks the merge).
+
+## Authoring Standards
+
+**Structure *and* deployment are baked in and enforced — not advised.** Every new IaC
+unit is stamped from a fixed canonical skeleton in [`templates/`](templates/) — 8 types
+(`ansible-role`, `ansible-repo`, `terraform-module`, `terraform-env`, `packer-template`,
+`python-tool`, `bash-tool`, `powershell-tool`) — via the [`/scaffold`](commands/scaffold.md)
+command. Two deterministic gates enforce it:
+
+- **Structure** — defined once in [`structure-spec.js`](scripts/lib/structure-spec.js),
+  enforced by [`validate-structure.js`](scripts/validate-structure.js).
+- **Deployment** — every `.gitlab-ci.yml` must match the canonical pipeline shape
+  (standard stages, the binding gates, environment scoping, **manual + protected-branch
+  production**), enforced by [`validate-deployment.js`](scripts/validate-deployment.js).
+
+The `iac-author` agent must pass both before an MR, and the
+[`structure-conformance`](.gitlab-ci/components/structure-conformance/template.yml) CI
+component runs them over every `roles/*`, `modules/*`, `envs/*` and the pipeline in the
+target repo — **any deviation fails the build.** So structure and deployment are uniform
+by construction.
+
+**Choosing the technology** comes first. The
+[`iac-tooling-selection`](skills/iac-tooling-selection/SKILL.md) skill +
+**[`docs/iac-tooling-and-automation-guide.md`](docs/iac-tooling-and-automation-guide.md)**
+define when to use **Terraform/OpenTofu** (provisioning) vs **Ansible** (in-host config)
+vs **Bash/PowerShell/Python** (glue, orchestration, data gathering), how to structure
+repos and CI/CD per tool, the deployment methods (immutable, blue-green, canary, rolling,
+GitOps), and **when to combine** them — grounded in industry standards. The standards for
+each file type auto-inject via path-scoped rules (`rules/terraform/*`, `rules/scripts/*`,
+`rules/ansible/*`).
+
+Once the tooling is chosen, the **Ansible execution** standards the **`iac-author`** agent
+follows — and that the review gate checks — are consolidated in
+**[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)**:
+
+- **Ansible**: FQCN everywhere, idempotent modules (no naked `command`/`shell`),
+  role-prefixed vars, inventory-as-directory, OS targeting by structure.
+- **Secrets**: no plaintext — Vault references + `no_log: true`; crown-jewels hard stop.
+- **Testing ladder**: `yamllint → ansible-lint → --syntax-check → --check --diff →
+  Molecule idempotence` (all five gate every MR).
+- **CI/CD**: staged pipelines, environment scoping, manual+protected production, the
+  agent triggers at most a gated *dev* deploy.
+- **Every MR**: `--check --diff` evidence + blast radius + rollback plan, then the
+  three-way review gate (any `BLOCK` blocks; max 2 remediation cycles).
+
+That guide is the readable index; the **binding** definitions are the rules under
+`rules/**` (if the guide and a rule diverge, the rule wins).
 
 ## The Hard Trust Boundary
 
@@ -198,32 +275,56 @@ See [`SPEC.md §2`](SPEC.md#2-the-hard-trust-boundary-never-violate) for full ju
 | `INFRAOPS_AUDIT_FORWARD` | SIEM endpoint for governance ledger | (none — events stored locally until set) |
 | `INFRAOPS_DLP_FAIL_CLOSED` | PAN/secrets filter fail posture (`0` to loosen) | `1` (fail-closed) |
 | `INFRAOPS_SENSITIVE_FAIL_CLOSED` | Sensitivity router fail posture (`0` to loosen) | `1` (fail-closed) |
-| `INFRAOPS_YAMLLINT` | Path to yamllint binary | `yamllint` |
-| `INFRAOPS_ANSIBLE_SYNTAX` | Path to ansible-playbook binary | `ansible-playbook` |
+| `INFRAOPS_HSA_ZONE` | Mark the air-gapped in-zone environment (required for HSA promotions) | (unset) |
+| `INFRAOPS_HSA_GUARD_FAIL_OPEN` | Relax the in-zone `hsa-boundary-guard` to fail-open (not recommended) | (unset — fail-closed) |
+| `INFRAOPS_BYPASS_DUAL_CONTROL` | Audited emergency bypass of the dual-control gate | (unset) |
 
-See [`.env.example`](.env.example) for the full list.
+Legacy `INFRA_OPS_*` / `INFRA_*` names are still honored as fallbacks. Hook feature
+flags (`INFRAOPS_YAMLLINT=1`, `INFRAOPS_ANSIBLE_SYNTAX=1`, `INFRAOPS_OBSERVE=1`,
+`INFRAOPS_GOVERNANCE_CAPTURE=1`) are set in `hooks/hooks.json`. See [`.env.example`](.env.example)
+for the full list.
 
 ## Architecture
 
 Full architecture documentation with Mermaid diagrams lives in **[`docs/architecture.md`](docs/architecture.md)**. Covers:
 
 - **System overview** — enforcement layers, hook pipeline, zone model
-- **Agent roster** — all 14 agents with model, zone, and skills
+- **Agent roster** — all 17 agents with model, zone, and skills
 - **Review gate** — 3-way parallel review with 2-cycle remediation loop
 - **State Store** — 9 collections (sessions, skillRuns, skillVersions, decisions, installState, governanceEvents, workItems, knowledgeBase, observations)
 - **Instinct lifecycle** — candidate → active → deprecated with governance gates
 
 Operational workflows (standard change, HSA change, drift detection, secret detection, learning loop, incident response, knowledge ingestion) are in **[`docs/workflows.md`](docs/workflows.md)**.
 
+The seven HSA `perso-*` agents run on a **separate, air-gapped, local-only plane**
+inside the HSA — they are not part of the corporate orchestration above and never run
+on a cloud model. See [`knowledge/hsa-deployment.md`](knowledge/hsa-deployment.md).
+
+See [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) for the complete architecture.
+
 ## Development
 
 ### Running Tests
 
 ```bash
-npm test                      # Run all tests
+npm test                      # Run all tests (18 validators)
 npm run coverage             # Run with coverage
 npm run validate             # Validate all components
+npm run conformance          # Structure + deployment conformance over a target repo
 ```
+
+### Reliable-execution functions
+
+Workflows that were prose are now deterministic, tested code:
+
+- `scripts/merge-gate.js` — computes the review-gate decision from the three reviewer
+  verdicts (any `BLOCK` blocks; a missing verdict is incomplete → BLOCK; 2-cycle cap →
+  escalate). Exit `0` cleared / `1` revise / `3` escalate.
+- `scripts/scaffold.js` (`/scaffold`) — copy template + substitute + validate + fail on
+  leftover `__…__` placeholders.
+- `scripts/preflight.js` (`/preflight`) — fail-fast env/state checklist before authoring.
+- `scripts/conformance.js` (`npm run conformance`) — one local gate mirroring CI.
+- `scripts/lib/retry.js` — bounded backoff wrapping the network callers.
 
 ### Component Validation
 

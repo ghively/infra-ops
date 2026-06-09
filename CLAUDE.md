@@ -54,25 +54,33 @@ separately under `knowledge/` and is loaded only when needed.
 | HSA infrastructure planning, review, or audit | **perso-planner** → **perso-reviewer** + **pci-compliance-reviewer** → **perso-scribe** | haiku (local) |
 
 ### The review gate (deterministic — runs three agents in parallel)
+
 Every authored change goes concurrently to **playbook-reviewer** (correctness/
 idempotency), **pci-compliance-reviewer** (PCI controls), and **secrets-scanner**
 (static secret/PAN scan). Each returns a machine-readable verdict token on its first
 output line (`VERDICT: PASS|WARN|BLOCK`). **Merge gate (no discretion): if *any* of the
 three returns BLOCK, the change is blocked.** WARN is advisory; PASS×3 clears the gate.
+Compute this deterministically, don't judge it by hand:
+`node scripts/merge-gate.js --verdicts <v1>,<v2>,<v3> --cycle <n>` (exit 0 = cleared,
+1 = BLOCK/revise, 3 = escalate). A missing reviewer verdict is incomplete → BLOCK.
 
 ### Evaluator → remediation loop (drives repeatable quality)
+
 For authored code: **iac-author → (3 reviewers in parallel) → if any BLOCK, return the
 consolidated findings to iac-author for ONE revision pass → re-review.** Cap at **2
 revision cycles**, then stop and escalate to a human with the open findings. Never
 merge around a BLOCK.
 
 ### When to stay in the orchestrator (do not delegate)
+
 - Trivial single-file lookups, routing decisions, and assembling/summarizing
   subagent results. Keep these light; everything heavier gets delegated.
 
 ### How to delegate well — the Delegation Envelope (every Task call MUST include)
+
 Subagents start with a **fresh context** and do not see this conversation. Each Task
 prompt must therefore carry:
+
 - **Objective** — one sentence naming the specific outcome this subagent owns.
 - **Inputs** — paths / diff / pipeline-ID / plan reference. Pass *pointers, not pasted
   file bodies* (let the subagent Read what it needs); for "current state" point at
@@ -81,6 +89,7 @@ prompt must therefore carry:
 - **Boundaries** — zone (corporate only), propose-only, no-CHD, and the hand-off target.
 
 ### No re-delegation / no loops
+
 Subagents return results to **you** (the orchestrator); they do not call each other.
 Chaining (plan → author → review → scribe) is the orchestrator's job. This prevents
 runaway fan-out and token blow-up.
@@ -91,6 +100,7 @@ runaway fan-out and token blow-up.
 
 | Skill | Loaded by |
 |---|---|
+| `iac-tooling-selection` | infra-planner, iac-author |
 | `ansible-patterns`, `ansible-testing` | iac-author, playbook-reviewer, infra-auditor, iac-debugger |
 | `gitlab-cicd-pipeline` | iac-author, playbook-reviewer |
 | `ci-pipeline-debugging` | iac-debugger |
@@ -102,6 +112,7 @@ runaway fan-out and token blow-up.
 | `pre-commit-and-secret-scanning` | iac-author, secrets-scanner |
 | `supply-chain-and-sbom` | iac-author, pci-compliance-reviewer |
 | `pci-dss-compliance`, `pci-cp-compliance` | pci-compliance-reviewer |
+| `pci-pin-awareness`, `perso-change-control` | (in-zone) perso-cp-compliance-reviewer, perso-iac-author |
 | `incident-response` | sensitive-local-analyst, pci-compliance-reviewer |
 | `change-documentation` | change-scribe, iac-author |
 | `knowledge-curation` | knowledge-curator |
@@ -128,6 +139,7 @@ the exact topic.
 ## Guardrails enforced by hooks (not prompts)
 
 These run automatically; know they exist:
+
 - `pan-egress-filter` — blocks PAN/secrets at the tool boundary (fail-closed option).
 - `sensitivity-router` — routes/denies CHD-adjacent tool calls toward the local lane.
 - `gateguard-fact-force` — demands investigation (blast radius + rollback) before edits.

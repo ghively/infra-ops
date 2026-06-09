@@ -1,0 +1,6 @@
+---
+# molecule/default/converge.yml — applies the role under test.
+- name: Converge
+  hosts: all
+  roles:
+    - role: __ROLE_NAME__

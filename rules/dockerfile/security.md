@@ -20,17 +20,21 @@ paths:
 ## High (should fix before merge)
 
 - **Run as non-root** — add `USER <non-root-user>` before the final `CMD`/`ENTRYPOINT`.
+
   ```dockerfile
   RUN groupadd -r appuser && useradd -r -g appuser appuser
   USER appuser
   ```
+
 - **Pin base image by digest for production images**:
+
   ```dockerfile
   # Acceptable: version-pinned
   FROM node:20.14-alpine3.20
   # Better: digest-pinned (immune to tag mutation)
   FROM node:20.14-alpine3.20@sha256:<digest>
   ```
+
 - **Minimize layers with sensitive data** — if a layer contains a secret (even temporarily),
   that secret is recoverable from the image. Use multi-stage builds to discard build-time secrets.
 - **Use multi-stage builds** to keep final images lean and free of build toolchain.
@@ -40,10 +44,13 @@ paths:
 - **Explicit `COPY` paths** — avoid `COPY . .`; enumerate what belongs in the image.
 - **`HEALTHCHECK` instruction** — every production image should define a health check.
 - **Label images** with version and maintainer:
+
   ```dockerfile
   LABEL version="1.2.3" maintainer="ops@example.com"
   ```
+
 - **`RUN` commands: use `--no-cache` for package managers**:
+
   ```dockerfile
   RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*

@@ -19,6 +19,7 @@ versioned, evidence-cited rule the agent applies going forward. Reach for it on
 prompts like "promote this pattern", "make this an instinct", or `/instinct-promote`.
 
 A pattern is **promotable** only when all of these hold (otherwise it is noise):
+
 - it recurs across multiple observations (not a one-off),
 - it has a clear, statable rule and a measurable benefit,
 - its blast radius is understood (what it changes about future behavior),
@@ -36,6 +37,7 @@ observe-runner → candidate → /instinct-promote → learning-promotion-gate
 ```
 
 The `learning-promotion-gate` enforces, and **denies** the promotion unless:
+
 1. **Human approval** — an `--approver` identifier is present.
 2. **Minimum confidence** — `>= 0.7` (recommended `>= 0.85`).
 3. **Documentation citation** — required when the content is compliance-related
@@ -94,7 +96,9 @@ INFRA_HSA_ZONE=1 node "${CLAUDE_PLUGIN_ROOT}/scripts/hooks/learning-promotion-ga
 ## Deep Reference
 
 ### Instinct Quality Checklist
+
 Before proposing an instinct for promotion, verify all of the following:
+
 - [ ] Confidence ≥ 0.85 (0.7 is the gate floor; 0.85 is recommended)
 - [ ] At least two independent observations support the pattern
 - [ ] A documentation citation exists (required for compliance items; strongly recommended for all)
@@ -102,7 +106,9 @@ Before proposing an instinct for promotion, verify all of the following:
 - [ ] A human approver has been identified who was not involved in originating the observation
 
 ### Instinct Content Guidelines
+
 Write instinct content as a rule a future agent can apply without needing the original context:
+
 ```yaml
 # GOOD — actionable, self-contained, zone-correct
 content: >

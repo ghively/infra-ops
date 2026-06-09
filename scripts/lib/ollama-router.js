@@ -30,6 +30,14 @@
 const http = require('http');
 const https = require('https');
 const { URL } = require('url');
+const { retry } = require('./retry.js');
+
+// Transient network/timeout failures worth retrying (not e.g. a refused non-local guard).
+function isTransient(err) {
+  const code = err && err.code;
+  if (['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EPIPE'].includes(code)) return true;
+  return /timed out|socket hang up|network/i.test((err && err.message) || '');
+}
 
 const DEFAULT_MODEL = process.env.INFRAOPS_OLLAMA_MODEL || 'qwen2.5-coder:32b';
 const DEFAULT_TIMEOUT_MS = parseInt(process.env.INFRAOPS_OLLAMA_TIMEOUT_MS || '120000', 10);
@@ -136,9 +144,12 @@ function postJson(pathName, payload, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
 /**
  * Run a single-turn local completion. Returns the response text.
  */
-async function generate({ prompt, model, system, timeoutMs } = {}) {
+async function generate({ prompt, model, system, timeoutMs, retries } = {}) {
   const payload = buildPayload({ prompt, model, system });
-  const json = await postJson('api/generate', payload, { timeoutMs });
+  const json = await retry(
+    () => postJson('api/generate', payload, { timeoutMs }),
+    { retries: retries == null ? 2 : retries, baseMs: 300, shouldRetry: isTransient },
+  );
   return (json && typeof json.response === 'string') ? json.response : '';
 }
 

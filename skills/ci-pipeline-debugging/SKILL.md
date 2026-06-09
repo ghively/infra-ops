@@ -72,6 +72,7 @@ glab ci trace <job-id>            # read-only; do NOT set CI_DEBUG_TRACE on prot
 ## Deep Reference
 
 ### Failure Signature Table
+
 | Error | Likely cause | First check |
 |-------|-------------|-------------|
 | `ERROR! the role 'X' was not found` | Missing collection or wrong path | `ansible-galaxy collection list` |
@@ -83,12 +84,15 @@ glab ci trace <job-id>            # read-only; do NOT set CI_DEBUG_TRACE on prot
 | Pipeline timeout | Job exceeded `timeout:` value | Increase timeout or split job |
 
 ### Reading a Failed ansible-lint Report
+
 Focus on `[rule-name]` tags. Suppressable: `[yaml[line-length]]`. Never suppress: `[fqcn]`, `[no-changed-when]`, `[risky-file-permissions]`.
 
 ### Safe Job Log Access
+
 ```bash
 # Via GitLab API (read-only)
 curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
   "https://gitlab.example.com/api/v4/projects/<id>/jobs/<job_id>/trace"
 ```
+
 Never extract secrets from job logs. If a job log contains a masked variable value, report it to the security team immediately.

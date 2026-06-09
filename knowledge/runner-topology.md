@@ -67,11 +67,13 @@ This document defines the GitLab Runner topology for the infra-ops environment, 
 **Executor:** Docker
 
 **Images:**
+
 - `ansible/ansible-runner:latest` — Ansible execution
 - `python:3.11` — Python-based tools
 - `node:20` — Node.js-based hooks
 
 **Environment Variables:**
+
 - `ANSIBLE_FORCE_COLOR=0`
 - `ANSIBLE_HOST_KEY_CHECKING=False`
 
@@ -86,10 +88,12 @@ This document defines the GitLab Runner topology for the infra-ops environment, 
 **Executor:** Shell
 
 **Access:**
+
 - GitLab CI service account (for Dev auto-deploy)
 - Ops team manual approval (for Test/Staging)
 
 **Limitations:**
+
 - No access to production
 - No access to HSA
 
@@ -102,10 +106,12 @@ This document defines the GitLab Runner topology for the infra-ops environment, 
 **Executor:** Shell (PowerShell)
 
 **Access:**
+
 - GitLab CI service account
 - Windows build team
 
 **Limitations:**
+
 - No Ansible execution against production
 
 ### HSA Deploy Runner (Air-gapped)
@@ -121,6 +127,7 @@ This document defines the GitLab Runner topology for the infra-ops environment, 
 **Network:** Air-gapped (no direct internet access)
 
 **Special Requirements:**
+
 - All playbooks authored in corporate zone
 - Transferred via air-gap process
 - Local-only model (Ollama) for execution
@@ -136,6 +143,7 @@ This document defines the GitLab Runner topology for the infra-ops environment, 
 **Access:** Corporate zone agents only
 
 **Environment Variables:**
+
 - `OLLAMA_BASE_URL=http://local-ollama:11434`
 
 ## Runner Registration
@@ -218,21 +226,25 @@ gitlab-runner register \
 ## Migration Path
 
 ### Phase 1: Split Corporate Zone Runners
+
 1. Register CI Runner (Docker)
 2. Register Deploy Runner (Shell)
 3. Update `.gitlab-ci.yml` to use specific tags
 
 ### Phase 2: Add Windows Build Runner
+
 1. Register Windows Build Runner
 2. Update Windows job definitions
 
 ### Phase 3: Implement HSA Runners (CPSA-Gated)
+
 1. **STOP** — Require CPSA review before proceeding
 2. Set up air-gapped GitLab instance
 3. Register HSA Deploy Runner
 4. Configure local-only runner with Ollama
 
 ### Phase 4: Decommission Single-Box Topology
+
 1. Migrate all jobs to tagged runners
 2. Remove shared runner configuration
 3. Implement resource groups per environment

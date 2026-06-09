@@ -18,7 +18,7 @@ flowchart TD
 
     subgraph Harness["Claude Code Harness"]
         Orchestrator["Orchestrator\n(CLAUDE.md contract)"]
-        HookPipeline["Hook Pipeline\n(11 hooks — see §3)"]
+        HookPipeline["Hook Pipeline\n(13 hook scripts — see §3)"]
     end
 
     subgraph Corporate["Corporate Zone  ·  PCI DSS"]
@@ -45,7 +45,7 @@ flowchart TD
         PS["perso-scribe\n(haiku / local)"]
     end
 
-    subgraph Skills["Skills Layer  ·  21 skills, lazy-loaded"]
+    subgraph Skills["Skills Layer  ·  24 skills, lazy-loaded"]
         direction LR
         S1["ansible-patterns\nansible-testing"]
         S2["gitlab-cicd-pipeline\nci-pipeline-debugging"]
@@ -102,7 +102,7 @@ flowchart TD
 
 ## 3. Hook Pipeline
 
-All 11 hooks are wired in `hooks/hooks.json` and auto-loaded by the harness. Scripts live in `scripts/hooks/`. No hook appears in `plugin.json`. Two gates are CLI-invoked rather than event-triggered.
+Of the 13 hook scripts under `scripts/hooks/`, 9 are event-wired in `hooks/hooks.json` and auto-loaded by the harness; 2 gates are CLI-invoked, and the 2 in-zone guards (`hsa-boundary-guard`, `block-no-verify`) are registered in the HSA's own hooks config, not corporate. No hook appears in `plugin.json`.
 
 ```mermaid
 flowchart TD
@@ -408,6 +408,7 @@ stateDiagram-v2
 **Instinct YAML fields:** `id`, `zone`, `confidence`, `content`, `citation`, `evidence[]`, `approver`, `promoted_at`, `status`. The `status: active` and `promoted_by` fields are written by the gate only — never by the curator.
 
 Ledger layout:
+
 ```
 knowledge/instincts/
   corporate/   ← PCI DSS zone  (legacy alias: corpor)
@@ -418,7 +419,7 @@ knowledge/instincts/
 
 ## 9. Skills Map
 
-Skills live in `skills/<name>/SKILL.md` with frontmatter (`name`, `description`). They are **lazy-loaded** — each agent loads its skills by invoking the Skill tool when needed. Skills teach *how to apply* a standard; hooks *enforce* the standard.
+Skills live in `skills/<name>/SKILL.md` with frontmatter (`name`, `description`). They are **lazy-loaded** — each agent loads its skills by invoking the Skill tool when needed. Skills teach _how to apply_ a standard; hooks _enforce_ the standard.
 
 | Skill | Agents that load it | Purpose |
 |---|---|---|

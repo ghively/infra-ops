@@ -29,7 +29,9 @@ expands.
   the machine; Octopus owns the release). Not yet wired into this plugin.
 - **PCI posture:** card production → corporate IT under **PCI DSS**; the personalization/data-prep
   High Security Area under **PCI Card Production (Logical+Physical) + PCI PIN**. A first deployment is
-  corporate-zone only. The HSA/in-zone deployment is a later, CPSA-gated phase (docs/infra-agent/DESIGN.md §14 Phase 7).
+  corporate-zone only. The HSA/in-zone **tooling** (perso-* agents, runbooks, in-zone dual-control
+  gate) is authored as proposals (`knowledge/cpsa-approval.md §1`); in-zone **deployment/go-live**
+  remains a later, CPSA-L-gated phase (`knowledge/cpsa-approval.md §2`; docs/infra-agent/DESIGN.md §14 Phase 7).
 
 > The agent should **not assume** beyond this. Unknowns (network segmentation, HSM vendor, exact
 > DSS-vs-CP system split) are answered by ingesting your documentation and proposing **cited** answers
@@ -62,6 +64,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 > For authoritative design-vs-as-built status (including the local-lane enforcement
 > caveat and what remains HSA/CPSA-gated), see **[`docs/architecture-gap.md`](docs/architecture-gap.md)**.
+> For the engineering standards the `iac-author` agent follows, see
+> **[`docs/iac-authoring-standards.md`](docs/iac-authoring-standards.md)**.
 
 ### Agents (`agents/*.md`, auto-discovered)
 
@@ -81,11 +85,20 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | perso-reviewer | haiku (local) | ✅ | HSA infrastructure MR review — CP+PIN controls (CPSA-gated deployment) |
 | perso-auditor | haiku (local) | ✅ | HSA read-only discovery + drift detection (CPSA-gated deployment) |
 | perso-scribe | haiku (local) | ✅ | HSA change records with dual-control evidence (CPSA-gated deployment) |
+| perso-iac-author | LOCAL (in-zone) | 🟡 proposal | In-HSA authoring (LOCAL-ONLY); inert until air-gap transfer + CPSA go-live. No PAN/keys/PIN/HSM. |
+| perso-iac-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA correctness/idempotency review (read-only, VERDICT token) |
+| perso-cp-compliance-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA PCI CP Logical + PIN compliance review (read-only, VERDICT token) |
+
+> The seven `perso-*` agents are **LOCAL-ONLY in-zone artifacts** authored under the
+> build authorization in `knowledge/cpsa-approval.md §1`. They are not part of the
+> corporate routing in `CLAUDE.md`; they run under a separate air-gapped in-zone
+> orchestrator only after the CPSA-L go-live sign-off (§2) is filled.
 
 ### Skills (`skills/<name>/SKILL.md`, lazy-loaded)
 
 | Skill | Status | Purpose |
 |---|---|---|
+| iac-tooling-selection | ✅ | Decision framework: Terraform/OpenTofu vs Ansible vs Bash/PowerShell/Python; when to combine |
 | ansible-patterns | ✅ | Repo layout, FQCN, idempotency, mixed Win/Linux, no-`command`/`shell` |
 | ansible-testing | ✅ | yamllint→ansible-lint→syntax→`--check --diff`→Molecule idempotence |
 | gitlab-cicd-pipeline | ✅ | Stages, `environment:`, protected envs, CI components, runner tags |
@@ -93,6 +106,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | drift-detection | ✅ | Scheduled `--check --diff`, ARA tagging, drift→alert |
 | pci-dss-compliance | ✅ | Corporate DSS controls (modeled on ECC healthcare-phi-compliance) |
 | pci-cp-compliance | ✅ | Card Production Logical+PIN constraints for in-zone work (docs/infra-agent/DESIGN.md §7) |
+| pci-pin-awareness | ✅ (in-zone) | PIN Security recognition vocabulary — recognize/refuse/route PIN data + keys; never handle |
+| perso-change-control | ✅ (in-zone) | In-zone test→live dual-control, witnessed sign-off, SoD (CP Logical §6.2–6.6) |
 | change-documentation | ✅ | The rework of the `documentation` playbook + auto-doc generation |
 | multi-env-promotion | ✅ | dev→test→staging→prod, build-once-promote-one-artifact |
 | secrets-vault | ✅ | Vault references, runtime lookups, `no_log`, never plaintext |
@@ -121,8 +136,10 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
 | yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
 | ansible-syntax-hook | PostToolUse | ✅ | Auto-run ansible-playbook --syntax-check |
-| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion (invoked by `/instinct-promote` via `--check`) |
+| dual-control-promotion-gate | CLI/hook | ✅ | CPSA-gated dual control for HSA instinct promotion; in-zone path requires 2 distinct approvers + citation + `--cpsa-ref` + `INFRAOPS_HSA_ZONE=1` (tests: `tests/unit/dual-control.test.js`) |
 | learning-promotion-gate | CLI/hook | ✅ | Block instinct promotion lacking human approval + doc citation (`--promote`/`--validate` CLI) |
+| hsa-boundary-guard | PreToolUse (in-zone) | ✅ | In-zone tripwire: deny any tool input referencing PAN/keys/components/PINs/HSM (fail-closed). Registered in the HSA hooks config only (tests: `tests/unit/hsa-guard.test.js`) |
+| block-no-verify | PreToolUse (in-zone) | ✅ | Deny Bash attempts to bypass verification hooks (`--no-verify`, `git commit -n`, hooksPath neutralization) |
 
 ### Libraries (`scripts/lib/*.js`)
 
@@ -140,6 +157,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 |---|---|
 | common/prompt-defense-baseline.md | ✅ |
 | ansible/*.md (coding-style, testing, security) | ✅ |
+| terraform/terraform-style.md (`**/*.tf,tofu,tfvars,hcl`) | ✅ |
+| scripts/scripting-standards.md (`**/*.sh,ps1,py`) | ✅ |
 | gitlab-ci/*, secrets/*, pci/* | ✅ |
 | pci/pci-cp-compliance.md | ✅ |
 
@@ -153,6 +172,30 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | /knowledge-ingest | ✅ | Ingest a document into the knowledge base (classify + index) |
 | /instinct-promote | ✅ | Promote observed pattern to governed instinct |
 | /instinct-rollback | ✅ | Rollback or deactivate an instinct |
+| /scaffold | ✅ | Scaffold an IaC unit from the canonical template + enforce structure |
+| /preflight | ✅ | Fail-fast environment/state checklist before authoring |
+
+### Reliable-execution functions (scripted, not prose)
+
+| Function | Status | Purpose |
+|---|---|---|
+| `scripts/merge-gate.js` (+ `lib/merge-gate.js`) | ✅ | Deterministic review-gate decision from the 3 verdict tokens (any BLOCK blocks; missing reviewer → BLOCK; 2-cycle cap → escalate). Exit 0/1/3 |
+| `scripts/scaffold.js` | ✅ | Deterministic scaffolder: copy template + substitute + validate-structure + fail on leftover placeholders |
+| `scripts/preflight.js` | ✅ | Env/state checklist: node/git/tooling, branch, clean tree, staged-secret tripwire, leftover placeholders |
+| `scripts/conformance.js` (`npm run conformance`) | ✅ | One local command running structure + deployment validators over a repo (mirrors CI) |
+| `scripts/lib/retry.js` | ✅ | Bounded exponential-backoff retry; wraps `ollama-router` + `siem-forwarder` network calls |
+
+### Canonical structure & enforcement
+
+| Component | Status | Purpose |
+|---|---|---|
+| `templates/*` (8 types) | ✅ | Fixed skeletons the agent stamps from: ansible-role/-repo, terraform-module/-env, packer-template, python-tool, bash-tool, powershell-tool |
+| `scripts/lib/structure-spec.js` | ✅ | Machine-readable single source of truth for the uniform layout (per type) |
+| `scripts/validate-structure.js` | ✅ | Deterministic structure gate — rejects (non-zero) any unit that deviates |
+| `scripts/lib/deployment-policy.js` | ✅ | Canonical pipeline policy (stages, gates, env scoping, manual+protected prod) |
+| `scripts/validate-deployment.js` | ✅ | Deterministic deployment gate — rejects non-uniform `.gitlab-ci.yml` |
+| `.gitlab-ci/components/structure-conformance` | ✅ | Binding CI gate; runs both validators over roles/modules/envs + the pipeline |
+| `tests/unit/{structure,deployment}.test.js` | ✅ | Assert templates/spec never drift and that deviations are rejected |
 
 ---
 
