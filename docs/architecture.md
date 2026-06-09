@@ -40,7 +40,9 @@ flowchart TD
     subgraph HSA["High Security Area  ·  PCI CP + PIN  ·  air-gapped"]
         direction TB
         PP["perso-planner\n(haiku / local)"]
-        PV["perso-reviewer\n(haiku / local)"]
+        PIA["perso-iac-author\n(local)"]
+        PIR["perso-iac-reviewer\n(local)"]
+        PCC["perso-cp-compliance-reviewer\n(local)"]
         PA["perso-auditor\n(haiku / local)"]
         PS["perso-scribe\n(haiku / local)"]
     end
@@ -238,14 +240,16 @@ flowchart TD
     subgraph HSAAgents["HSA Zone Agents  (CPSA-gated deployment)"]
         direction LR
         PP2["perso-planner\nhaiku/local\nHSA brief → plan + dual-control gates"]
-        PV2["perso-reviewer\nhaiku/local\nHSA MR review — CP+PIN controls"]
+        PIA2["perso-iac-author\nlocal\nIn-zone Ansible/CI authoring"]
+        PV2["perso-iac-reviewer\nlocal\nIn-zone correctness/idempotency review"]
+        PCR2["perso-cp-compliance-reviewer\nlocal\nIn-zone CP+PIN compliance review"]
         PA2["perso-auditor\nhaiku/local\nHSA discovery + drift"]
         PS2["perso-scribe\nhaiku/local\nHSA change records"]
     end
 
     Orch --> IP2 & IA2 & AU2 & SL2 & KC2 & CS2 & DB2
     Orch --> PR2 & CR2 & SS3
-    Orch -->|"CPSA gate"| PP2 & PV2 & PA2 & PS2
+    Orch -->|"CPSA gate"| PP2 & PIA2 & PV2 & PCR2 & PA2 & PS2
 
     IP2 -.->|"loads"| SK_IP["ansible-patterns\ngitlab-cicd-pipeline\noctopus-release\nmulti-env-promotion\nrollback-and-runbooks"]
     IA2 -.->|"loads"| SK_IA["ansible-patterns\nansible-testing\ngitlab-cicd-pipeline\noctopus-release\nmulti-env-promotion\nsecrets-vault\niac-sast-scanning\npre-commit-and-secret-scanning\nsupply-chain-and-sbom\nrollback-and-runbooks\nchange-documentation"]
@@ -257,10 +261,12 @@ flowchart TD
     KC2 -.->|"loads"| SK_KC["knowledge-curation\ninstinct-promotion\ninstinct-rollback"]
     CS2 -.->|"loads"| SK_CS["change-documentation"]
     DB2 -.->|"loads"| SK_DB["ansible-patterns\nci-pipeline-debugging"]
-    PP2 & PV2 & PA2 & PS2 -.->|"loads"| SK_HSA["hsa-infrastructure\nperso-compliance"]
+    PP2 & PA2 & PS2 -.->|"loads"| SK_HSA["hsa-infrastructure\nperso-compliance"]
+    PIA2 & PV2 -.->|"loads"| SK_PIZ["ansible-patterns\nansible-testing\nhsa-infrastructure"]
+    PCR2 -.->|"loads"| SK_PCC["pci-cp-compliance\npci-pin-awareness\nperso-change-control\nperso-compliance\nsecrets-vault"]
 
     classDef hsa fill:#6c3483,color:#fff
-    class PP2,PV2,PA2,PS2 hsa
+    class PP2,PIA2,PV2,PCR2,PA2,PS2 hsa
 ```
 
 ---
@@ -442,8 +448,8 @@ Skills live in `skills/<name>/SKILL.md` with frontmatter (`name`, `description`)
 | `knowledge-curation` | knowledge-curator | Document ingestion, sensitivity classification, cited-answer protocol |
 | `instinct-promotion` | knowledge-curator | Promote observed patterns to governed instincts via the promotion gate |
 | `instinct-rollback` | knowledge-curator | Rollback or deactivate instincts with governance event logging |
-| `hsa-infrastructure` | perso-planner, perso-reviewer, perso-auditor, perso-scribe | Air-gap patterns, dual-control requirements, local-only Ansible/CI conventions |
-| `perso-compliance` | perso-planner, perso-reviewer, perso-auditor, perso-scribe | PCI Card Production Logical + PIN infrastructure controls checklist |
+| `hsa-infrastructure` | perso-planner, perso-auditor, perso-scribe, perso-iac-reviewer | Air-gap patterns, dual-control requirements, local-only Ansible/CI conventions |
+| `perso-compliance` | perso-planner, perso-auditor, perso-scribe, perso-cp-compliance-reviewer | PCI Card Production Logical + PIN infrastructure controls checklist |
 
 ---
 

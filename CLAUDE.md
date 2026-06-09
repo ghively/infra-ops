@@ -51,7 +51,7 @@ separately under `knowledge/` and is loaded only when needed.
 | CHD-adjacent / sensitive work | **sensitive-local-analyst** → local lane | (local) |
 | Ingesting docs / answering scoping questions with citations | **knowledge-curator** | sonnet |
 | Generating changelog / ADR / change records from a merged diff | **change-scribe** | haiku |
-| HSA infrastructure planning, review, or audit | **perso-planner** → **perso-reviewer** + **pci-compliance-reviewer** → **perso-scribe** | haiku (local) |
+| HSA infrastructure planning, review, or audit | **perso-planner** → **perso-iac-author** → **perso-iac-reviewer** + **perso-cp-compliance-reviewer** → **perso-scribe** | (local) |
 
 ### The review gate (deterministic — runs three agents in parallel)
 
@@ -117,7 +117,7 @@ runaway fan-out and token blow-up.
 | `change-documentation` | change-scribe, iac-author |
 | `knowledge-curation` | knowledge-curator |
 | `instinct-promotion`, `instinct-rollback` | knowledge-curator (governed learning loop) |
-| `hsa-infrastructure`, `perso-compliance` | perso-planner, perso-reviewer, perso-auditor, perso-scribe |
+| `hsa-infrastructure`, `perso-compliance` | perso-planner, perso-auditor, perso-scribe, perso-iac-reviewer, perso-cp-compliance-reviewer |
 
 Zone tokens used repo-wide: **`corporate`** (PCI DSS) and **`hsa`** (PCI Card
 Production + PIN, air-gapped). Legacy `corpor`/`in-zone` are accepted as aliases.

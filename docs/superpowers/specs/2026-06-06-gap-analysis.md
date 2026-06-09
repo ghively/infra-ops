@@ -10,7 +10,7 @@ _Authoritative status: [docs/architecture-gap.md](../../architecture-gap.md)_
 
 **What's fully built and wired (tested via `npm test`):**
 
-- 10 corporate agents (+7 `perso-*` HSA artifacts/proposals), 24 skills, 8 commands
+- 10 corporate agents (+6 `perso-*` HSA artifacts/proposals), 24 skills, 8 commands
 - Full hook set (9 event-wired + 4 CLI/in-zone gates)
 - DLP (`pan-egress-filter`) with fail-closed option
 - Local inference lane (`ollama-router.js`) + enforcing `sensitivity-router`
@@ -105,7 +105,7 @@ These items must land before the plugin can reason about a real estate.
       - Wire `dual-control-promotion-gate` for HSA instinct promotion
       - Validate `knowledge/hsa-deployment.md` against actual HSA topology
 
-- [x] **`perso-*` agent suite** — perso-planner, perso-reviewer, perso-auditor, perso-scribe built as full design artifacts; CPSA gates deployment only, not development.
+- [x] **`perso-*` agent suite** — perso-planner, perso-auditor, perso-scribe + perso-iac-author, perso-iac-reviewer, perso-cp-compliance-reviewer built as full design artifacts; CPSA gates deployment only, not development.
 
 ---
 
@@ -125,7 +125,7 @@ These items must land before the plugin can reason about a real estate.
 | knowledge-curator | ✅ | ✅ | Ingest docs once environment.md exists (P1) |
 | change-scribe | ✅ | ✅ | — |
 | iac-debugger | ✅ | ✅ | — |
-| perso-planner / perso-reviewer / perso-auditor / perso-scribe | ✅ | ⬜ | CPSA gates deployment; development complete |
+| perso-planner / perso-auditor / perso-scribe / perso-iac-author / perso-iac-reviewer / perso-cp-compliance-reviewer | ✅ | ⬜ | CPSA gates deployment; development complete |
 
 ### Skills
 

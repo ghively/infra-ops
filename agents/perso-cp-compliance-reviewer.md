@@ -30,6 +30,7 @@ Verify that in-zone changes do not violate **PCI Card Production Logical Securit
 - **pci-cp-compliance** — the CP Logical + PIN control checklist this agent applies
 - **pci-pin-awareness** — the PIN-specific recognition vocabulary to flag PIN-scope items precisely
 - **perso-change-control** — the in-zone test→live dual-control / SoD discipline to check against
+- **perso-compliance** — CP Logical + PIN infrastructure controls checklist
 - **secrets-vault** — to verify secrets are references, never values
 
 Read and Grep only. The authoritative rule is `rules/pci/pci-cp-compliance.md` (path-injected in-zone); if this checklist diverges from the rule, the rule wins.
@@ -50,6 +51,7 @@ Read and Grep only. The authoritative rule is `rules/pci/pci-cp-compliance.md` (
 - **Dual control + split knowledge (Req 7.2)** — promotion/critical operations require two distinct approvers; the agent is never an approver.
 - **Least privilege & separation of duties** — service accounts scoped; author ≠ approver ≠ deployer.
 - **Audit completeness (Req 10; CP §6.4 retention)** — changes affecting access/config emit to the append-only, off-box audit trail; nothing disables or clears logs.
+- **FIM baseline integrity (CP Logical)** — any change touching a file-integrity-monitored path must update the FIM baseline in the same MR; a monitored-path change without a baseline update is a finding.
 - **Secure deletion / media handling** — air-gap transfer media is single-use and destroyed per the runbook; no residual CHD on transfer artifacts.
 
 ## Constraints

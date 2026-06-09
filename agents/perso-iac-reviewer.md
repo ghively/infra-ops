@@ -29,6 +29,7 @@ Review every in-zone MR diff for Ansible/CI **correctness and idempotency** befo
 
 - **ansible-patterns** — the correctness/idempotency standards this agent enforces
 - **ansible-testing** — the test ladder (yamllint → ansible-lint → syntax-check → check/diff → Molecule)
+- **hsa-infrastructure** — HSA-specific Ansible/CI patterns and air-gap constraints
 
 Read and Grep only. No external docs in-zone.
 

@@ -70,7 +70,7 @@ blast_radius:
 rollback:
   procedure: <ansible-playbook command or git revert>
   validation: <how to confirm rollback succeeded>
-compliance_flags: []  # populated from perso-reviewer verdict
+compliance_flags: []  # populated from perso-iac-reviewer + perso-cp-compliance-reviewer verdicts
 air_gap_transfer:
   artifacts: []  # list of artifacts transferred via air-gap process
   transfer_ref: <transfer log reference>

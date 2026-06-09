@@ -83,14 +83,13 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | iac-debugger | sonnet | ✅ | Diagnose red pipelines / failed runs → cited root cause + proposed fix (read-only) |
 | secrets-scanner | haiku | ✅ | Deterministic pre-merge secret/PAN static scan; emits VERDICT for the merge gate |
 | perso-planner | haiku (local) | ✅ | HSA infra brief → phased plan with dual-control gates (CPSA-gated deployment) |
-| perso-reviewer | haiku (local) | ✅ | HSA infrastructure MR review — CP+PIN controls (CPSA-gated deployment) |
 | perso-auditor | haiku (local) | ✅ | HSA read-only discovery + drift detection (CPSA-gated deployment) |
 | perso-scribe | haiku (local) | ✅ | HSA change records with dual-control evidence (CPSA-gated deployment) |
 | perso-iac-author | LOCAL (in-zone) | 🟡 proposal | In-HSA authoring (LOCAL-ONLY); inert until air-gap transfer + CPSA go-live. No PAN/keys/PIN/HSM. |
 | perso-iac-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA correctness/idempotency review (read-only, VERDICT token) |
 | perso-cp-compliance-reviewer | LOCAL (in-zone) | 🟡 proposal | In-HSA PCI CP Logical + PIN compliance review (read-only, VERDICT token) |
 
-> The seven `perso-*` agents are **LOCAL-ONLY in-zone artifacts** authored under the
+> The six `perso-*` agents are **LOCAL-ONLY in-zone artifacts** authored under the
 > build authorization in `knowledge/cpsa-approval.md §1`. They are not part of the
 > corporate routing in `CLAUDE.md`; they run under a separate air-gapped in-zone
 > orchestrator only after the CPSA-L go-live sign-off (§2) is filled.
