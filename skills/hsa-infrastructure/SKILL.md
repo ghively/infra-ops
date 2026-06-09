@@ -8,6 +8,7 @@ description: Use when authoring, reviewing, or auditing infrastructure in the Hi
 ## When to Use
 
 Load this skill for any task involving infrastructure in the High Security Area:
+
 - Planning changes to personalization system infrastructure
 - Reviewing Ansible playbooks or CI configs targeting HSA hosts
 - Auditing HSA infrastructure state
@@ -23,8 +24,10 @@ conflict.
 ## Core Constraints (non-negotiable)
 
 ### Air-gap
+
 The HSA has no direct internet access. Every artifact (playbook, role, CI component,
 container image, package) must be:
+
 1. Authored and tested in the corporate zone
 2. Transferred via the approved air-gap process (signed artifact + hash verification)
 3. Never pulled from the internet on HSA hosts
@@ -34,11 +37,13 @@ Use `ansible.builtin.copy` to push pre-staged packages from a transfer share, no
 `ansible.builtin.get_url` pointing at a public mirror.
 
 ### Local inference only
+
 No cloud model may process HSA-adjacent content. All analysis of HSA infrastructure
 content must use the local Ollama lane (`scripts/lib/ollama-router.js`). The
 `INFRAOPS_SENSITIVE_FAIL_CLOSED=1` default enforces this at the hook boundary.
 
 ### Dual control
+
 Every infrastructure change to an HSA host requires two distinct human approvers —
 not just the MR author. The `dual-control-promotion-gate` enforces this for instinct
 promotion. MR-level enforcement requires the GitLab HSA project to have a minimum
@@ -46,6 +51,7 @@ approval count of 2 on protected branches. Verify this configuration is in place
 before proposing any HSA MR.
 
 ### No CHD in agent context
+
 This agent operates on infrastructure metadata only — file paths, config schemas,
 playbook structure, runner topology. It never reads or reasons about actual PAN,
 SAD, PIN blocks, key components, or HSM configuration. If a file contains those
@@ -54,6 +60,7 @@ values, identify it by path and route to the local lane.
 ## Ansible Patterns for the HSA Zone
 
 ### Package management (air-gapped)
+
 ```yaml
 # CORRECT — push from staged share, no internet
 - name: Install perso-agent package
@@ -76,6 +83,7 @@ values, identify it by path and route to the local lane.
 ```
 
 ### Service management
+
 ```yaml
 # Always use FQCN; always verify state explicitly
 - name: Ensure personalization service is running
@@ -93,6 +101,7 @@ values, identify it by path and route to the local lane.
 ```
 
 ### Configuration management
+
 ```yaml
 # Use templated configs; never hardcode endpoint addresses
 - name: Deploy perso-engine config
@@ -161,6 +170,7 @@ air-gapped, rollbacks cannot pull updated packages — they must revert to the
 previously staged artifact or revert configuration via git.
 
 Standard rollback pattern:
+
 1. Re-run the previous version playbook with `--tags rollback`
 2. Verify service state with `ansible.builtin.assert`
 3. Log rollback to governance ledger via change record

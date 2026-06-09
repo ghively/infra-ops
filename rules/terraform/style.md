@@ -11,6 +11,7 @@ paths:
 - **All resources must have a descriptive `description` or comment** explaining their purpose.
 - **Use `locals` for repeated expressions** — avoid duplicating the same expression in multiple resources.
 - **Variable definitions must include `description` and `type`**:
+
   ```hcl
   variable "db_instance_class" {
     type        = string
@@ -18,5 +19,6 @@ paths:
     default     = "db.t3.medium"
   }
   ```
+
 - **Output values must include `description`**.
 - **`terraform fmt` before commit** — CI runs `terraform fmt -check` and fails on unformatted code.

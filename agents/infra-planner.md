@@ -24,6 +24,9 @@ Decompose ambiguous infra briefs into concrete, phased plans with explicit depen
 ## Skills & Tools
 
 Reference while planning (to scope feasible units and place gates correctly):
+
+- **iac-tooling-selection** — choose the right technology per unit (Terraform/OpenTofu vs
+  Ansible vs a Bash/PowerShell/Python script) and when to combine them, per industry standards
 - **ansible-patterns**, **gitlab-cicd-pipeline** — what an authorable unit looks like
 - **multi-env-promotion**, **octopus-release** — where stage gates and promotions belong
 - **drift-detection** — how each unit's verification / rollback check will work
@@ -39,6 +42,7 @@ to a specific approach (`mcp__context7__resolve-library-id` →
 2. **Survey the environment** — Use Read/Grep/Glob to scan existing playbooks, inventory, group_vars, `.gitlab-ci.yml`, and `knowledge/` to understand the current state. Cite every referenced pattern as `file:line`.
 3. **Identify unknowns** — List open questions (network segmentation, system ownership, PCI scope boundary). Do not guess; surface them for human confirmation. Reference `knowledge/` if the answer has been previously ingested.
 4. **Decompose into phases** — Split the work into atomic units. For each unit: describe what it changes, what it depends on, and what the expected outcome is.
+   - **Select the tooling per unit** (via `iac-tooling-selection`): provisioning → Terraform/OpenTofu; in-host configuration/app deploy → Ansible; glue/orchestration/data-gathering → Bash (Linux) / PowerShell (Windows) / Python (logic). Name the chosen tech and *why*, and where two tools combine (e.g. Terraform provisions → Ansible configures). Adopting a tool not in the current estate (a new state backend, a TACO) is itself a flagged proposal with PCI-scope review — never assume it.
 5. **Draw dependency edges** — Express dependencies explicitly (unit B cannot start until unit A is verified). Flag circular or unclear dependencies for human resolution.
 6. **Define rollback per unit** — For each atomic unit, state the rollback procedure: which playbook task to revert, which tag to re-run, or which commit to revert — with the specific Ansible check command to validate rollback success (`ansible-playbook --check --diff`).
 7. **Set stage gates** — Identify where human approval is required before proceeding (at minimum: before any change reaches test, staging, or prod). Gates must be explicit checkpoints, not implicit milestones.
@@ -56,6 +60,7 @@ to a specific approach (`mcp__context7__resolve-library-id` →
 - **Confidence gate** — if the overall confidence score is **below 70**, do not hand the plan onward for authoring; recommend re-scoping or a human clarification round on the open questions first. Low-confidence plans must not silently flow to iac-author.
 
 ## Handoffs
+
 - High-confidence plan → **iac-author** (authoring), unit by unit per the dependency graph.
 - Unresolved unknowns about current state → **infra-auditor** (discovery) or **knowledge-curator** (cited answers) before authoring.
 - Rollback/runbook design for a unit → reference the `rollback-and-runbooks` skill.

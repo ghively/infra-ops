@@ -8,6 +8,7 @@ description: Use when reviewing infrastructure changes in the card personalizati
 ## When to Use
 
 Load this skill for:
+
 - Reviewing HSA infrastructure changes against PCI Card Production controls
 - Auditing HSA zone configuration for compliance evidence
 - Proposing compliance-annotated change records for HSA MRs
@@ -23,6 +24,7 @@ mode before being included in the verdict.
 
 This skill covers **infrastructure** in the personalization zone — compute, storage,
 networking, OS config, service deployment. It does NOT cover:
+
 - Key ceremonies or key loading (dual-control human operation, no agent involvement)
 - PIN block generation or verification (out of scope for any agent)
 - HSM configuration (out of scope — no agent may touch HSM config)
@@ -34,6 +36,7 @@ a human CPSA reviewer.
 ## Key PCI Card Production Controls for Infrastructure
 
 ### CP Logical §3 — Access Control
+
 - All access to personalization infrastructure requires individual authentication
   (no shared accounts, no shared SSH keys)
 - Service accounts must have the minimum privilege necessary
@@ -58,6 +61,7 @@ a human CPSA reviewer.
 ```
 
 ### CP Logical §4 — Audit Logging
+
 - All infrastructure changes must emit to the tamper-evident audit trail
 - Log retention: per CP §6.4 (confirm with CPSA for specific retention period)
 - Logs must be forwarded to the SIEM before any log rotation can occur
@@ -72,16 +76,19 @@ a human CPSA reviewer.
 ```
 
 ### CP Logical §5 — Integrity Monitoring
+
 - System files in the personalization zone must be covered by file integrity monitoring
 - Playbooks that modify monitored paths must update the FIM baseline
 - Never disable FIM without an approved change window
 
 ### CP Logical §6 — Change Management
+
 - All changes must have an approved change record before deployment
 - The per-change YAML record (produced by perso-scribe) must be attached to the MR
 - Dual control: MR author cannot be the sole approver
 
 ### No SAD / No PAN in Infrastructure
+
 - Infrastructure configs must never contain PAN, SAD, or PIN values
 - Connection strings to personalization systems must use service account references
   (Vault lookups), never embedded credentials

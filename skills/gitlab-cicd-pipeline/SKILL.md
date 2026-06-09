@@ -223,7 +223,9 @@ deploy_prod:
 ## Deep Reference
 
 ### Protected Branch Rules (PCI SoD requirement)
+
 Every environment branch (test, staging, prod) must be protected with:
+
 - Minimum 2 approvals (author cannot approve own MR)
 - No force-push allowed
 - No deletion allowed
@@ -245,13 +247,16 @@ deploy-prod:
 ```
 
 ### CI Variables Security (PCI Req 8.3)
+
 - Never store secrets in unprotected CI/CD variables
 - Use protected + masked variables for all credentials
 - Prefer Vault lookups over CI variables for secrets; CI variables as fallback only
 - Rotate CI variables on any team member departure
 
 ### Reusable CI Components
+
 For recurring job patterns, extract to `.gitlab/ci/components/`:
+
 ```yaml
 # .gitlab/ci/components/ansible-check.yml
 spec:
@@ -269,8 +274,10 @@ spec:
 ```
 
 ### Runner Tag Discipline
+
 Jobs must specify tags to control which runner executes them. Generic jobs without
 tags run on any shared runner — a PCI least-privilege violation for deployment jobs.
+
 ```yaml
 # CORRECT
 deploy:
@@ -282,6 +289,7 @@ deploy:
 ```
 
 ### GitLab Security Scanning Integration (SAST/Secret Detection)
+
 ```yaml
 include:
   - template: Security/SAST.gitlab-ci.yml

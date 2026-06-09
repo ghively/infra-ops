@@ -18,16 +18,20 @@ paths:
 ## High
 
 - **Pin dependencies in `requirements.txt` with hashes**:
+
   ```
   requests==2.32.3 --hash=sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6 \
                    --hash=sha256:...
   ```
+
 - **Use `secrets` module, not `random`**, for security-sensitive token generation:
+
   ```python
   import secrets
   token = secrets.token_hex(32)   # CORRECT
   # NOT: import random; token = random.token_hex(32)
   ```
+
 - **Input validation at all external boundaries** — validate and sanitize all inputs from
   environment variables, CLI arguments, and file reads before use.
 - **Avoid `os.system()`** — use `subprocess.run()` with a list of arguments.

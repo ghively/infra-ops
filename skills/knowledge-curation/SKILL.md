@@ -26,6 +26,7 @@ learning loop. Also load when deciding which model lane a query must use.
 The agent cannot directly answer scoping questions (which corporate systems are DSS
 vs CP scope, HSA network topology, HSM vendor) because those answers depend on
 internal documentation. The correct flow is:
+
 1. Ingest the relevant document.
 2. Retrieve the answer from the ingested doc.
 3. Surface it as a **confidence-scored proposal with a citation** to the source.
@@ -185,6 +186,7 @@ Proposal: ingesting the perso-network architecture doc would resolve this."
 ## Deep Reference
 
 ### Sensitivity Classification Decision Tree
+
 ```
 Does the document contain or reference:
   ├── PAN, full card numbers, or SAD? → CHD-ADJACENT
@@ -195,12 +197,14 @@ Does the document contain or reference:
 ```
 
 ### Confidence Score Guidelines
+
 - 90–100: Single authoritative primary source; question is directly answered; source < 3 months old
 - 70–89: Source covers the topic but indirectly; or 3–6 months old; or single source
 - 50–69: Multiple sources with minor conflicts; source > 6 months old; or question is partially answered
 - < 50: No direct source; answer is inferred; or source is clearly outdated — DO NOT use as the basis for a compliance decision
 
 ### Index Format (knowledge/index.yaml entry)
+
 ```yaml
 - slug: pci-dss-v4-overview
   file: knowledge/docs/pci-dss-v4-overview.md

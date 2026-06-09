@@ -29,6 +29,7 @@ tokens. (ansible-iac-gitops.md §3; pci-dss-devops.md §8)
 ### HashiCorp Vault — the Source of Truth
 
 Vault is preferred over ansible-vault for enterprise estates:
+
 - **Dynamic/short-lived secrets** (rotated automatically).
 - **Fine-grained ACLs** (per-path, per-environment).
 - **Tamper-evident audit log** of every secret access.
@@ -116,6 +117,7 @@ deploy_prod:
 ```
 
 Environment-specific secret paths:
+
 ```
 secret/data/ansible/dev/db_password     ← dev jobs only
 secret/data/ansible/test/db_password    ← test jobs only
@@ -203,6 +205,7 @@ files. Ansible-vault is acceptable for low-sensitivity or bootstrap secrets only
 ## Deep Reference
 
 ### Vault Reference Patterns (HashiCorp Vault)
+
 ```yaml
 # CORRECT — runtime lookup, value never in source control
 - name: Retrieve DB password
@@ -233,12 +236,15 @@ files. Ansible-vault is acceptable for low-sensitivity or bootstrap secrets only
 ```
 
 ### AppRole Authentication (Ansible → Vault)
+
 The recommended auth method for Ansible is AppRole:
+
 - `role_id`: stored as a protected CI variable (non-secret)
 - `secret_id`: fetched from Vault at runtime or stored as a protected/masked CI variable
 - Rotate `secret_id` on any team member departure or suspected compromise
 
 ### Vault Policy Principle (least privilege)
+
 Each Ansible service account gets a Vault policy granting read-only access to exactly
 the paths it needs. Wildcard `*` policies are never acceptable.
 
@@ -255,6 +261,7 @@ path "secret/*" {
 ```
 
 ### Breaking Glass (emergency credential access)
+
 Document the break-glass procedure in `knowledge/runbooks/vault-break-glass.md`.
 Break-glass use must be logged to the governance ledger and reported in the next
 change control window.

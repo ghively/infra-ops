@@ -24,6 +24,7 @@ Take a failing Ansible run or GitLab CI job and produce a cited root-cause analy
 ## Skills & Tools
 
 Load for diagnosis:
+
 - **ci-pipeline-debugging** — reading GitLab job logs safely, common failure signatures, runner-tag/EE diagnosis
 - **ansible-testing** — the safe, read-only reproduction commands (`--syntax-check`, `--check --diff`)
 - **ansible-patterns** — the standards a defect is measured against
@@ -55,6 +56,7 @@ configured, prefer its read tools over `glab`. Never run a command that mutates 
 - **HSA out of scope** — route in-zone failures to the local lane.
 
 ## Handoffs
+
 - Fix authoring → **iac-author**. Drift confirmed → **infra-auditor**. Compliance implications of the fix → **pci-compliance-reviewer**. A surfaced secret/PAN → **secrets-scanner** + flag.
 
 ## Output

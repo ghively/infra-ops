@@ -63,6 +63,7 @@ sbom:
 ## Deep Reference — SLSA + SBOM + PCI 6.3.2
 
 ### SLSA Supply Chain Levels
+
 - **SLSA Level 1:** Build process is scripted (GitLab CI); SBOM generated
 - **SLSA Level 2:** Hosted build service with version-controlled build scripts; artifact signed
 - **SLSA Level 3:** Hardened build with provenance — no human operator access during build
@@ -70,6 +71,7 @@ sbom:
 For PCI DSS 6.3.2 compliance, SLSA Level 2 is the practical minimum.
 
 ### SBOM Generation (syft)
+
 ```yaml
 # .gitlab-ci.yml — SBOM generation stage
 generate-sbom:
@@ -85,6 +87,7 @@ generate-sbom:
 ```
 
 ### Artifact Signing (cosign + Sigstore)
+
 ```yaml
 sign-artifact:
   stage: sign
@@ -95,7 +98,9 @@ sign-artifact:
 ```
 
 ### Dependency Pinning
+
 All dependencies must be pinned to exact versions with hash verification:
+
 ```
 # requirements.txt — CORRECT
 ansible==9.5.1 --hash=sha256:abc123...
@@ -104,6 +109,7 @@ ansible==9.5.1 --hash=sha256:abc123...
 ```
 
 ### PCI 6.3.2 Inventory Requirements
+
 The SBOM must cover: all bespoke software components, all third-party and open-source
 software, all frameworks and libraries, and their versions. Review the SBOM on every
 merge to catch unexpected new dependencies.

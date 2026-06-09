@@ -120,6 +120,7 @@ checkov:
 ## Deep Reference
 
 ### Full Tool Stack
+
 | Tool | What it catches | Config file |
 |------|----------------|-------------|
 | `ansible-lint` | Ansible anti-patterns, FQCN, idempotency | `.ansible-lint` |
@@ -129,6 +130,7 @@ checkov:
 | `Checkov` | IaC misconfigurations (Terraform, Ansible, Dockerfile) | `.checkov.yaml` |
 
 ### SARIF Output for GitLab Security Dashboard
+
 ```yaml
 # .gitlab-ci.yml
 ansible-lint-sast:
@@ -143,6 +145,7 @@ ansible-lint-sast:
 ```
 
 ### Checkov Ansible Checks to Enable
+
 ```yaml
 # .checkov.yaml
 check:
@@ -152,6 +155,7 @@ check:
 ```
 
 ### Blocking vs. Advisory
+
 The `iac-sast-scanning` CI gate is **blocking** — it must pass before a merge is allowed.
 Agent reviewer VERDICTs are advisory. If the CI gate passes but an agent returns BLOCK,
 treat the agent BLOCK as the authoritative signal (the agent may catch logic issues the

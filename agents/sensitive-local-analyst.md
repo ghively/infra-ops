@@ -61,6 +61,7 @@ This agent must **not** pull third-party docs (no Context7) or CHD into its own 
 ## Output
 
 **For non-sensitive tasks (metadata only):**
+
 ```
 ROUTED: NO
 
@@ -72,6 +73,7 @@ Routed to local lane: NO
 ```
 
 **For tasks requiring local-lane routing:**
+
 ```
 ROUTED: YES
 

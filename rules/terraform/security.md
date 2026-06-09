@@ -14,6 +14,7 @@ paths:
 - **No `.tfstate` in source control** — state files contain plaintext resource attributes including secrets.
   Use remote state (S3 + DynamoDB lock, or Terraform Cloud).
 - **`sensitive = true` on secret outputs**:
+
   ```hcl
   output "db_password" {
     value     = random_password.db.result
@@ -24,6 +25,7 @@ paths:
 ## High
 
 - **Restrict provider version**:
+
   ```hcl
   terraform {
     required_providers {
@@ -34,13 +36,16 @@ paths:
     }
   }
   ```
+
 - **Enable state encryption** when using remote state with sensitive data.
 - **`prevent_destroy = true` for stateful resources** in production:
+
   ```hcl
   lifecycle {
     prevent_destroy = true
   }
   ```
+
 - **IAM least privilege** — IAM policies defined in Terraform must not use `"*"` for actions
   on sensitive resource types without justification.
 

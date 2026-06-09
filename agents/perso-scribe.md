@@ -50,6 +50,7 @@ Read and Write only. No Bash. No external network.
 ## Output
 
 **Per-change record** (`docs/changes/hsa/records/<MR-number>.yaml`):
+
 ```yaml
 mr: <number>
 zone: hsa

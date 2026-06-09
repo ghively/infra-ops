@@ -100,6 +100,7 @@ the EE by digest (`sha256:…`) so CI is reproducible across runners.
 ### Windows Roles
 
 Windows roles cannot run Molecule in a Linux container (WinRM not available). Options:
+
 - Use a dedicated Windows VM runner with Molecule's `delegated`/vagrant driver
   (from `molecule-plugins`).
 - Test Windows logic via `--check --diff` against a staging inventory.
@@ -180,24 +181,30 @@ ansible-playbook --check --diff -i inventories/staging site.yml
 ## Deep Reference
 
 ### Full Pipeline Execution Order
+
 ```
 yamllint → ansible-lint → ansible-playbook --syntax-check →
 ansible-playbook --check --diff (dev inventory) →
 molecule test (idempotence) → CI gate (iac-sast-scanning)
 ```
+
 Never skip a step. Never propose an MR with a failing lint or syntax check.
 
 ### yamllint Configuration
+
 Project-wide rule: max line length 120, comments-indentation at warning level.
 Run with: `yamllint -d '{extends: default, rules: {line-length: {max: 120}, comments-indentation: {level: warning}}}' <file>`
 
 ### ansible-lint Rules to Never Suppress
+
 - `fqcn` — FQCN is mandatory. No suppression.
 - `no-changed-when` — if you suppress this, `creates:` or `removes:` must be present.
 - `risky-shell-pipe` — if a pipe is needed, add `pipefail` or use a dedicated module.
 
 ### Molecule Driver Choice
+
 Use `podman` (rootless) not `docker` for new scenarios:
+
 ```yaml
 # molecule/default/molecule.yml
 driver:
@@ -209,6 +216,7 @@ platforms:
 ```
 
 ### Molecule Verify Pattern
+
 ```yaml
 # molecule/default/verify.yml
 - name: Verify
@@ -224,7 +232,9 @@ platforms:
 ```
 
 ### Check-mode Evidence in MR Description
+
 Every MR must include the `--check --diff` output summary. Format:
+
 ```
 ## Check-mode evidence
 Ran: `ansible-playbook --check --diff site.yml -i inventory/dev/`
