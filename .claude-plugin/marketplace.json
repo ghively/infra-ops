@@ -11,7 +11,7 @@
       "name": "infra-ops",
       "source": "./",
       "description": "Lean Claude Code orchestrator + isolated specialist subagents for managing an Ansible/GitLab/Octopus estate under PCI DSS + PCI Card Production + PCI PIN, with a governed, documentation-grounded self-improvement loop.",
-      "version": "0.1.0",
+      "version": "0.14.0",
       "license": "MIT",
       "category": "workflow",
       "keywords": [

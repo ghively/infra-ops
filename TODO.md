@@ -120,7 +120,7 @@ design-vs-as-built status. Summary:
 
 - ✅ Foundation hooks (GateGuard, Governance Capture, State Store, Observation)
 - ✅ Context modes (dev, research, review); quality hooks (yamllint, ansible-syntax)
-- ✅ 24 skills (incl. `iac-tooling-selection`, in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+7 `perso-*` HSA agents authored as design artifacts/proposals), 8 commands
+- ✅ 24 skills (incl. `iac-tooling-selection`, in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+6 `perso-*` HSA agents authored as design artifacts/proposals), 8 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
 - ✅ Reliable-execution functions (scripted + tested): `merge-gate`, `scaffold`, `preflight`,
   `conformance`, `retry` — prose workflows turned into deterministic code (18 validators)

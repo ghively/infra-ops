@@ -93,9 +93,9 @@ sequenceDiagram
     participant Op as Operator
     participant O as Orchestrator
     participant PP as perso-planner
-    participant IA as iac-author (local)
-    participant PV as perso-reviewer
-    participant CR as pci-compliance-reviewer
+    participant IA as perso-iac-author
+    participant PV as perso-iac-reviewer
+    participant CR as perso-cp-compliance-reviewer
     participant PS as perso-scribe
     participant CPSA as CPSA / QSA
 
@@ -115,13 +115,13 @@ sequenceDiagram
         IA-->>O: Feature branch + MR URL + check-mode diff
 
         par Parallel review
-            O->>PV: Review diff (CP + PIN controls)
+            O->>PV: Review diff (correctness/idempotency)
         and
-            O->>CR: Review diff (PCI DSS cross-check)
+            O->>CR: Review diff (CP + PIN controls)
         end
 
-        PV-->>O: VERDICT + CP/PIN control table
-        CR-->>O: VERDICT + DSS control table
+        PV-->>O: VERDICT + correctness findings
+        CR-->>O: VERDICT + CP/PIN control table
 
         alt Any BLOCK
             O->>IA: Consolidated findings
