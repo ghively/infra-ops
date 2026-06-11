@@ -1,0 +1,180 @@
+# infra-ops genetic architecture — canonical genome manifest
+# Source of truth for validating any framework expression of this system.
+# Companion prose: docs/genetic-architecture/02-genome.md
+version: 1
+generated: 2026-06-11
+source_expression:
+  framework: claude-code-plugin
+  plugin: infra-ops
+  plugin_version: 0.14.0
+
+portability_classes:
+  A: ports verbatim (data / standalone scripts, no harness dependency)
+  B: re-express (pattern available in any serious agent framework)
+  C: harness-coupled (re-bind or redesign per target)
+
+genes:
+  - id: G1
+    name: lean-orchestrator
+    invariant: >
+      One coordinator classifies, delegates, and assembles; specialist work never
+      runs inline in the coordinator context.
+    class: B
+    expression: [CLAUDE.md]
+    conformance: coordinator transcript contains no authored file bodies
+
+  - id: G2
+    name: specialist-roster
+    invariant: >
+      Named specialists with role, least-privilege tool allowlist, model tier, zone,
+      and output contract; fresh context per invocation.
+    class: B
+    expression: ["agents/*.md (16 agents: 10 corporate, 6 hsa)"]
+    conformance: per-agent tool surface equals declared allowlist; writes by reviewers fail structurally
+
+  - id: G3
+    name: delegation-envelope
+    invariant: >
+      Every delegation carries objective, input pointers (not pasted bodies),
+      output contract, and boundaries (zone / propose-only / no-CHD / hand-off).
+    class: B
+    expression: ["CLAUDE.md §delegation envelope"]
+    conformance: schema-invalid delegations are rejected before dispatch
+
+  - id: G4
+    name: verdict-contracts
+    invariant: >
+      Specialist output opens with a parseable verdict token
+      (PASS|WARN|BLOCK etc.) followed by named sections with file:line citations.
+    class: A/B
+    expression: ["agents/*.md §Output", "scripts/lib/merge-gate.js parseVerdict()"]
+    conformance: parseVerdict() yields non-null for every reviewer run
+
+  - id: G5
+    name: deterministic-review-gate
+    invariant: >
+      Three parallel reviewers (correctness, compliance, secrets); decision computed
+      not judged; any BLOCK blocks; missing verdict = BLOCK; exit 0/1/3.
+    class: A(decision)/B(topology)
+    expression: ["scripts/merge-gate.js", "scripts/lib/merge-gate.js"]
+    conformance: >
+      truth table: (PASS,WARN,PASS)->0; (PASS,BLOCK,PASS)->1; (PASS,null,PASS)->1;
+      cycle>=3 with BLOCK->3
+
+  - id: G6
+    name: bounded-remediation
+    invariant: >
+      BLOCK returns consolidated findings to author for one revision pass; cap 2
+      cycles; then human escalation; never merge around a BLOCK.
+    class: B
+    expression: ["CLAUDE.md §evaluator loop", "merge-gate.js --cycle"]
+    conformance: post-cycle-2 BLOCK yields escalation artifact and no merge
+
+  - id: G7
+    name: model-tiering
+    invariant: >
+      Frontier model for plan/author; mid-tier for review/debug; small for scan/
+      scribe; local-only inside HSA zone.
+    class: B
+    expression: ["agents/*.md frontmatter model: opus|sonnet|haiku|inherit"]
+    conformance: telemetry shows tier separation; zero frontier calls from HSA work
+
+  - id: G8
+    name: tool-boundary-enforcement
+    invariant: >
+      Guardrails execute at the tool boundary, fail-closed where mandated:
+      PAN/secret DLP, CHD sensitivity routing, pre-edit investigation gate,
+      post-write lint/syntax gates.
+    class: C(bindings)/A(logic)
+    expression:
+      - hooks/hooks.json
+      - scripts/hooks/pan-egress-filter.js
+      - scripts/hooks/sensitivity-router.js
+      - scripts/hooks/gateguard-fact-force.js
+      - scripts/hooks/yamllint-hook.js
+      - scripts/hooks/ansible-syntax-hook.js
+    conformance: test PAN in any tool input is denied and ledgered in every expression
+
+  - id: G9
+    name: governance-ledger
+    invariant: >
+      Append-only structured store of every tool execution, decision, approval,
+      promotion, rollback; non-blocking capture; SIEM-forwardable (PCI Req 10).
+    class: A(store)/C(capture points)
+    expression:
+      - scripts/lib/state-store.js
+      - schemas/state-store.schema.json
+      - scripts/hooks/governance-capture.js
+      - scripts/hooks/governance-ledger.js
+      - scripts/lib/siem-forwarder.js
+    conformance: every replayed tool invocation has a schema-valid governanceEvents entry
+
+  - id: G10
+    name: zone-separation
+    invariant: >
+      corporate (PCI DSS, cloud ok) vs hsa (CP+PIN, air-gapped, local inference
+      only); zone is data on agents/skills/instincts; crown jewels untouchable in
+      both zones; HSA governance is dual-control; CPSA gates HSA deployment.
+    class: B
+    expression:
+      - "agents/perso-*.md"
+      - scripts/lib/ollama-router.js
+      - scripts/hooks/hsa-boundary-guard.js
+      - scripts/hooks/dual-control-promotion-gate.js
+    conformance: no HSA component references cloud endpoints; HSA egress empty at runtime
+
+  - id: G11
+    name: lazy-knowledge
+    invariant: >
+      Skills load on demand; rules inject path-scoped; rule files are the
+      authoritative standard over any checklist.
+    class: A(content)/C(loading)
+    expression: ["skills/*/SKILL.md (24)", "rules/** (13)"]
+    conformance: requests touching no matching files load no matching rules/skills
+
+  - id: G12
+    name: governed-learning-loop
+    invariant: >
+      Observation capture automatic; behavior change human-gated (approver,
+      confidence >=0.7, citations for compliance); instincts zone-segmented YAML
+      with provenance; rollback first-class; HSA/compliance = two approvers.
+    class: A
+    expression:
+      - scripts/hooks/observe-runner.js
+      - scripts/hooks/learning-promotion-gate.js
+      - scripts/hooks/dual-control-promotion-gate.js
+      - scripts/lib/instinct-ledger.js
+      - knowledge/instincts/
+    conformance: promotion without approver/confidence/citation exits non-zero, ledger unchanged
+
+  - id: G13
+    name: single-level-delegation
+    invariant: >
+      Specialists return to the orchestrator and never call each other; chains are
+      orchestrator-owned; delegation depth <= 1.
+    class: B
+    expression: ["CLAUDE.md §no re-delegation"]
+    conformance: call-graph audit of a full chain shows depth <= 1
+
+  - id: G14
+    name: deterministic-artifacts
+    invariant: >
+      Artifact shape decided by templates + validators with exit codes, runnable in
+      CI with no model in the loop.
+    class: A
+    expression:
+      - scripts/scaffold.js
+      - scripts/validate-structure.js
+      - scripts/lib/structure-spec.js
+      - scripts/validate-deployment.js
+      - scripts/conformance.js
+      - scripts/preflight.js
+      - templates/
+    conformance: CI conformance job green without any LLM
+
+# Hard rules inherited by every expression (from CLAUDE.md — not negotiable per target)
+hard_rules:
+  - propose-never-dispose (MRs and gated Dev deploys at most; promotion human-gated)
+  - never touch crown jewels (cleartext PAN/CHD, keys, PINs, HSM config)
+  - zone separation (corporate vs hsa; CHD-adjacent on local lane; HSA air-gapped)
+  - cite-dont-guess (scoping/compliance answers carry citations for human confirmation)
