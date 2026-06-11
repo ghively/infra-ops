@@ -128,6 +128,83 @@ A2A interop becomes a requirement.**
 
 ---
 
+## Addendum: personal-assistant harnesses — OpenClaw (and the Claw family), Hermes Agent
+
+These came up as candidates and deserve an honest scoring, but first a category
+correction: **OpenClaw and Hermes are not orchestration frameworks — they are
+self-hosted personal-assistant harnesses.** They compete with Claude Code (the
+phenotype layer: an always-on agent runtime with channels, skills, memory), not with
+LangGraph/MAF (the structural layer where G1/G5/G6/G13 get enforced). Evaluating them
+as port targets means asking a WhatsApp-native daemon to become a PCI merge gate.
+
+### OpenClaw (formerly Clawdbot/Moltbot) and variants
+
+Gateway + node-host runtime, 15+ messaging/channel surfaces, SKILL.md-format skills,
+ClawHub marketplace, eBPF least-privilege hooks. The fork ecosystem is the interesting
+part: **NanoClaw** (~700 LOC, container-per-channel, built on Anthropic's Agent SDK),
+**IronClaw** (Rust, TEE-attested agent actions), **ZeroClaw** (<5MB always-on),
+**NemoClaw** (NVIDIA kernel-level sandboxing wrapper), plus PicoClaw/NullClaw/etc.
+
+| Gene | Fit | Why |
+|---|---|---|
+| G1–G6, G13 (orchestration ring) | **L** | Single-assistant model; roster, parallel review gate, bounded remediation, depth-1 delegation all hand-built with no native primitives — strictly worse than LangGraph/MAF |
+| G8 enforcement | M (core) / **H (forks)** | eBPF least-privilege is real; NemoClaw's kernel sandboxing and NanoClaw's container-per-channel are *stronger isolation than anything in our current expression* |
+| G9 ledger | M / **H (IronClaw)** | IronClaw's TEE cryptographic attestation of every agent action is the most rigorous Req-10 audit primitive in any framework surveyed |
+| G10 zones | **H** (self-hosted, model-agnostic — air-gappable in principle) |
+| G11 lazy knowledge | **H** | Uses the same open SKILL.md spec — our 24 skills load nearly verbatim |
+| G12 governed learning | M | No native loop; our CLIs would run unchanged |
+
+**Disqualifier for the CDE:** the security track record. A 2026 audit found ~12% of
+ClawHub skills malicious (341/2,857), and CVE-2026-25253 (CVSS 8.8) allowed one-click
+RCE via malicious webpages. The breadth that makes it a great personal assistant
+(browser automation, webhooks, camera, chat channels) is precisely the attack surface
+a CDE deployment must amputate. Core OpenClaw is a non-starter for this genome;
+NanoClaw is the only family member with a defensible profile (minimal LOC, real
+container isolation, Agent SDK underneath — i.e., closer to "hardened Claude Code"
+than to OpenClaw proper).
+
+### Hermes Agent (Nous Research)
+
+The fastest-growing open agent of 2026 (175k+ stars; overtook OpenClaw on OpenRouter
+daily inference). Self-hosted daemon with a built-in harness: three-layer memory
+(SQLite+FTS5 session search, MEMORY.md, user model), **automatic skill generation**
+(writes a reusable SKILL.md after solving any ≥5-tool-call task), and GEPA
+(genetic-Pareto trace-driven prompt/skill optimization). Five security layers
+(auth, command approval, Docker isolation, credential filtering, injection scanning).
+
+The genome verdict is sharp: Hermes is the **closest living relative of G12 — and its
+anti-pattern**. Its entire identity is *ungoverned* self-improvement: zero-human skill
+authoring, memory as accumulating behavior. Our G12 exists specifically to forbid
+that in a regulated zone (human approver, confidence floor, citations, dual control).
+Published threat models flag Hermes' persistent memory as "the largest unbounded
+attack surface" — for PCI work, a self-modifying agent whose yesterday's web page can
+become today's instinct is the exact failure mode the promotion gate was built
+against. Running Hermes *with auto-skill-writing disabled and our gates bolted on*
+discards the framework's reason to exist.
+
+**What to steal rather than adopt:**
+
+1. **SKILL.md is now a cross-vendor standard** (Anthropic spec, adopted by Microsoft/
+   OpenAI/Google/Hermes/OpenClaw). Our skills layer is therefore *more* portable than
+   `03` originally scored — G11 content is near-universal currency.
+2. **GEPA-style trace mining belongs in G12's *candidate* stage.** Automatic analysis
+   of full traces (errors, profiling, reasoning) to *propose* instinct candidates is
+   compatible with the genome as long as promotion stays human-gated — it would make
+   `observe-runner` → `knowledge-curator` materially smarter.
+3. **IronClaw's TEE attestation and NemoClaw's kernel sandboxing** are enforcement-
+   depth upgrades for G8/G9 worth tracking regardless of framework choice.
+4. **A chat front door, maybe, someday.** A Hermes/NanoClaw-style daemon could serve
+   as the *delivery channel* (ops chat → orchestrator) in front of a governed core —
+   but that is an integration at the edge, never the core itself.
+
+**Bottom line:** not port targets for this genome. NanoClaw is the only one worth a
+second look (as a hardened corporate-lane *host*, since it wraps the Claude Agent SDK
+we already score H). Hermes and OpenClaw matter to this project as a source of ideas
+(trace-mined candidates, attestation, the SKILL.md standard) and as a cautionary
+exhibit for why G12 is shaped the way it is.
+
+---
+
 ## Weighing it: three honest options
 
 **Option 1 — Stay native, deepen the current expression (lowest cost).**
@@ -170,3 +247,11 @@ Decision checkpoint: revisit after the P0 blockers land and CPSA review is sched
 - Anthropic Managed Agents: platform.claude.com/docs/en/managed-agents/* (multiagent
   coordinator depth-1 enforcement, outcomes/rubrics, memory-store versioning, vaults,
   self-hosted sandboxes)
+- [OpenClaw architecture, skills, security](https://www.mintmcp.com/blog/openclaw-works-architecture-skills-security);
+  [OpenClaw vulnerability taxonomy (arXiv)](https://arxiv.org/html/2603.27517v1);
+  [Claw-family fork comparison — NanoClaw/IronClaw/ZeroClaw/NemoClaw](https://www.aimagicx.com/blog/openclaw-alternatives-comparison-2026);
+  [NanoClaw repo](https://github.com/nanocoai/nanoclaw/)
+- [Hermes Agent docs](https://hermes-agent.nousresearch.com/docs/);
+  [Hermes memory system](https://medium.com/@xpf6677/hermes-agent-memory-system-curated-memory-session-search-and-self-improvement-a84d2a9d5d01);
+  [Hermes enterprise threat model](https://repello.ai/blog/hermes-agent-security);
+  [Hermes self-improvement / GEPA review](https://www.innobu.com/en/articles/hermes-agent-self-improvement-open-source-2026.html)
