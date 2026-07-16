@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `tests/ci/validate-doc-links.js` — 19th validator: every relative markdown link in
+  tracked `.md` files must resolve to an existing file or directory. Added after the
+  2026-07-16 plan audit found four documents linking to a spec file
+  (`deep-init-reference.md`) that never existed.
+- `INFRAOPS_GATEGUARD` — canonical disable toggle for `gateguard-fact-force.js`,
+  closing residual env-var namespace drift the v0.11.0 standardization missed
+  (legacy `ECC_GATEGUARD` / `GATEGUARD_DISABLED` still honored).
+
+### Fixed
+
+- Repointed all `deep-init-reference.md` links (CLAUDE.md, README.md, gap-analysis,
+  architecture.md) at `docs/architecture.md` — the referenced file never existed.
+- Gap-analysis agent table: `sensitive-local-analyst` no longer instructs setting
+  `INFRAOPS_SENSITIVE_FAIL_CLOSED=1` (fail-closed has been the default since v0.11.0);
+  P0 items gained explicit ordering, done-criteria, and a VRAM sizing caveat.
+- `docs/foundation-improvement-plan.md` marked **superseded** (everything in it
+  shipped by v0.14.0); live backlog is the gap-analysis + `docs/architecture-gap.md`.
+- TODO.md drift: State Store 7→9 collections, fail-closed decision checked off
+  (landed v0.11.0), instinct-ledger paths corrected to `corporate`/`hsa`, stale
+  v0.9.0 status block bumped to v0.14.0, authority pointer added.
+- `package-lock.json` version synced to 0.14.0.
+
 ## [0.14.0] - 2026-06-09
 
 Merge of the v0.11–v0.13 main line (fail-closed defaults, expanded skills/rules,

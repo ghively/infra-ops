@@ -1,5 +1,12 @@
 # Infra-Ops Foundation Improvement Plan
 
+> **⚠️ SUPERSEDED (2026-07-16).** Everything in this plan shipped by v0.14.0. It is
+> retained for historical context only — do not work from it. The live backlog is
+> [`docs/superpowers/specs/2026-06-06-gap-analysis.md`](superpowers/specs/2026-06-06-gap-analysis.md);
+> authoritative build status is [`docs/architecture-gap.md`](architecture-gap.md).
+> Note: env vars mentioned below use the retired `ECC_*`/`INFRA_OPS_*` namespaces;
+> the canonical namespace is now `INFRAOPS_*`.
+
 Analysis of ECC foundational practices and recommendations for strengthening infra-ops core foundation.
 
 **Status:** v0.1.0 → v0.2.0 target
@@ -269,7 +276,7 @@ ECC/hooks/memory-persistence/* → infra-ops/hooks/memory-persistence/
 
 | Risk | Mitigation |
 |------|------------|
-| GateGuard blocks legitimate work | Add `ECC_GATEGUARD=off` env var |
+| GateGuard blocks legitimate work | Add `INFRAOPS_GATEGUARD=off` env var (legacy `ECC_GATEGUARD=off` honored) |
 | State store bloat | Add TTL and max entries |
 | Hook performance overhead | Async hooks, 5-10s timeout |
 | Context mode confusion | Add status indicator |

@@ -1,6 +1,6 @@
 # infra-ops — Architecture Reference
 
-_Last updated: 2026-06-06. Generated from SPEC.md, CLAUDE.md, deep-init-reference.md, hooks/hooks.json, and source files._
+_Last updated: 2026-07-16. Generated from SPEC.md, CLAUDE.md, hooks/hooks.json, and source files._
 
 This document is the structural reference for the infra-ops Claude Code plugin. It describes the component layout, enforcement hierarchy, zone model, hook pipeline, agent roster, state store, and instinct lifecycle. For operational how-to workflows, see [`docs/workflows.md`](./workflows.md).
 
