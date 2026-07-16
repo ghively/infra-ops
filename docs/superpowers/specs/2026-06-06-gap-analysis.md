@@ -1,7 +1,7 @@
 # infra-ops — Gap Analysis and Prioritized Backlog
 
-_Generated: 2026-06-06 via deep-init analysis. Check off items as they land._
-_Companion: [deep-init-reference.md](./2026-06-06-deep-init-reference.md)_
+_Generated: 2026-06-06 via deep-init analysis. Last audited: 2026-07-16. Check off items as they land._
+_Companion: [docs/architecture.md](../../architecture.md) (architecture reference)_
 _Authoritative status: [docs/architecture-gap.md](../../architecture-gap.md)_
 
 ---
@@ -26,18 +26,32 @@ _Authoritative status: [docs/architecture-gap.md](../../architecture-gap.md)_
 
 These items must land before the plugin can reason about a real estate.
 
+**Ordering:** these are sequenced — service accounts → `/infra-discover` →
+`environment.md` → knowledge ingestion → the P1 cited scoping answers. The local
+model is independent and can proceed in parallel.
+
 - [ ] **Stand up local model** — register Ollama on the PoC box with a tool-calling
       model (Qwen2.5-Coder-32B or Qwen3-Coder-30B-A3B); set `OLLAMA_BASE_URL`.
       Without this, the local lane is wired but the endpoint is unreachable.
+      ⚠️ Qwen2.5-Coder-32B needs roughly 20+ GB VRAM even quantized — confirm the
+      PoC box against `docs/infra-agent/research/local-llm-hardware.md` first; the
+      30B-A3B MoE is the lighter fallback.
+      _Done when: `node scripts/lib/ollama-router.js --health` exits 0 against the
+      configured endpoint._
       _Ref: DESIGN §5, SPEC Phase 0._
 
 - [ ] **Create GitLab service accounts** — CI token with read + branch/MR write only
       (no protected branch, no prod). Document permissions in `knowledge/environment.md`.
+      _Done when: the token can clone + open an MR but is rejected pushing to a
+      protected branch, and the permission matrix is recorded in
+      `knowledge/environment.md`._
       _Ref: SPEC Phase 0._
 
 - [ ] **Produce `knowledge/environment.md`** — run `/infra-discover` against the real
       GitLab project and the two existing playbooks. This is the orchestrator's ground
       truth for reasoning about the estate. Currently absent.
+      _Done when: the file exists, covers the sections listed in
+      `knowledge/README.md`, and carries a dated `_Generated:_` header._
       _Ref: SPEC §1, knowledge/README.md._
 
 ---
@@ -62,6 +76,9 @@ These items must land before the plugin can reason about a real estate.
       prefixes (`INFRA_OPS_YAMLLINT`, `INFRA_OPS_ANSIBLE_SYNTAX`) while the standard is
       `INFRAOPS_*`. Standardize before 1.0 to avoid operator confusion.
       _Affected files: `hooks/hooks.json`, `yamllint-hook.js`, `ansible-syntax-hook.js`._
+      _2026-07-16 audit follow-up: `gateguard-fact-force.js` was missed by this item —
+      it only honored `ECC_GATEGUARD`/`GATEGUARD_DISABLED`. `INFRAOPS_GATEGUARD` is now
+      canonical there too (legacy names still honored), closing the residual drift._
 
 - [x] **Decide `pan-egress-filter` fail-closed posture** — now fail-closed by default.
       `INFRAOPS_DLP_FAIL_CLOSED=0` to loosen. Same for `sensitivity-router`
@@ -87,7 +104,9 @@ These items must land before the plugin can reason about a real estate.
 
 - [ ] **`knowledge/environment.md` freshness loop** — schedule periodic re-runs of
       `/infra-discover` and establish a process for updating the environment map when
-      topology changes. Currently a manual step.
+      topology changes. Currently a manual step. Convention: the file carries a dated
+      `_Generated:_` header (same as this document); a validator warns when it is
+      older than 30 days rather than inventing a separate tracking process.
 
 - [ ] **Molecule test coverage for existing playbooks** — the `ansible-testing` skill
       defines the Molecule idempotence pipeline but existing playbooks (updates,
@@ -121,7 +140,7 @@ These items must land before the plugin can reason about a real estate.
 | pci-compliance-reviewer | ✅ | ✅ | — |
 | secrets-scanner | ✅ | ✅ | — |
 | infra-auditor | ✅ | ✅ | Run `/infra-discover` to produce environment.md (P0) |
-| sensitive-local-analyst | ✅ | 🟡 advisory | Set OLLAMA_BASE_URL + INFRAOPS_SENSITIVE_FAIL_CLOSED=1 (P0) |
+| sensitive-local-analyst | ✅ | ✅ fail-closed (v0.11.0) | Set OLLAMA_BASE_URL to make the local endpoint reachable (P0) |
 | knowledge-curator | ✅ | ✅ | Ingest docs once environment.md exists (P1) |
 | change-scribe | ✅ | ✅ | — |
 | iac-debugger | ✅ | ✅ | — |

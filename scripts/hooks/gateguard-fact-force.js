@@ -431,6 +431,12 @@ function normalizeEnvValue(value) {
 }
 
 function isGateGuardDisabled() {
+  // Canonical toggle (INFRAOPS_GATEGUARD) takes precedence when set; legacy
+  // GATEGUARD_DISABLED / ECC_GATEGUARD remain honored for back-compat.
+  if (process.env.INFRAOPS_GATEGUARD !== undefined) {
+    return ECC_DISABLE_VALUES.has(normalizeEnvValue(process.env.INFRAOPS_GATEGUARD));
+  }
+
   if (normalizeEnvValue(process.env.GATEGUARD_DISABLED) === '1') {
     return true;
   }
@@ -760,7 +766,7 @@ function withRecoveryHint(message, hookIds = [EDIT_WRITE_HOOK_ID]) {
   return [
     message,
     '',
-    `Recovery: if GateGuard is blocking setup or repair work, run this session with \`ECC_GATEGUARD=off\` or add ${disableTargets} to \`ECC_DISABLED_HOOKS\`.`
+    `Recovery: if GateGuard is blocking setup or repair work, run this session with \`INFRAOPS_GATEGUARD=off\` (legacy \`ECC_GATEGUARD=off\` also honored) or add ${disableTargets} to \`ECC_DISABLED_HOOKS\`.`
   ].join('\n');
 }
 

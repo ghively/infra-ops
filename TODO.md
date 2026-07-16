@@ -6,6 +6,12 @@ to execute when it has context. Follow the conventions in [`SPEC.md §4`](SPEC.m
 
 Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 
+> **Note (2026-07-16):** this file is the historical build backlog. The live,
+> prioritized backlog is
+> [`docs/superpowers/specs/2026-06-06-gap-analysis.md`](docs/superpowers/specs/2026-06-06-gap-analysis.md);
+> authoritative design-vs-as-built status is
+> [`docs/architecture-gap.md`](docs/architecture-gap.md). When they disagree, those win.
+
 ---
 
 ## Phase 0 — Foundations (PoC on the single Linux box)
@@ -16,14 +22,15 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 - [x] Session primer: `infra-session-bootstrap`
 - [x] GateGuard fact-forcing hook: `gateguard-fact-force.js` (demands investigation before edits)
 - [x] Governance capture hook: `governance-capture.js` (secret/policy detection)
-- [x] State Store library: `scripts/lib/state-store.js` (7 collections)
+- [x] State Store library: `scripts/lib/state-store.js` (9 collections)
 - [x] Observation hook: `observe-runner.js` (continuous learning capture)
 - [x] Context modes: `contexts/dev.md`, `contexts/research.md`, `contexts/review.md`
 - [ ] Stand up local model on the PoC box (`OLLAMA_BASE_URL`); register a tool-calling model
       (Qwen2.5-Coder-32B or Qwen3-Coder-30B-A3B) — docs/infra-agent/DESIGN.md §5.
 - [ ] Create agent **service accounts**: GitLab token = read + branch/MR write only (no protected
       branch, no prod). Document in `knowledge/environment.md`.
-- [ ] Decide whether `pan-egress-filter` should be **fail-closed** behind an env flag for sensitive runs.
+- [x] Decide whether `pan-egress-filter` should be **fail-closed** behind an env flag for sensitive runs.
+      Decided in v0.11.0: fail-closed by default; `INFRAOPS_DLP_FAIL_CLOSED=0` to loosen.
 
 ## Phase 1 — Capture current state + knowledge base
 
@@ -93,7 +100,8 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 ## Phase 8 — Governed self-improvement
 
 - [x] `learning-promotion-gate` hook: block instinct promotion lacking human approval + doc citation.
-- [x] Instinct ledger structure: `knowledge/instincts/corpor/`, `knowledge/instincts/in-zone/`.
+- [x] Instinct ledger structure: `knowledge/instincts/corporate/`, `knowledge/instincts/hsa/`
+      (legacy `corpor`/`in-zone` accepted as zone-token aliases).
 - [x] `instinct-promotion` skill: promote observed patterns to governed instincts.
 - [x] `instinct-rollback` skill: rollback or deactivate instincts with governance.
 
@@ -110,8 +118,8 @@ Status legend: `[ ]` todo · `[~]` scaffolded (flesh out) · `[x]` done.
 
 ## Current Status
 
-**Version:** v0.9.0 — corporate-zone foundations built; HSA pending CPSA review
-**Date:** 2026-06-06
+**Version:** v0.14.0 — corporate-zone foundations built; HSA pending CPSA review
+**Date:** 2026-07-16
 
 See **[`docs/architecture-gap.md`](docs/architecture-gap.md)** for the authoritative
 design-vs-as-built status. Summary:
@@ -123,15 +131,17 @@ design-vs-as-built status. Summary:
 - ✅ 24 skills (incl. `iac-tooling-selection`, in-zone `pci-pin-awareness`, `perso-change-control`), 10 corporate agents (+6 `perso-*` HSA agents authored as design artifacts/proposals), 8 commands
 - ✅ Lint + test tooling green (`eslint.config.js`, `.markdownlint.json`); `npm run lint` and `npm test` both pass
 - ✅ Reliable-execution functions (scripted + tested): `merge-gate`, `scaffold`, `preflight`,
-  `conformance`, `retry` — prose workflows turned into deterministic code (18 validators)
+  `conformance`, `retry` — prose workflows turned into deterministic code (19 validators)
 - ✅ Enforced uniform IaC structure: 8 `templates/` canonical skeletons (ansible/terraform/
   packer/python/bash/powershell), `validate-structure.js` + `validate-deployment.js`, and the
   `structure-conformance` CI gate (structure + deployment; deviation fails the pipeline); `/scaffold`
 - ✅ Phase-7 tooling authored (corporate-side, build-only): `perso-*` agents, HSA runbooks,
   in-zone dual-control gate (`--cpsa-ref`) + tests; authorization in `knowledge/cpsa-approval.md`
-- ✅ DLP (`pan-egress-filter`) with `INFRAOPS_DLP_FAIL_CLOSED` fail-closed option
+- ✅ DLP (`pan-egress-filter`) — fail-closed by default since v0.11.0
+  (`INFRAOPS_DLP_FAIL_CLOSED=0` to loosen)
 - ✅ Real local inference lane (`scripts/lib/ollama-router.js`) + enforcing
-  `sensitivity-router` (advisory default; deny under `INFRAOPS_SENSITIVE_FAIL_CLOSED`)
+  `sensitivity-router` — fail-closed by default since v0.11.0
+  (`INFRAOPS_SENSITIVE_FAIL_CLOSED=0` for advisory mode)
 - ✅ Unified State Store; governed learning loop wired end-to-end
   (promote → ledger → governance event → rollback) via real CLIs
 - ✅ SIEM forwarding capability; CPSA-gated HSA deployment **documentation**

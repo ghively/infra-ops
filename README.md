@@ -17,7 +17,7 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.14.0** — 16 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 18 validators passing.
+**v0.14.0** — 16 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 19 validators passing.
 
 The corporate-zone plugin is built and wired: DLP (fail-closed), the local inference lane,
 the governed learning loop, and the audit/state substrate all run and are covered by
@@ -173,14 +173,13 @@ infra-ops/
 │   ├── iac-authoring-standards.md  # Ansible execution standards the iac-author follows
 │   ├── iac-tooling-and-automation-guide.md  # Tech selection + repo/CI/CD/scripting standards
 │   ├── foundation-improvement-plan.md  mcp-servers.md
-│   ├── superpowers/specs/          # Living architectural specs + gap backlog
-│   │   ├── 2026-06-06-deep-init-reference.md
+│   ├── superpowers/specs/          # Prioritized gap backlog
 │   │   └── 2026-06-06-gap-analysis.md
 │   ├── changes/  decisions/        # Auto-docs (change records + ADRs)
 │   └── infra-agent/                # Full design rationale + research
 │       ├── DESIGN.md  research/    # (11 research reports)
 ├── tests/
-│   ├── ci/                  # Component validators (agents/commands/skills/hooks/instincts/schema)
+│   ├── ci/                  # Component validators (agents/commands/skills/hooks/instincts/schema/doc-links)
 │   ├── unit/                # Unit suites (local-lane, instinct-loop, data-plane,
 │   │                        #             dual-control, hsa-guard, merge-gate, scaffold,
 │   │                        #             preflight, conformance, retry, structure, deployment)
@@ -306,7 +305,7 @@ See [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) for the complete 
 ### Running Tests
 
 ```bash
-npm test                      # Run all tests (18 validators)
+npm test                      # Run all tests (19 validators)
 npm run coverage             # Run with coverage
 npm run validate             # Validate all components
 npm run conformance          # Structure + deployment conformance over a target repo

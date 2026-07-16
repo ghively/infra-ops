@@ -14,7 +14,7 @@ separately under `knowledge/` and is loaded only when needed.
 
 ## Architecture reference (read when onboarding or extending)
 
-- **[`docs/superpowers/specs/2026-06-06-deep-init-reference.md`](docs/superpowers/specs/2026-06-06-deep-init-reference.md)** —
+- **[`docs/architecture.md`](docs/architecture.md)** —
   living architectural reference: enforcement hierarchy, full hook pipeline, agent
   roster + delegation flows, skills map, learning loop, State Store, zone model,
   plugin wiring. Read this before extending any component.
