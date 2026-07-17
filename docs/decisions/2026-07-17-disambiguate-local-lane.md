@@ -1,6 +1,6 @@
 # Disambiguate "local lane" — air-gap vs sensitive-handling path
 
-- Status: Proposed
+- Status: Accepted (2026-07-17) — chose Option 2 (build the ingress classifier now)
 - Date: 2026-07-17
 - Priority: 4
 - Deciders: repo owner
@@ -45,12 +45,23 @@ Calling both "local lane" invites reading (2) as a compliance control it is not.
 
 ## Decision outcome
 
-**Proposed: Option 1 now, Option 2 as a later enhancement.** The immediate risk is a
-*claims* risk — a PoC path being mistaken for a compliance control — and that is fixed
-by naming and honest scoping, cheaply, today. Option 2 is the architecturally correct
-long-term move (put the boundary at intake, not exhaust) but is real new work and is
-not required for corporate-zone development, which is where the PoC lives. Option 3
-leaves a foreseeable misread in place.
+**Accepted: Option 2 (build the ingress classifier now).** Rather than defer the real
+boundary to "later," the intake classifier is built up front: CHD-adjacent content is
+refused *before* it reaches the cloud orchestrator, so the corporate sensitive-handling
+path becomes an actual data boundary — not merely egress-risk reduction. The
+naming/honest-scoping work from Option 1 is still done alongside it (reserve "air-gap"
+for the HSA; call the corporate path the "sensitive-handling path"), but the "local
+lane" claim is made defensible by the *mechanism*, not only by re-wording. This is more
+work than a rename, accepted deliberately: putting the boundary at intake rather than
+exhaust is the architecturally correct placement, and doing it now avoids shipping a
+path that reads like a control it isn't.
+
+Design note for implementation: an ingress classifier in a chat-based agent cannot sit
+at the tool-call boundary (that's egress, and too late — the orchestrator has already
+seen the content). It must gate content *entering* the orchestrator's context. Confirm
+the harness hook point that can intercept intake before committing the approach; if no
+such hook point exists, this decision reopens and falls back to Option 1 (rename +
+honest scoping) plus a documented harness limitation.
 
 ### Consequences
 

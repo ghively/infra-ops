@@ -1,6 +1,6 @@
 # Zone as an overlay, not a parallel agent roster
 
-- Status: Proposed
+- Status: Accepted (2026-07-17)
 - Date: 2026-07-17
 - Priority: 5
 - Deciders: repo owner

@@ -1,6 +1,6 @@
 # Close the learning loop (instinct recall) or mark it dormant
 
-- Status: Proposed
+- Status: Accepted (2026-07-17)
 - Date: 2026-07-17
 - Priority: 1 (highest — blocks the value of the entire learning subsystem)
 - Deciders: repo owner

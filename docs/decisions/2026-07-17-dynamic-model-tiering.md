@@ -1,6 +1,6 @@
 # Make dynamic model tiering real, or drop the claim
 
-- Status: Proposed
+- Status: Accepted (2026-07-17)
 - Date: 2026-07-17
 - Priority: 8 (lowest — clarity/consistency, not safety)
 - Deciders: repo owner
