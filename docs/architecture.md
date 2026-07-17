@@ -1,6 +1,6 @@
 # infra-ops — Architecture Reference
 
-_Last updated: 2026-07-16. Generated from SPEC.md, CLAUDE.md, hooks/hooks.json, and source files._
+_Last updated: 2026-07-17. Generated from SPEC.md, CLAUDE.md, hooks/hooks.json, and source files._
 
 This document is the structural reference for the infra-ops Claude Code plugin. It describes the component layout, enforcement hierarchy, zone model, hook pipeline, agent roster, state store, and instinct lifecycle. For operational how-to workflows, see [`docs/workflows.md`](./workflows.md).
 
@@ -18,7 +18,7 @@ flowchart TD
 
     subgraph Harness["Claude Code Harness"]
         Orchestrator["Orchestrator\n(CLAUDE.md contract)"]
-        HookPipeline["Hook Pipeline\n(13 hook scripts — see §3)"]
+        HookPipeline["Hook Pipeline\n(15 hook scripts — see §3)"]
     end
 
     subgraph Corporate["Corporate Zone  ·  PCI DSS"]
@@ -104,7 +104,24 @@ flowchart TD
 
 ## 3. Hook Pipeline
 
-Of the 13 hook scripts under `scripts/hooks/`, 9 are event-wired in `hooks/hooks.json` and auto-loaded by the harness; 2 gates are CLI-invoked, and the 2 in-zone guards (`hsa-boundary-guard`, `block-no-verify`) are registered in the HSA's own hooks config, not corporate. No hook appears in `plugin.json`.
+Of the 15 hook scripts under `scripts/hooks/`, 11 are event-wired in `hooks/hooks.json` and auto-loaded by the harness; 2 gates are CLI-invoked, and the 2 in-zone guards (`hsa-boundary-guard`, `block-no-verify`) are registered in the HSA's own hooks config, not corporate. No hook appears in `plugin.json`.
+
+The pipeline is layered by channel: **intake** (`UserPromptSubmit`), **pre-tool** (DLP +
+CHD routing on _every_ tool via matcher `*`, plus the file/Bash gates), and **post-tool**
+(quality + governance). Two additions close boundaries the original pipeline left open:
+
+- **`chd-ingress-classifier` (`UserPromptSubmit`)** — the intake boundary. CHD-adjacent
+  content is refused _before_ it reaches the cloud model, not merely at tool egress.
+- **`prod-execution-guard` (`PreToolUse`, Bash)** — enforces hard rule #1
+  ("propose, never dispose") at the tool boundary: denies `ansible-playbook` against
+  non-dev inventories and promotion commands, symmetric with `pan-egress-filter`.
+
+DLP (`pan-egress-filter`) and CHD routing (`sensitivity-router`) now match **`*`** so
+WebFetch, WebSearch, and MCP tools — the cloud-egress channels a Bash-only matcher
+missed — are covered. `gateguard-fact-force` has a live stdin entry point (it was
+previously wired but inert). Every enforcing hook is exercised by
+`tests/ci/validate-hook-conformance.js`, which feeds it a known-bad payload and asserts
+it actually denies.
 
 ```mermaid
 flowchart TD
@@ -331,7 +348,7 @@ sequenceDiagram
 
 The State Store is a unified JSON persistence layer under `~/.infra-ops/state-store/` (configurable via `INFRAOPS_STATE_DIR`). Each collection is a separate JSON file; max 1,000 entries per collection with a 30-day TTL. Implementation: `scripts/lib/state-store.js`.
 
-The **governance ledger** (`governance-ledger.js`) is separate by design — it writes a fingerprinted append-only JSONL file for tamper-evidence (PCI Req 10) and is never mixed with mutable state.
+The **governance ledger** (`governance-ledger.js`) is separate by design — it writes a fingerprinted append-only JSONL file for tamper-evidence (PCI Req 10) and is never mixed with mutable state. It is the **sole authoritative audit record**; the State Store's `governanceEvents` collection is a **non-authoritative, best-effort query cache** (capped/TTL-pruned) whose loss is acceptable (decision `docs/decisions/2026-07-17-governance-events-authority.md`). Real-time SIEM forwarding is awaited (bounded) before the ledger hook exits, and the State Store serializes concurrent writes under a lock so audit adds are not lost.
 
 ```mermaid
 flowchart LR
@@ -372,6 +389,15 @@ flowchart LR
 ## 8. Instinct Lifecycle
 
 Instincts are governed, versioned patterns promoted from observed tool sequences. Every promotion requires human involvement; no silent self-modification. The instinct ledger (`scripts/lib/instinct-ledger.js`) is the **only** writer of instinct YAML.
+
+**The loop is closed on the recall side.** `scripts/compile-instincts.js` compiles every
+_active_ instinct for a zone into path-scoped rule fragments under
+`rules/instincts/<zone>/`, which the harness injects deterministically when a matching
+file is in context — so promoted instincts actually influence agent behavior (they were
+previously write-only). Promote/rollback recompile automatically; `npm run compile:instincts`
+regenerates on demand. Version rollback restores the target version's real content from an
+immutable `.versions/<id>@vN.yml` snapshot taken at promote time, and HSA dual-control
+compares the _canonical_ zone token so it cannot be bypassed by casing.
 
 ```mermaid
 stateDiagram-v2
@@ -476,8 +502,12 @@ Components are auto-discovered by the harness. Nothing is manually listed except
 
 | Variable | Default | Effect |
 |---|---|---|
-| `INFRAOPS_DLP_FAIL_CLOSED` | `false` | pan-egress-filter denies on parse error |
-| `INFRAOPS_SENSITIVE_FAIL_CLOSED` | `false` | sensitivity-router denies CHD-adjacent tool calls |
+| `INFRAOPS_DLP_FAIL_CLOSED` | `1` (fail-closed) | pan-egress-filter denies on parse error; `0` to loosen |
+| `INFRAOPS_SENSITIVE_FAIL_CLOSED` | `1` (fail-closed) | sensitivity-router + chd-ingress-classifier deny CHD-adjacent content; `0` for advisory |
+| `INFRAOPS_PROD_EXEC_GUARD` | `1` (on) | prod-execution-guard denies non-dev `ansible-playbook`/promotion; `0` for break-glass |
+| `INFRAOPS_DEV_INVENTORY` | (built-in dev\|local\|…) | comma-separated substrings prod-execution-guard treats as Dev inventories |
+| `INFRAOPS_CHD_INGRESS` | `1` (on) | chd-ingress-classifier intake check; `0` to disable |
+| `INFRAOPS_GATEGUARD` | (unset) | `off` disables the gateguard fact-forcing gate (legacy `ECC_GATEGUARD` honored) |
 | `INFRAOPS_OLLAMA_REQUIRE_LOCAL` | `1` | ollama-router refuses non-localhost endpoints |
 | `OLLAMA_BASE_URL` | (none) | Local model endpoint for CHD-adjacent work |
 | `INFRAOPS_AUDIT_FORWARD` | (none) | SIEM endpoint for governance ledger forwarding |
@@ -485,4 +515,5 @@ Components are auto-discovered by the harness. Nothing is manually listed except
 | `INFRAOPS_GOVERNANCE_CAPTURE` | `1` | Enable governance-capture hook |
 | `INFRAOPS_OBSERVE` | `1` | Enable observe-runner hook |
 
-> **Note:** yamllint and ansible-syntax hooks still use `INFRA_OPS_YAMLLINT` and `INFRA_OPS_ANSIBLE_SYNTAX` prefixes. Standardising to `INFRAOPS_*` is a pre-1.0 task.
+> **Note:** all hooks use the canonical `INFRAOPS_*` namespace; legacy `INFRA_OPS_*` /
+> `ECC_*` names remain honored as back-compat fallbacks (canonical takes precedence).

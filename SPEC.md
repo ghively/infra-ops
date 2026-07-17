@@ -128,10 +128,12 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | Hook | Event | Status | Function |
 |---|---|---|---|
 | infra-session-bootstrap | SessionStart | ✅ | Prime session with SPEC/TODO/knowledge + hard rules |
-| pan-egress-filter | PreToolUse | ✅ | Block PAN/secret in tool input (DLP) |
-| governance-ledger | PostToolUse | ✅ | Append-only, fingerprinted audit record |
-| gateguard-fact-force | PreToolUse | ✅ | Demands investigation facts before Edit/Write/Bash (blast radius + rollback) |
-| sensitivity-router | PreToolUse | ✅ | Route CHD-adjacent prompts to the local lane |
+| chd-ingress-classifier | UserPromptSubmit | ✅ | Intake boundary: block CHD-adjacent prompts before the cloud model (fail-closed) |
+| pan-egress-filter | PreToolUse (`*`) | ✅ | Block PAN/secret in tool input (DLP) — all tools incl. WebFetch/MCP |
+| prod-execution-guard | PreToolUse (Bash) | ✅ | Enforce rule #1: deny `ansible-playbook` vs non-dev inventories + promotion commands |
+| governance-ledger | PostToolUse | ✅ | Append-only, fingerprinted audit record; awaits SIEM forward before exit |
+| gateguard-fact-force | PreToolUse | ✅ | Demands investigation facts before Edit/Write/Bash (blast radius + rollback); live stdin entry point |
+| sensitivity-router | PreToolUse (`*`) | ✅ | Route CHD-adjacent content to the local lane; recursive scan; fail-closed on parse error |
 | governance-capture | PostToolUse | ✅ | Detect secrets/policy violations, log to State Store |
 | observe-runner | PostToolUse | ✅ | Capture tool sequences for continuous learning |
 | yamllint-hook | PostToolUse | ✅ | Auto-lint YAML files on Edit/Write |
@@ -145,8 +147,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 
 | Library | Status | Purpose |
 |---|---|---|
-| state-store.js | ✅ | Unified JSON state/governance store (9 collections); single source of truth |
-| instinct-ledger.js | ✅ | Instinct persistence (zone-segmented YAML) + governance logging via state-store |
+| state-store.js | ✅ | Unified JSON state/governance store (9 collections); cross-process write lock + corrupt-file quarantine |
+| instinct-ledger.js | ✅ | Instinct persistence (zone-segmented YAML) + governance logging; versioned `.versions/` snapshots; auto-recompiles recall |
 | ollama-router.js | ✅ | Local-only inference lane (built-in http; refuses non-local endpoints) |
 | siem-forwarder.js | ✅ | Forward audit/governance events to a SIEM |
 | shell-substitution.js | ✅ | Shell variable substitution helper |
@@ -184,6 +186,8 @@ Legend: ✅ built (baseline) · 🟡 scaffold/stub (TODO to flesh out) · ⬜ no
 | `scripts/preflight.js` | ✅ | Env/state checklist: node/git/tooling, branch, clean tree, staged-secret tripwire, leftover placeholders |
 | `scripts/conformance.js` (`npm run conformance`) | ✅ | One local command running structure + deployment validators over a repo (mirrors CI) |
 | `scripts/lib/retry.js` | ✅ | Bounded exponential-backoff retry; wraps `ollama-router` + `siem-forwarder` network calls |
+| `scripts/compile-instincts.js` (`npm run compile:instincts`) | ✅ | Recall side of the learning loop: compiles active instincts → path-scoped `rules/instincts/<zone>/` fragments the harness injects |
+| `scripts/generate-perso-agents.js` (`npm run generate:perso`) | ✅ | Injects the shared HSA overlay into the six perso-* agents (single source of truth; `--check` fails on drift) |
 
 ### Canonical structure & enforcement
 

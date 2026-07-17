@@ -17,7 +17,7 @@ A **lean orchestrator + isolated specialist subagents** for managing infrastruct
 
 ## Status
 
-**v0.14.0** — 16 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 19 validators passing.
+**v0.14.0** — 16 agents · 24 skills · 37 seed instincts · canonical templates + conformance gates · 22 validators passing.
 
 The corporate-zone plugin is built and wired: DLP (fail-closed), the local inference lane,
 the governed learning loop, and the audit/state substrate all run and are covered by
@@ -52,7 +52,7 @@ ever authored here.
 | 8 commands (incl. `/scaffold`, `/preflight`) | ✅ Implemented |
 | Canonical templates + structure/deployment gates | ✅ Enforced (`validate-structure.js`, `validate-deployment.js`) |
 | Reliable-execution functions (merge-gate, scaffold, preflight, conformance, retry) | ✅ Scripted + tested |
-| 13 hook scripts (9 event-wired + 4 CLI/in-zone gates) | ✅ Implemented |
+| 15 hook scripts (11 event-wired + 4 CLI/in-zone gates) | ✅ Implemented |
 | Ansible / GitLab / secrets / PCI / Dockerfile / Terraform / Python / scripts rules | ✅ Implemented |
 | In-HSA deployment / go-live | ⬜ CPSA-L sign-off pending (`knowledge/cpsa-approval.md §2`) |
 
@@ -130,17 +130,19 @@ infra-ops/
 │   └── python-tool/  bash-tool/  powershell-tool/
 ├── contexts/                # Context modes (dev / research / review)
 ├── hooks/
-│   └── hooks.json           # Hook event bindings (9 event-wired hooks)
+│   └── hooks.json           # Hook event bindings (11 event-wired hooks)
 ├── scripts/
-│   ├── hooks/               # 13 hook implementations (9 event-wired + 4 CLI/in-zone gates)
-│   │   ├── infra-session-bootstrap.js  pan-egress-filter.js
+│   ├── hooks/               # 15 hook implementations (11 event-wired + 4 CLI/in-zone gates)
+│   │   ├── infra-session-bootstrap.js  chd-ingress-classifier.js  pan-egress-filter.js
 │   │   ├── governance-ledger.js  governance-capture.js  observe-runner.js
-│   │   ├── gateguard-fact-force.js  sensitivity-router.js
+│   │   ├── gateguard-fact-force.js  sensitivity-router.js  prod-execution-guard.js
 │   │   ├── yamllint-hook.js  ansible-syntax-hook.js
 │   │   ├── learning-promotion-gate.js  dual-control-promotion-gate.js
 │   │   └── hsa-boundary-guard.js  block-no-verify.js   # in-zone guards
 │   ├── validate-structure.js   # Deterministic structure-conformance gate (uniform layout)
 │   ├── validate-deployment.js  # Deterministic deployment-uniformity gate (pipeline shape)
+│   ├── compile-instincts.js    # Learning-loop recall: active instincts → rules/instincts/
+│   ├── generate-perso-agents.js # Inject the shared HSA overlay into the perso-* agents
 │   ├── merge-gate.js  scaffold.js  preflight.js  conformance.js   # reliable-execution functions
 │   └── lib/                 # Shared libraries
 │       ├── structure-spec.js       # Canonical IaC layout spec (single source of truth)
@@ -305,7 +307,7 @@ See [`docs/infra-agent/DESIGN.md`](docs/infra-agent/DESIGN.md) for the complete 
 ### Running Tests
 
 ```bash
-npm test                      # Run all tests (19 validators)
+npm test                      # Run all tests (22 validators)
 npm run coverage             # Run with coverage
 npm run validate             # Validate all components
 npm run conformance          # Structure + deployment conformance over a target repo
