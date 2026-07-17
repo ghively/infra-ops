@@ -78,8 +78,12 @@ valid current syntax as wrong from stale memory.
 
 ## Output
 
+**Your first output line MUST be exactly `VERDICT: <PASS|WARN|BLOCK>`** — a single
+token, nothing before it, no alternatives listed. The deterministic merge gate parses
+only the first non-empty line and treats a missing/multi-token verdict as BLOCK.
+
 ```
-VERDICT: PASS | WARN | BLOCK
+VERDICT: BLOCK
 
 ## Playbook Review: <MR title / branch>
 

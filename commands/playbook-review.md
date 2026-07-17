@@ -1,12 +1,14 @@
 ---
-description: "Review a playbook or MR diff with playbook-reviewer + pci-compliance-reviewer."
+description: "Review a playbook or MR diff through the canonical three-reviewer merge gate (playbook-reviewer + pci-compliance-reviewer + secrets-scanner)."
 ---
 
 # /playbook-review
 
-Run a two-agent review of an Ansible playbook file or GitLab MR diff, then
-merge the findings into a single prioritised report. Never auto-merge or apply
-changes.
+Run the **canonical review gate** on an Ansible playbook file or GitLab MR diff:
+the same deterministic three-reviewer flow the orchestrator uses (CLAUDE.md "The
+review gate"). This command does not define its own weaker review — it invokes the
+one gate, so "reviewed via `/playbook-review`" means exactly what "reviewed" means
+everywhere else. Never auto-merges or applies changes.
 
 ## Usage
 
@@ -22,57 +24,66 @@ reference (e.g. `!42`). If omitted, reviews the current working diff
 
 ### Step 1 — Gather the diff
 
-- If a **file path** is given: read the file and produce a unified diff against
-  `HEAD` (or show the full file if new).
-- If an **MR reference** is given: fetch the MR diff via the GitLab API
-  (read-only).
-- If no argument: use `git diff HEAD`.
+- **File path** → read the file and produce a unified diff against `HEAD` (or show
+  the full file if new).
+- **MR reference** → fetch the MR diff via the GitLab API (read-only).
+- **No argument** → use `git diff HEAD`.
 
-### Step 2 — Delegate to `playbook-reviewer`
+### Step 2 — Fan out to all THREE reviewers in parallel
 
-The playbook-reviewer checks:
+Delegate the diff simultaneously (single message, three Task calls) to:
 
-- FQCN on every module call.
-- No `command`/`shell` where a module exists.
-- Idempotency markers (`changed_when`, `creates`, `state:`).
-- Role-prefixed variables; no play-level `vars:` or `include_vars`.
-- OS targeting by group structure, not by `when:` guard alone.
-- Inventory layout compliance (directory per env, `vault.yml` separation).
-- Severity tier: **CRITICAL / HIGH / MEDIUM / LOW / INFO**.
+1. **playbook-reviewer** — correctness + idempotency (FQCN, no `command`/`shell`
+   where a module exists, `changed_when`/`creates`/`state:`, role-prefixed vars,
+   OS targeting by group, inventory layout, severity tiers).
+2. **pci-compliance-reviewer** — PCI control checks (no hardcoded secrets,
+   `no_log: true` on secret-handling tasks, WinRM over HTTPS/5986, least-privilege
+   `become:`, no PAN/keys/PIN, separation of duty).
+3. **secrets-scanner** — deterministic static secret/PAN scan of the diff.
 
-### Step 3 — Delegate to `pci-compliance-reviewer`
+Each reviewer's **first output line MUST be** `VERDICT: PASS|WARN|BLOCK` (a single
+token). The reviewers own that contract; this command depends on it.
 
-The pci-compliance-reviewer checks:
+### Step 3 — Compute the gate decision deterministically
 
-- No hardcoded secrets or plaintext credentials.
-- `no_log: true` on any task that handles secret values.
-- WinRM transport is HTTPS (port 5986), not HTTP (port 5985).
-- Least-privilege `become:` scoping.
-- No PAN, key material, or PIN data referenced anywhere in the diff.
-- Separation of duty (no task both creates and approves its own change).
+Do **not** judge the outcome by hand. Pass the three verdict tokens to the merge gate:
 
-### Step 4 — Merge findings
+```
+node scripts/merge-gate.js --verdicts <v1>,<v2>,<v3> --cycle <n>
+```
 
-Produce a single report with all findings, deduped and sorted by severity:
+- exit **0** → gate cleared (PASS×3, or WARN advisory only)
+- exit **1** → BLOCK or incomplete → return consolidated findings to the author for
+  one revision pass, then re-review (max 2 cycles)
+- exit **3** → revision cap reached → escalate to a human with open findings
+
+A missing or invalid verdict is incomplete → the gate cannot clear (treated as BLOCK).
+There is no discretion on a BLOCK.
+
+### Step 4 — Report
+
+Produce a single deduped, severity-sorted report, and state the gate result verbatim:
 
 ```
 ## Playbook Review — <path or MR ref>
 Date: <ISO date>
 
-### CRITICAL
-- [playbook-reviewer] Task "..." uses shell instead of module. Line N.
+Gate: CLEARED | BLOCKED | ESCALATE   (merge-gate exit 0 | 1 | 3)
+Verdicts: playbook-reviewer=<v> · pci-compliance-reviewer=<v> · secrets-scanner=<v>
 
+### CRITICAL
+- [<reviewer>] finding … Line N.
 ### HIGH
-...
+…
 
 ### Summary
 - N critical, N high, N medium, N low, N info findings.
-- Recommendation: BLOCK / APPROVE WITH CONDITIONS / APPROVE
+- Gate decision: <as computed by scripts/merge-gate.js — not by hand>.
 ```
 
 ## Trust boundary
 
 - Read-only: fetches diffs and reads files only.
-- Never auto-merges the MR, never applies `ansible-playbook`.
-- PAN, keys, PINs, and HSM config are out of scope — if spotted in the diff,
-  flag as CRITICAL and stop further analysis of that content.
+- Never auto-merges the MR, never runs `ansible-playbook`.
+- PAN, keys, PINs, and HSM config are out of scope — if spotted in the diff, flag as
+  CRITICAL and stop further analysis of that content.

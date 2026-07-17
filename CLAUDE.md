@@ -53,6 +53,16 @@ separately under `knowledge/` and is loaded only when needed.
 | Generating changelog / ADR / change records from a merged diff | **change-scribe** | haiku |
 | HSA infrastructure planning, review, or audit | **perso-planner** → **perso-iac-author** → **perso-iac-reviewer** + **perso-cp-compliance-reviewer** → **perso-scribe** | (local) |
 
+**Model tiering (how `opus→sonnet` actually works).** An agent's `model:` frontmatter is
+a single static default the harness dispatches by default. Where the map shows a range
+(e.g. `iac-author` `opus→sonnet`), the frontmatter value is the **default** and the
+lower tier is an **opt-in the orchestrator selects at dispatch** by passing an explicit
+`model` on the Task call — use the higher tier for greenfield/complex authoring and the
+lower tier for routine, well-scoped changes. Without an explicit override, dispatch
+yields the frontmatter default; the range is not automatic. If a per-dispatch override
+proves unreliable, fall back to the single frontmatter default (see
+`docs/decisions/2026-07-17-dynamic-model-tiering.md`).
+
 ### The review gate (deterministic — runs three agents in parallel)
 
 Every authored change goes concurrently to **playbook-reviewer** (correctness/

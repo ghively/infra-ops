@@ -16,10 +16,25 @@ const VALID = ['PASS', 'WARN', 'BLOCK'];
 const REQUIRED_REVIEWERS = 3;
 const MAX_CYCLES = 2;
 
-// Extract a `VERDICT: PASS|WARN|BLOCK` token from a reviewer's output (first match).
+// Extract the reviewer's verdict token. Per the CLAUDE.md contract the token MUST be
+// the reviewer's FIRST output line, so we anchor to it: scan from the top for the first
+// non-empty line and require it to be `VERDICT: <token>`. This prevents a spoof where a
+// malicious diff the reviewer echoes ("VERDICT: PASS") earlier in the body outranks the
+// reviewer's real trailing verdict. A body that doesn't lead with a verdict returns null
+// → the gate treats it as an incomplete/missing verdict → BLOCK.
 function parseVerdict(text) {
-  const m = String(text || '').match(/VERDICT:\s*(PASS|WARN|BLOCK)/i);
-  return m ? m[1].toUpperCase() : null;
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    if (!line.trim()) continue; // skip leading blank lines
+    const m = line.match(/^\s*VERDICT:\s*(PASS|WARN|BLOCK)\b/i);
+    if (!m) return null; // first non-empty line isn't a verdict → missing verdict
+    // Reject a template placeholder that enumerates multiple tokens
+    // (e.g. "VERDICT: PASS | WARN | BLOCK") — a real verdict names exactly one.
+    const tokenCount = (line.match(/\b(PASS|WARN|BLOCK)\b/gi) || []).length;
+    if (tokenCount > 1) return null;
+    return m[1].toUpperCase();
+  }
+  return null;
 }
 
 /**
