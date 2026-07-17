@@ -110,13 +110,28 @@ const CASES = [
     stdin: { tool_name: 'Bash', tool_input: { command: 'configure hsm partition and load zmk' } },
     expectDeny: true,
   },
+  {
+    name: 'chd-ingress-classifier blocks a CHD-adjacent prompt at intake (fail-closed)',
+    script: 'chd-ingress-classifier.js',
+    env: { INFRAOPS_SENSITIVE_FAIL_CLOSED: '1' },
+    stdin: { prompt: 'help me configure the cardholder personalization feed' },
+    expectDeny: true,
+  },
+  {
+    name: 'chd-ingress-classifier allows a benign prompt',
+    script: 'chd-ingress-classifier.js',
+    env: { INFRAOPS_SENSITIVE_FAIL_CLOSED: '1' },
+    stdin: { prompt: 'update the nginx role to enforce TLS 1.2' },
+    expectDeny: false,
+  },
 ];
 
 function isDeny(stdout) {
   if (!stdout || !stdout.trim()) return false;
   try {
     const parsed = JSON.parse(stdout);
-    return parsed?.hookSpecificOutput?.permissionDecision === 'deny';
+    // PreToolUse deny, or UserPromptSubmit block.
+    return parsed?.hookSpecificOutput?.permissionDecision === 'deny' || parsed?.decision === 'block';
   } catch {
     return false;
   }
