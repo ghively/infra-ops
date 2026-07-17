@@ -11,7 +11,9 @@ _Authoritative status: [docs/architecture-gap.md](../../architecture-gap.md)_
 **What's fully built and wired (tested via `npm test`):**
 
 - 10 corporate agents (+6 `perso-*` HSA artifacts/proposals), 24 skills, 8 commands
-- Full hook set (9 event-wired + 4 CLI/in-zone gates)
+- Full hook set (11 event-wired + 4 CLI/in-zone gates), each covered by a conformance test
+- CHD **intake** boundary (`chd-ingress-classifier`) + prod-execution guard enforcing rule #1
+- Learning loop closed on the recall side (`compile-instincts` → injected `rules/instincts/`)
 - DLP (`pan-egress-filter`) with fail-closed option
 - Local inference lane (`ollama-router.js`) + enforcing `sensitivity-router`
 - Unified State Store (9 collections); governed learning loop end-to-end

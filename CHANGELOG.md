@@ -7,14 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Architecture decisions implemented (2026-07-17 design review)
+
+All eight MADR records under `docs/decisions/` were accepted and implemented:
+
+- **Enforcement integrity** — `gateguard-fact-force.js` gained its missing stdin entry
+  point (it was wired but inert); DLP + CHD routing moved to matcher `*` so WebFetch and
+  MCP tools are covered; `sensitivity-router` fails closed on a malformed payload and
+  scans all string fields recursively; `hsa-boundary-guard` key/PIN/HSM patterns are
+  case-insensitive. NEW `prod-execution-guard` hook enforces "propose, never dispose" at
+  the tool boundary. NEW `tests/ci/validate-hook-conformance.js` feeds every enforcing
+  hook a known-bad payload and asserts it denies.
+- **Learning loop closed** — NEW `scripts/compile-instincts.js` compiles active instincts
+  into path-scoped `rules/instincts/<zone>/` fragments the harness injects; promote/rollback
+  recompile automatically. Instincts now influence behavior instead of being write-only.
+- **Ingress boundary** — NEW `chd-ingress-classifier.js` (`UserPromptSubmit`) refuses
+  CHD-adjacent prompts before they reach the cloud model.
+- **Zone-as-overlay** — the six `perso-*` agents now draw shared HSA constraints from a
+  single `overlays/hsa-zone-overlay.md`, injected by `scripts/generate-perso-agents.js`
+  and drift-checked by `tests/ci/validate-perso-overlay.js`.
+- **Single review path** — `/playbook-review` rewired to the canonical three-reviewer
+  merge gate; `merge-gate.js` anchors the verdict to the first output line and rejects
+  multi-token placeholders. Model tiering (`opus→sonnet`) documented as a dispatch-time
+  override in CLAUDE.md.
+
 ### Added
 
-- `docs/decisions/` — eight MADR architecture decision records (status `Proposed`) from
-  the 2026-07-17 design review, plus a priority-ordered index (`docs/decisions/README.md`):
-  close the learning loop (instinct recall), hook conformance self-test, prod-execution
-  prevention hook, disambiguate "local lane", zone-as-overlay, governanceEvents authority,
-  single review path, dynamic model tiering. Each records the problem, options, and a
-  recommended call for accept/reject before code changes.
+- `docs/decisions/` — eight MADR architecture decision records from the 2026-07-17 design
+  review (all now `Accepted`), plus a priority-ordered index (`docs/decisions/README.md`).
 - `tests/ci/validate-doc-links.js` — 19th validator: every relative markdown link in
   tracked `.md` files must resolve to an existing file or directory. Added after the
   2026-07-16 plan audit found four documents linking to a spec file
@@ -25,6 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Audit durability** — `governance-ledger` now awaits the SIEM forward (bounded) before
+  exit; previously the request was fired and killed by `process.exit`, so real-time
+  forwarding delivered nothing. `state-store` `add()` holds a cross-process lock across its
+  read-modify-write (concurrent adds lost ~half of audit events; now none) and quarantines a
+  corrupt collection file to `.corrupt-<ts>` instead of silently truncating it.
+- **Instinct ledger** — version rollback restores the target version's actual content from
+  immutable `.versions/<id>@vN.yml` snapshots (was leaving newer content active); HSA
+  dual-control compares the canonical zone token (`--zone HSA` can no longer bypass it by
+  casing); an unknown zone token now throws instead of failing open into `corporate`.
+- `governanceEvents` documented as a non-authoritative query cache; the append-only
+  `governance-ledger.jsonl` is the sole PCI Req 10 record of truth.
+- `perso-planner`/`-auditor`/`-scribe` model `haiku` → `inherit` (they claimed local-only
+  for HSA work while naming a cloud model).
 - Repointed all `deep-init-reference.md` links (CLAUDE.md, README.md, gap-analysis,
   architecture.md) at `docs/architecture.md` — the referenced file never existed.
 - Gap-analysis agent table: `sensitive-local-analyst` no longer instructs setting
