@@ -902,4 +902,35 @@ function run(rawInput) {
   return rawInput; // allow
 }
 
+/**
+ * Stdin entry point. Without this block the hook — wired in hooks.json as a bare
+ * `node gateguard-fact-force.js` — read nothing and exited 0, making the fact-forcing
+ * gate inert. `run()` returns either the raw input (allow/passthrough) or a
+ * `{ stdout|stderr, exitCode }` object from denyResult()/allowWithStateWarning().
+ */
+if (require.main === module) {
+  let raw = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', chunk => { raw += chunk; });
+  process.stdin.on('end', () => {
+    let result;
+    try {
+      result = run(raw);
+    } catch (err) {
+      // Never hard-fail the tool chain on an internal error; log and allow.
+      process.stderr.write('[gateguard-fact-force] internal error, allowing: ' + err.message + '\n');
+      process.exit(0);
+      return;
+    }
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      if (typeof result.stdout === 'string') process.stdout.write(result.stdout);
+      if (typeof result.stderr === 'string') process.stderr.write(result.stderr);
+      process.exit(typeof result.exitCode === 'number' ? result.exitCode : 0);
+      return;
+    }
+    // Anything else (the raw input echoed back) means allow → passthrough, no output.
+    process.exit(0);
+  });
+}
+
 module.exports = { run };
