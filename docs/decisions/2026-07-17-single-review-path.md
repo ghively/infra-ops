@@ -1,6 +1,6 @@
 # One review path, wired to `/playbook-review`
 
-- Status: Proposed
+- Status: Accepted (2026-07-17)
 - Date: 2026-07-17
 - Priority: 7
 - Deciders: repo owner

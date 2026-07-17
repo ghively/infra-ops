@@ -1,6 +1,6 @@
 # Hook conformance self-test — verify the enforcers actually enforce
 
-- Status: Proposed
+- Status: Accepted (2026-07-17)
 - Date: 2026-07-17
 - Priority: 2
 - Deciders: repo owner

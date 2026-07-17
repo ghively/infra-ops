@@ -12,21 +12,21 @@ format, filename `YYYY-MM-DD-<topic>.md`.
 `Proposed` — awaiting accept/reject · `Accepted` — decided, implement · `Rejected` —
 decided against, kept for the rationale · `Superseded` — replaced by a later record.
 
-## Open decisions (2026-07-17 architecture review)
+## Decisions (2026-07-17 architecture review) — all Accepted
 
-Priority order — resolve 1–4 before touching code, because each changes what the code
-should be:
+Priority order. Records 1–4 were flagged "resolve before touching code"; all eight are
+now accepted and ready to implement.
 
-| # | Decision | Status | One-line problem |
-|---|----------|--------|------------------|
-| 1 | [Close the learning loop](2026-07-17-close-the-learning-loop.md) | Proposed | Instincts are written but never read back — the loop is open |
-| 2 | [Hook conformance self-test](2026-07-17-hook-conformance-selftest.md) | Proposed | No mechanism verifies hooks actually run and fail closed (one is inert) |
-| 3 | [Prod-execution prevention hook](2026-07-17-prod-execution-prevention-hook.md) | Proposed | Hard rule #1 ("never dispose") lives only in prompts, not a hook |
-| 4 | [Disambiguate "local lane"](2026-07-17-disambiguate-local-lane.md) | Proposed | One name covers two isolation mechanisms; only one is a real boundary |
-| 5 | [Zone as an overlay](2026-07-17-zone-as-overlay.md) | Proposed | `perso-*` agents are hand-maintained twins → guaranteed drift |
-| 6 | [governanceEvents authority](2026-07-17-governance-events-authority.md) | Proposed | Lossy State-Store mirror sits beside the authoritative audit ledger |
-| 7 | [Single review path](2026-07-17-single-review-path.md) | Proposed | `/playbook-review` bypasses the deterministic three-reviewer gate |
-| 8 | [Dynamic model tiering](2026-07-17-dynamic-model-tiering.md) | Proposed | "opus→sonnet" is prose; static frontmatter can't express it |
+| # | Decision | Status | Chosen resolution |
+|---|----------|--------|-------------------|
+| 1 | [Close the learning loop](2026-07-17-close-the-learning-loop.md) | Accepted | Rules-rail recall; docs mark subsystem capture-only until it ships |
+| 2 | [Hook conformance self-test](2026-07-17-hook-conformance-selftest.md) | Accepted | CI conformance harness + SessionStart canary |
+| 3 | [Prod-execution prevention hook](2026-07-17-prod-execution-prevention-hook.md) | Accepted | Dedicated deny-by-default PreToolUse hook (dev-inventory allowlist) |
+| 4 | [Disambiguate "local lane"](2026-07-17-disambiguate-local-lane.md) | Accepted | **Build the ingress classifier now** (real intake boundary) + rename |
+| 5 | [Zone as an overlay](2026-07-17-zone-as-overlay.md) | Accepted | Overlay + generation; perso-* become derived artifacts |
+| 6 | [governanceEvents authority](2026-07-17-governance-events-authority.md) | Accepted | Label it a non-authoritative query cache; ledger is record of truth |
+| 7 | [Single review path](2026-07-17-single-review-path.md) | Accepted | Rewire `/playbook-review` to the canonical merge-gate |
+| 8 | [Dynamic model tiering](2026-07-17-dynamic-model-tiering.md) | Accepted | Document the dispatch-time model override in CLAUDE.md |
 
-To accept a record, change its `Status:` to `Accepted` and open the implementation
-work; to reject, set `Status: Rejected` and keep the file for its rationale.
+To later reverse a record, set `Status: Superseded` and add a new record; keep the file
+for its rationale.
