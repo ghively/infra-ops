@@ -75,7 +75,7 @@ const CATEGORIES = [
       /\bclear[\s_-]?key\b/i,
       /\bkey[\s_-]?ceremony\b/i,
       /\bsplit[\s_-]?knowledge\b/i,
-      /\b(?:ZMK|ZPK|BDK|TMK|TPK|KEK|DUKPT|LMK)\b/, // payment key types
+      /\b(?:ZMK|ZPK|BDK|TMK|TPK|KEK|DUKPT|LMK)\b/i, // payment key types
     ],
   },
   {
@@ -83,14 +83,14 @@ const CATEGORIES = [
     patterns: [
       /\bPIN[\s_-]?block\b/i,
       /\bPIN[\s_-]?offset\b/i,
-      /\b(?:PVV|PVKI|CVK)\b/,
+      /\b(?:PVV|PVKI|CVK)\b/i,
       /\bencrypt(?:ed|ing)?[\s_-]+PIN\b/i,
     ],
   },
   {
     name: 'HSM configuration',
     patterns: [
-      /\bHSM\b/,
+      /\bHSM\b/i,
       /\b(?:Thales|SafeNet|payShield|nCipher|Luna)\b/i,
       /\bpartition[\s_-]?(?:password|policy|config)\b/i,
     ],

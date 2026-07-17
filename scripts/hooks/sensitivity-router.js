@@ -104,6 +104,24 @@ function isFailClosed() {
  *   { action: 'advise', reason }   non-blocking guidance
  *   { action: 'deny', reason }     block; route to the local lane
  */
+/**
+ * Recursively collect every string value in a tool_input object/array, so content
+ * scanning does not depend on a hardcoded field allowlist. Bounded depth guards
+ * against pathological nesting.
+ */
+function collectStrings(node, depth = 0, out = []) {
+  if (depth > 8 || node == null) return out;
+  if (typeof node === 'string') { out.push(node); return out; }
+  if (Array.isArray(node)) {
+    for (const v of node) collectStrings(v, depth + 1, out);
+    return out;
+  }
+  if (typeof node === 'object') {
+    for (const v of Object.values(node)) collectStrings(v, depth + 1, out);
+  }
+  return out;
+}
+
 function decide(rawInput) {
   if (isDisabled()) return { action: 'allow' };
 
@@ -111,17 +129,33 @@ function decide(rawInput) {
   try {
     input = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
   } catch {
+    // Fail-open on a malformed payload lets CHD-adjacent work through by simply
+    // malforming the input. Under the fail-closed default, deny instead.
+    if (isFailClosed()) {
+      return {
+        action: 'deny',
+        reason: '[infra-ops] BLOCKED (fail-closed): sensitivity-router could not parse ' +
+          'the tool input to classify CHD-adjacency. Set INFRAOPS_SENSITIVE_FAIL_CLOSED=0 ' +
+          'for advisory mode.',
+      };
+    }
     return { action: 'allow' };
   }
 
   const toolInput = (input && input.tool_input) || {};
   let chdDetected = false;
 
+  // Path check stays targeted (it's a zone-path test, not a content test).
   if (toolInput.file_path && isInZonePath(toolInput.file_path)) chdDetected = true;
-  if (toolInput.command && isCHDAdjacent(toolInput.command)) chdDetected = true;
-  if (toolInput.content && isCHDAdjacent(toolInput.content)) chdDetected = true;
-  if (toolInput.new_string && isCHDAdjacent(toolInput.new_string)) chdDetected = true;
-  if (toolInput.query && isCHDAdjacent(toolInput.query)) chdDetected = true;
+
+  // Scan ALL string values in the tool input, not a hardcoded field allowlist, so
+  // MultiEdit edits[].new_string, Edit old_string, and MCP/WebFetch url/body/prompt
+  // fields are covered too.
+  if (!chdDetected) {
+    for (const value of collectStrings(toolInput)) {
+      if (isCHDAdjacent(value)) { chdDetected = true; break; }
+    }
+  }
 
   if (!chdDetected) return { action: 'allow' };
 

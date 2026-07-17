@@ -16,7 +16,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write|MultiEdit",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -25,16 +25,36 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/gateguard-fact-force.js\"",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/pan-egress-filter.js\""
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/pan-egress-filter.js\"",
+            "timeout": 3
           }
         ],
-        "description": "CHD routing to local lane; GateGuard investigation gate; DLP PAN/secrets blocking",
-        "id": "infra:pre:sensitivity-gateguard-pan-filter"
+        "description": "DLP PAN/secrets blocking and CHD routing on EVERY tool — incl. WebFetch, WebSearch, and MCP tools, the cloud-egress channels a Bash-only matcher missed",
+        "id": "infra:pre:dlp-sensitivity-all-tools"
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/gateguard-fact-force.js\"",
+            "timeout": 5
+          }
+        ],
+        "description": "GateGuard fact-forcing investigation gate before file modification / destructive Bash",
+        "id": "infra:pre:gateguard"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/prod-execution-guard.js\"",
+            "timeout": 3
+          }
+        ],
+        "description": "Enforce propose-never-dispose: deny ansible-playbook against non-dev inventories and promotion commands (SPEC §2 rule #1)",
+        "id": "infra:pre:prod-execution-guard"
       }
     ],
     "PostToolUse": [
