@@ -52,6 +52,7 @@
     "test": "node tests/run-all.js",
     "conformance": "node scripts/conformance.js",
     "compile:instincts": "node scripts/compile-instincts.js",
+    "generate:perso": "node scripts/generate-perso-agents.js",
     "coverage": "c8 --all --include=\"scripts/**/*.js\" --reporter=text --reporter=lcov node tests/run-all.js",
     "validate": "npm run validate:agents && npm run validate:commands && npm run validate:skills && npm run validate:hooks",
     "validate:agents": "node tests/ci/validate-agents.js",
