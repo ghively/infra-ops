@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/decisions/` — eight MADR architecture decision records (status `Proposed`) from
+  the 2026-07-17 design review, plus a priority-ordered index (`docs/decisions/README.md`):
+  close the learning loop (instinct recall), hook conformance self-test, prod-execution
+  prevention hook, disambiguate "local lane", zone-as-overlay, governanceEvents authority,
+  single review path, dynamic model tiering. Each records the problem, options, and a
+  recommended call for accept/reject before code changes.
 - `tests/ci/validate-doc-links.js` — 19th validator: every relative markdown link in
   tracked `.md` files must resolve to an existing file or directory. Added after the
   2026-07-16 plan audit found four documents linking to a spec file
