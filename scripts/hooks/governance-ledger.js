@@ -20,7 +20,7 @@ function sha256(s) {
   return crypto.createHash('sha256').update(String(s)).digest('hex').slice(0, 16);
 }
 
-function main() {
+async function main() {
   let raw = '';
   try {
     raw = fs.readFileSync(0, 'utf8');
@@ -60,11 +60,18 @@ function main() {
   }
 
   // Forward to a SIEM in real time when configured (INFRAOPS_AUDIT_FORWARD or SIEM_*).
-  // Fire-and-forget: never block or fail the tool pipeline on a forwarding error.
+  // AWAIT the forward (bounded) before exiting — previously the request was fired and
+  // then process.exit(0) killed it before it flushed, so nothing was ever delivered.
+  // The bound keeps us within the hook's async timeout; a transport error is ignored so
+  // we never block or fail the tool pipeline.
   if (process.env.INFRAOPS_AUDIT_FORWARD || String(process.env.SIEM_ENABLED || '') === '1') {
     try {
       const siem = require('../lib/siem-forwarder.js');
-      siem.forwardRecord(record).catch(() => { /* ignore transport errors */ });
+      const timeoutMs = Number(process.env.INFRAOPS_AUDIT_FORWARD_TIMEOUT_MS || 8000);
+      await Promise.race([
+        Promise.resolve(siem.forwardRecord(record)).catch(() => { /* ignore transport errors */ }),
+        new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+      ]);
     } catch {
       /* forwarder unavailable — ledger write already succeeded */
     }
@@ -75,9 +82,7 @@ function main() {
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   process.stderr.write('[governance-ledger] error: ' + err.message + '\n');
   process.exit(0);
-}
+});

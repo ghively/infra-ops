@@ -37,6 +37,12 @@ const COLLECTION_FILES = {
   skillVersions: 'skill-versions.json',
   decisions: 'decisions.json',
   installState: 'install-state.json',
+  // governanceEvents is a NON-AUTHORITATIVE, best-effort query cache of recent
+  // governance detections (capped/TTL-pruned like every collection). The authoritative,
+  // tamper-evident audit record of truth is the append-only governance-ledger.jsonl
+  // (PCI Req 10) written by governance-ledger.js — never this collection. Loss here
+  // under cap/TTL is expected and acceptable. See
+  // docs/decisions/2026-07-17-governance-events-authority.md.
   governanceEvents: 'governance-events.json',
   workItems: 'work-items.json',
   knowledgeBase: 'knowledge-base.json',
@@ -91,9 +97,52 @@ function readCollection(collectionName) {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error(`Error reading collection ${collectionName}:`, error.message);
+    // A corrupt file must NOT silently read as [] — the next add() would then overwrite
+    // it with a single entry, destroying recoverable data. Quarantine it instead and
+    // refuse to build on top of it; an operator can reconcile the .corrupt-* file.
+    try {
+      const bak = `${collectionPath}.corrupt-${Date.now()}`;
+      fs.renameSync(collectionPath, bak);
+      console.error(`state-store: quarantined corrupt ${collectionName} → ${path.basename(bak)} (${error.message})`);
+    } catch (_) {
+      console.error(`Error reading collection ${collectionName}:`, error.message);
+    }
   }
   return [];
+}
+
+/**
+ * Cross-process advisory lock around a collection's read-modify-write. Hooks run as
+ * separate processes; without this, two concurrent add()s each read N, append 1, and
+ * write N+1 — the second clobbers the first and an audit event is silently lost.
+ * Exclusive-create ('wx') is atomic; a stale lock (crashed holder) is broken after
+ * staleMs; if the lock can't be taken within timeoutMs we proceed best-effort rather
+ * than block a hook forever.
+ */
+async function acquireLock(collectionName, { timeoutMs = 3000, staleMs = 15000 } = {}) {
+  ensureStateDir();
+  const lockPath = `${getCollectionPath(collectionName)}.lock`;
+  const start = Date.now();
+  for (;;) {
+    try {
+      const fd = fs.openSync(lockPath, 'wx');
+      fs.writeSync(fd, `${process.pid}:${Date.now()}`);
+      fs.closeSync(fd);
+      return lockPath;
+    } catch (e) {
+      if (e.code !== 'EEXIST') return null; // unexpected FS error → proceed unlocked
+      try {
+        const st = fs.statSync(lockPath);
+        if (Date.now() - st.mtimeMs > staleMs) { fs.unlinkSync(lockPath); continue; }
+      } catch { /* lock vanished — retry immediately */ continue; }
+      if (Date.now() - start > timeoutMs) return null; // give up; best-effort write
+      await new Promise((r) => setTimeout(r, 15 + Math.floor(Math.random() * 20)));
+    }
+  }
+}
+
+function releaseLock(lockPath) {
+  if (lockPath) { try { fs.unlinkSync(lockPath); } catch { /* already gone */ } }
 }
 
 /**
@@ -165,21 +214,26 @@ function createCollectionProxy(collectionName) {
      * Add a new entry to the collection.
      */
     async add(entry) {
-      const entries = readCollection(collectionName);
-
       // Ensure ID exists
       if (!entry.id) {
         entry.id = generateId(collectionName.slice(0, -1)); // singular prefix
       }
-
       // Add createdAt if missing
       if (!entry.createdAt) {
         entry.createdAt = new Date().toISOString();
       }
 
-      entries.push(entry);
-      const pruned = pruneCollection(collectionName, entries);
-      writeCollection(collectionName, pruned);
+      // Hold the lock across the entire read-modify-write so concurrent adds don't
+      // clobber each other (previously ~half of concurrent audit events were lost).
+      const lock = await acquireLock(collectionName);
+      try {
+        const entries = readCollection(collectionName);
+        entries.push(entry);
+        const pruned = pruneCollection(collectionName, entries);
+        writeCollection(collectionName, pruned);
+      } finally {
+        releaseLock(lock);
+      }
       return entry;
     },
 

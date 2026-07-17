@@ -33,10 +33,22 @@ const INSTINCTS_ROOT = path.join(PLUGIN_ROOT, 'knowledge', 'instincts');
 // Map any accepted zone token to its canonical on-disk directory name.
 // Canonical: 'corporate' (PCI DSS) and 'hsa' (PCI CP + PIN). Legacy aliases
 // 'corpor'/'in-zone' are accepted for back-compat.
+// Canonical zone tokens + accepted aliases. An unrecognized non-empty token THROWS
+// rather than silently falling through to 'corporate' — a mislabeled HSA instinct must
+// never land in the corporate ledger (that would break zone segregation fail-open).
+const KNOWN_ZONES = { corporate: 'corporate', corpor: 'corporate', hsa: 'hsa', 'in-zone': 'hsa' };
 function zoneDir(zone) {
-  const z = String(zone || '').toLowerCase();
-  if (z === 'hsa' || z === 'in-zone') return 'hsa';
-  return 'corporate';
+  if (zone == null || String(zone).trim() === '') return 'corporate';
+  const z = String(zone).trim().toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(KNOWN_ZONES, z)) return KNOWN_ZONES[z];
+  throw new Error(`Unknown zone token: "${zone}" (expected corporate|hsa; aliases corpor|in-zone)`);
+}
+
+// Path for a versioned content snapshot, written at promote time so rollback can
+// restore the actual prior content (not just rewrite the version number). Snapshots
+// live in a `.versions/` subdir so they stay out of list() and the instinct validator.
+function snapshotPath(zone, id, version) {
+  return path.join(ledgerDir(zone), '.versions', `${id}@v${version}.yml`);
 }
 
 function ledgerDir(zone) {
@@ -122,7 +134,12 @@ async function promote(req) {
   };
 
   const filePath = instinctPath(req.zone, req.instinctId);
-  fs.writeFileSync(filePath, toYaml(instinct));
+  const yaml = toYaml(instinct);
+  fs.writeFileSync(filePath, yaml);
+  // Immutable versioned snapshot so a later rollback restores this exact content.
+  const snap = snapshotPath(req.zone, req.instinctId, instinct.version);
+  fs.mkdirSync(path.dirname(snap), { recursive: true });
+  fs.writeFileSync(snap, yaml);
 
   await logGovernance({
     rule: 'instinct-promotion',
@@ -131,7 +148,19 @@ async function promote(req) {
     context: { instinct_id: req.instinctId, zone: zoneDir(req.zone), approver: req.approver, confidence: req.confidence },
   });
 
+  recompileRecall(req.zone);
   return filePath;
+}
+
+// Best-effort: regenerate the rules-rail recall fragments so a newly promoted or
+// rolled-back instinct actually reaches agent context (closes the learning loop).
+// Never let a recall-compile failure break the ledger operation itself.
+function recompileRecall(zone) {
+  try {
+    require('../compile-instincts.js').compileZone(zone);
+  } catch (_) {
+    /* recall is advisory; ledger write already succeeded */
+  }
 }
 
 /**
@@ -154,9 +183,20 @@ async function rollback(req) {
     const fromMatch = raw.match(/^version: (\d+)/m);
     const fromVersion = fromMatch ? parseInt(fromMatch[1], 10) : 1;
     const target = req.version || Math.max(1, fromVersion - 1);
-    updated = raw.replace(/^version: .*$/m, `version: ${target}`);
     const block = `rollback:\n  from_version: ${fromVersion}\n  at: "${now}"\n  by: [${(req.approvers || []).map((b) => `"${b}"`).join(', ')}]\n  reason: "${(req.reason || '').replace(/"/g, '\\"')}"\n`;
-    updated = updated.replace(/^content: \|/m, block + 'content: |');
+    const snap = snapshotPath(req.zone, req.instinctId, target);
+    if (fs.existsSync(snap)) {
+      // Restore the target version's actual content, not just its version number.
+      updated = fs.readFileSync(snap, 'utf8');
+      updated = updated.replace(/^status: .*$/m, 'status: active');
+      updated = updated.replace(/^content: \|/m, block + 'content: |');
+    } else {
+      // Legacy instinct promoted before snapshotting existed — we can only reset the
+      // version number and record the rollback; the content cannot be truly restored.
+      updated = raw.replace(/^version: .*$/m, `version: ${target}`);
+      const warnBlock = block.replace(/^rollback:/, 'rollback:\n  content_restored: false');
+      updated = updated.replace(/^content: \|/m, warnBlock + 'content: |');
+    }
   }
 
   fs.writeFileSync(filePath, updated);
@@ -168,6 +208,7 @@ async function rollback(req) {
     context: { instinct_id: req.instinctId, zone: zoneDir(req.zone), approvers: req.approvers, reason: req.reason },
   });
 
+  recompileRecall(req.zone);
   return filePath;
 }
 
@@ -204,8 +245,10 @@ async function runCli(argv) {
     if (!args.reason) { process.stderr.write('❌ rollback requires --reason\n'); return 1; }
     if (approvers.length < 1) { process.stderr.write('❌ rollback requires at least one --approvers\n'); return 1; }
     const zone = args.zone || 'corporate';
-    // Compliance / HSA rollbacks require two distinct approvers.
-    const needDual = zone === 'in-zone' || zone === 'hsa' || /^(1|true|yes)$/i.test(String(args.compliance || ''));
+    // Compliance / HSA rollbacks require two distinct approvers. Compare the CANONICAL
+    // zone (zoneDir lowercases + resolves aliases) so `--zone HSA` cannot bypass dual
+    // control by simply uppercasing the token.
+    const needDual = zoneDir(zone) === 'hsa' || /^(1|true|yes)$/i.test(String(args.compliance || ''));
     if (needDual && new Set(approvers).size < 2) {
       process.stderr.write('❌ compliance/HSA rollback requires two distinct --approvers\n');
       return 1;
