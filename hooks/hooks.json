@@ -14,6 +14,20 @@
         "id": "infra:session:bootstrap"
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/chd-ingress-classifier.js\"",
+            "timeout": 3
+          }
+        ],
+        "description": "CHD ingress boundary: classify the submitted prompt and block CHD-adjacent content before it reaches the cloud model (fail-closed)",
+        "id": "infra:intake:chd-ingress-classifier"
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "*",
